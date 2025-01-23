@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ChevronDown, Phone, MapPin } from 'lucide-react';
+import { Menu, X, ChevronDown, MapPin } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Navbar() {
@@ -17,9 +17,9 @@ export default function Navbar() {
     }, []);
 
     const navigationItems = [
-        { 
-            name: 'الرئيسية', 
-            path: '/' 
+        {
+            name: 'الرئيسية',
+            path: '/'
         },
         {
             name: 'العقارات',
@@ -31,34 +31,27 @@ export default function Navbar() {
                 { name: 'الأراضي', path: '/properties' }
             ]
         },
-        { 
-            name: 'من نحن', 
-            path: '/' 
+        {
+            name: 'من نحن',
+            path: '/'
         },
-        { 
-            name: 'اتصل بنا', 
-            path: '/' 
+        {
+            name: 'اتصل بنا',
+            path: '/'
         }
     ];
 
     return (
         <>
             {/* Top Bar */}
-            <div className={`hidden md:block transition-all duration-300 ${
-                isScrolled ? 'h-0 opacity-0' : 'h-10 opacity-100'
-            }`}>
+            <div className={`hidden md:block transition-all duration-300 ${isScrolled ? 'h-0 opacity-0' : 'h-10 opacity-100'
+                }`}>
                 <div className="bg-gray-900 text-white">
                     <div className="max-w-7xl mx-auto px-4">
                         <div className="flex items-center justify-between h-10">
-                            <div className="flex items-center gap-6 text-sm">
-                                <div className="flex items-center gap-2">
-                                    <Phone className="w-4 h-4" />
-                                    <span>+968 1234 5678</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <MapPin className="w-4 h-4" />
-                                    <span>مسقط، عمان</span>
-                                </div>
+                            <div className="flex items-center gap-2">
+                                <MapPin className="w-4 h-4" />
+                                <span>مسقط، عمان</span>
                             </div>
                         </div>
                     </div>
@@ -69,11 +62,10 @@ export default function Navbar() {
             <motion.nav
                 initial={{ y: -100 }}
                 animate={{ y: 0 }}
-                className={`fixed w-full z-50 transition-all duration-300 ${
-                    isScrolled
+                className={`fixed w-full z-50 transition-all duration-300 ${isScrolled
                         ? 'bg-white shadow-lg py-4'
                         : 'bg-transparent py-6'
-                }`}
+                    }`}
             >
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="flex items-center justify-between">
@@ -82,9 +74,8 @@ export default function Navbar() {
                             <motion.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
-                                className={`text-2xl font-bold transition-colors ${
-                                    isScrolled ? 'text-gray-900' : 'text-white'
-                                }`}
+                                className={`text-2xl font-bold transition-colors ${isScrolled ? 'text-gray-900' : 'text-white'
+                                    }`}
                             >
                                 عقارات عمان
                             </motion.div>
@@ -106,18 +97,15 @@ export default function Navbar() {
                                     >
                                         <Link
                                             href={item.path}
-                                            className={`${
-                                                isScrolled ? 'text-gray-800' : 'text-white'
-                                            } hover:text-blue-500 transition-colors font-medium`}
+                                            className={`${isScrolled ? 'text-gray-800' : 'text-white'
+                                                } hover:text-blue-500 transition-colors font-medium`}
                                         >
                                             {item.name}
                                         </Link>
                                         {item.dropdownItems && (
-                                            <ChevronDown className={`w-4 h-4 transition-transform ${
-                                                activeDropdown === item.name ? 'rotate-180' : ''
-                                            } ${
-                                                isScrolled ? 'text-gray-800' : 'text-white'
-                                            }`} />
+                                            <ChevronDown className={`w-4 h-4 transition-transform ${activeDropdown === item.name ? 'rotate-180' : ''
+                                                } ${isScrolled ? 'text-gray-800' : 'text-white'
+                                                }`} />
                                         )}
                                     </motion.div>
 

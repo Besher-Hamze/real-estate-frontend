@@ -1,0 +1,54 @@
+export interface CreateMainTypeForm {
+    name: string;
+    icon: string;
+}
+
+export interface CreateCity {
+    name: string;
+}
+
+export interface CreateNeighborhood {
+    cityId: number;
+    name: string;
+}
+
+export interface CreateSubTypeForm {
+    name: string;
+    mainId: number;
+}
+
+
+export interface CreateFinalTypeForm {
+    name: string;
+    subId: number;
+}
+
+export interface CreateEstateForm {
+    title: string;
+    price: number;
+    cityId: number;
+    neighborhoodId: number;
+    bedrooms: number;
+    bathrooms: number;
+    furnished: boolean;
+    buildingArea: string;
+    floorNumber: number;
+    facade: string;
+    paymentMethod: string;
+    mainCategoryId: number;
+    subCategoryId: number;
+    finalTypeId: number;
+    mainFeatures: string;
+    additionalFeatures: string;
+    nearbyLocations: string;
+    coverImage: File | null;
+    files: File[] | null;
+    rentalDuration: number;
+    ceilingHeight: number;
+    totalFloors: number | null;
+}
+
+
+
+
+

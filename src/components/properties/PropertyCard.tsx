@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { IoBed, IoExpand, IoCar } from 'react-icons/io5';
 import { FaBath } from 'react-icons/fa'; 
-import { Property } from '@/types';
+import { Property } from '@/lib/types';
 
 interface PropertyCardProps {
   property: Property;

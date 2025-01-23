@@ -1,15 +1,18 @@
 // src/app/layout.tsx
-import type { Metadata } from 'next'
+
+"use client"
 import { Cairo } from 'next/font/google'
 import './globals.css'
-import Navbar from '@/components/layout/Navbar'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ToastContainer } from 'react-toastify'
 
 const cairo = Cairo({ subsets: ['arabic'] })
 
-export const metadata: Metadata = {
-  title: 'عقارات عُمان | الموقع الأول للعقارات في سلطنة عمان',
-  description: 'ابحث عن عقارات للبيع والإيجار في سلطنة عمان',
-}
+// export const metadata: Metadata = {
+//   title: 'عقارات عُمان | الموقع الأول للعقارات في سلطنة عمان',
+//   description: 'ابحث عن عقارات للبيع والإيجار في سلطنة عمان',
+// }
+const queryClient = new QueryClient();
 
 export default function RootLayout({
   children,
@@ -19,10 +22,10 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl">
       <body className={cairo.className}>
-        {/* <Navbar /> */}
-        <main className="min-h-screen">
+        <QueryClientProvider client={queryClient}>
           {children}
-        </main>
+        </QueryClientProvider>
+        <ToastContainer position="bottom-left" autoClose={2000} hideProgressBar={true} /> {/* Add ToastContainer here */}
       </body>
     </html>
   )

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Home, Users, Key, ChevronLeft, Trophy, Clock, Shield } from 'lucide-react';
+import { Users, ChevronLeft, Trophy, Shield } from 'lucide-react';
 
 export default function WhyChooseUs() {
     const features = [
@@ -66,7 +66,7 @@ export default function WhyChooseUs() {
 
                             <h3 className="text-xl font-bold mb-4 text-gray-900">{feature.title}</h3>
                             <p className="text-gray-600 mb-6 leading-relaxed">{feature.description}</p>
-                            
+
                             <div className="flex items-center justify-between text-sm">
                                 <span className="text-gray-500">{feature.statLabel}</span>
                                 <motion.button
