@@ -30,7 +30,7 @@ export interface CreateEstateForm {
     neighborhoodId: number;
     bedrooms: number;
     bathrooms: number;
-    furnished: boolean;
+    furnished: number;
     buildingArea: string;
     floorNumber: number;
     facade: string;

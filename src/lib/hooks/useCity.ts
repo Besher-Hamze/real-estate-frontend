@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { cityApi } from "@/api/cityApi";
-import { CityType } from "@/lib/types/create";
 import { cityQuery } from "../constants/queryNames";
+import { CityType } from "../types";
 
 export const useCity = () => {
   const {

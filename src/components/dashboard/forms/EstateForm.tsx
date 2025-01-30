@@ -9,6 +9,7 @@ import { CreateEstateForm } from "@/lib/types/create";
 import { finalTypeTypeApi } from "@/api/finalTypeApi";
 import { toast } from "react-toastify";
 import FeaturesSelection from "../estate-components/FeaturesSelectionProps ";
+import AdditionalFeaturesSelection from "../estate-components/AdditionalSelectionProps";
 
 export default function EstateForm() {
   const { mainTypes, refetch: refetchMainTypes } = useMainType();
@@ -26,7 +27,7 @@ export default function EstateForm() {
     neighborhoodId: 1,
     bedrooms: 1,
     bathrooms: 1,
-    furnished: false,
+    furnished: 2,
     buildingArea: "",
     floorNumber: 0,
     facade: "",
@@ -140,7 +141,7 @@ export default function EstateForm() {
         neighborhoodId: 1,
         bedrooms: 1,
         bathrooms: 1,
-        furnished: false,
+        furnished: 0,
         buildingArea: "",
         floorNumber: 0,
         facade: "",
@@ -202,6 +203,12 @@ export default function EstateForm() {
     setEstateForm(prev => ({
       ...prev,
       mainFeatures: features.join('، ')
+    }));
+  };
+  const handleAdditinalFeaturesChange = (additionalFeatures: string[]) => {
+    setEstateForm(prev => ({
+      ...prev,
+      additionalFeatures: additionalFeatures.join('، ')
     }));
   };
 
@@ -430,6 +437,35 @@ export default function EstateForm() {
           </select>
         </div>
 
+        {/* Furnished */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            حالة الفرش
+          </label>
+          <select
+            value={estateForm.furnished ? 1 : 0}
+            onChange={(e) =>
+              setEstateForm({
+                ...estateForm,
+                furnished: Number(e.target.value), // Convert to integer
+              })
+            }
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg 
+      focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">اختر حالة الفرش</option>
+            {[
+              { value: 1, label: 'مفروشة' },
+              { value: 0, label: 'غير مفروشة' },
+            ].map((option, index) => (
+              <option key={index} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+
         {/* View */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -561,6 +597,16 @@ export default function EstateForm() {
           />
         </div>
 
+        {/* Additional Features */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            الميزات الإضافية
+          </label>
+          <AdditionalFeaturesSelection
+            selectedFeatures={estateForm.additionalFeatures.split('، ').filter(Boolean)}
+            onChange={handleAdditinalFeaturesChange}
+          />
+        </div>
 
         {/* Additional Features */}
         <div>

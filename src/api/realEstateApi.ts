@@ -46,6 +46,9 @@ export const RealEstateApi = {
             estate.files = undefined;
             estate.cityName=undefined;
             estate.neighborhoodName=undefined;
+            estate.mainCategoryName=undefined;
+            estate.subCategoryName=undefined;
+            estate.finalTypeName=undefined;
             const response = await apiClient.put(`${API_BASE_URL}/api/realestate/${id}`, estate);
             return response.data;
         } catch (error) {
