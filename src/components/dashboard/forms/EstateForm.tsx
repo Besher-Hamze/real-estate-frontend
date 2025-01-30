@@ -608,25 +608,6 @@ export default function EstateForm() {
           />
         </div>
 
-        {/* Additional Features */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            الميزات الإضافية
-          </label>
-          <textarea
-            value={estateForm.additionalFeatures}
-            onChange={(e) =>
-              setEstateForm({
-                ...estateForm,
-                additionalFeatures: e.target.value,
-              })
-            }
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg 
-              focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="الميزات الإضافية"
-          />
-        </div>
-
         {/* Cover Image */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
