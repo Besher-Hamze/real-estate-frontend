@@ -44,13 +44,9 @@ export default function FinalTypeTable() {
     try {
       await finalTypeTypeApi.updateFinalTypeType(finalTypeId, {
         name: editName,
-        // If you need to update subId as well, add it here:
-        // sub_id: someSubId
       });
 
-      // Refresh data
       refetch();
-      // Exit edit mode
       setEditingId(null);
       setEditName("");
     } catch (err) {
@@ -59,7 +55,6 @@ export default function FinalTypeTable() {
     }
   };
 
-  // --- Delete Handlers with Dialog ---
   const openDeleteDialog = (finalTypeId: number) => {
     setPendingDeleteId(finalTypeId);
     setIsDialogOpen(true);

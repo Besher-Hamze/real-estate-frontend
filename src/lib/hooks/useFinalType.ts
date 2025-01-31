@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { FinalType, SubType } from "@/lib/types/types";
 import { finalTypeTypeApi } from "@/api/finalTypeApi";
 import { finalTypeQuery } from "../constants/queryNames";
+import { FinalType } from "../types";
 
 export const useFinalType = () => {
   const {
