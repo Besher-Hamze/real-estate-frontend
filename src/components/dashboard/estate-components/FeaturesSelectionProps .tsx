@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Checkbox,
   Label,
@@ -83,6 +83,7 @@ const FeaturesSelection: React.FC<FeaturesSelectionProps> = ({
 }) => {
   const features = FEATURES_BY_TYPE[propertyType] || [];
   const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const handleFeatureToggle = (feature: string) => {
     const updatedFeatures = selectedFeatures.includes(feature)
@@ -101,8 +102,23 @@ const FeaturesSelection: React.FC<FeaturesSelectionProps> = ({
     onChange(updatedFeatures);
   };
 
+  // Close dropdown when clicking outside of the container
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   return (
-    <div className="w-full" dir="rtl">
+    <div className="w-full" dir="rtl" ref={containerRef}>
       <Select>
         <SelectTrigger
           className="w-full bg-white border border-gray-300 rounded-lg shadow-md hover:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"

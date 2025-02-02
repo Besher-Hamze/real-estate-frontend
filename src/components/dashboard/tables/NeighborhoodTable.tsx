@@ -9,6 +9,7 @@ import { neighborhoodApi } from "@/api/NeighborhoodApi";
 import Spinner from "@/components/ui/Spinner";
 import ErrorFallback from "@/components/ui/ErrorFallback";
 import { NeighborhoodType } from "@/lib/types"; // Adjust import to match your project
+import { useCity } from "@/lib/hooks/useCity";
 
 export default function NeighborhoodTable() {
   const { neighborhoods, isLoading, error, refetch } = useNeighborhood();
@@ -19,15 +20,13 @@ export default function NeighborhoodTable() {
   const [editCityId, setEditCityId] = useState<number | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
 
-  // Delete states
+  const { cities } = useCity();
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  // Dialog for deletion
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
-  // 1) Inline Edit Handlers
   const handleEdit = (nb: NeighborhoodType) => {
     setEditingId(nb.id);
     setEditName(nb.name);
@@ -44,21 +43,17 @@ export default function NeighborhoodTable() {
 
   const handleSaveEdit = async (id: number) => {
     try {
-      if (editName.trim() === "" || editCityId === null) {
+      if (editName.trim() === "" || !editCityId) {
         setEditError("الرجاء ملء كافة الحقول");
         return;
       }
 
-      // Payload for update
       await neighborhoodApi.updagteNeighborhood(id, {
         name: editName,
-        // cityId: editCityId,
+        cityId: editCityId,
       });
 
-      // Refetch after successful update
       refetch();
-
-      // Exit edit mode
       setEditingId(null);
       setEditName("");
       setEditCityId(null);
@@ -73,6 +68,14 @@ export default function NeighborhoodTable() {
     setPendingDeleteId(id);
     setIsDialogOpen(true);
   };
+
+
+  const getCityName = (cityId: number) => {
+    const city = cities?.find((c) => c.id === cityId);
+    if (city) return city.name;
+    return "غير معروف";
+  }
+
 
   const closeDeleteDialog = () => {
     setPendingDeleteId(null);
@@ -119,22 +122,13 @@ export default function NeighborhoodTable() {
       <table className="w-full">
         <thead className="bg-gray-50">
           <tr>
-            <th
-              className="px-6 py-3 text-right text-xs font-medium text-gray-500 
-              uppercase tracking-wider"
-            >
+            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
               الحي
             </th>
-            <th
-              className="px-6 py-3 text-right text-xs font-medium text-gray-500 
-              uppercase tracking-wider"
-            >
+            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
               المدينة
             </th>
-            <th
-              className="px-6 py-3 text-right text-xs font-medium text-gray-500 
-              uppercase tracking-wider"
-            >
+            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
               الإجراءات
             </th>
           </tr>
@@ -162,20 +156,25 @@ export default function NeighborhoodTable() {
                     </div>
                   )}
                 </td>
-                {/* City Id */}
+                {/* City selection */}
                 <td className="px-6 py-4 whitespace-nowrap">
                   {isEditing ? (
-                    /* Simple text input for cityId 
-                       (You can use a <select> if you want a city list) */
-                    <input
-                      type="number"
-                      className="border rounded p-1 text-sm w-full"
-                      value={editCityId ?? ""}
+                    <select
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg 
+                        focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      value={editCityId || ""}
                       onChange={(e) => setEditCityId(Number(e.target.value))}
-                    />
+                    >
+                      <option value="">اختر المدينة</option>
+                      {cities?.map((city) => (
+                        <option key={city.id} value={city.id}>
+                          {city.name}
+                        </option>
+                      ))}
+                    </select>
                   ) : (
                     <div className="text-sm text-gray-500">
-                      {nb.cityId /* or nb.city_id if that's your actual field */}
+                      {getCityName(nb.cityId)}
                     </div>
                   )}
                 </td>
@@ -185,7 +184,6 @@ export default function NeighborhoodTable() {
                   <div className="flex items-center gap-2">
                     {isEditing ? (
                       <>
-                        {/* Save */}
                         <button
                           className="text-green-600 hover:text-green-700"
                           onClick={() => handleSaveEdit(nb.id)}
@@ -193,7 +191,6 @@ export default function NeighborhoodTable() {
                         >
                           <Check className="w-4 h-4" />
                         </button>
-                        {/* Cancel */}
                         <button
                           className="text-red-600 hover:text-red-700"
                           onClick={handleCancelEdit}
@@ -204,7 +201,6 @@ export default function NeighborhoodTable() {
                       </>
                     ) : (
                       <>
-                        {/* Edit */}
                         <button
                           className="text-blue-600 hover:text-blue-700"
                           onClick={() => handleEdit(nb)}
@@ -212,7 +208,6 @@ export default function NeighborhoodTable() {
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
-                        {/* Delete (Dialog) */}
                         <button
                           className="text-red-600 hover:text-red-700"
                           onClick={() => openDeleteDialog(nb.id)}
@@ -234,6 +229,7 @@ export default function NeighborhoodTable() {
           })}
         </tbody>
       </table>
+
 
       {/* Delete Confirmation Dialog */}
       <Transition appear show={isDialogOpen} as={Fragment}>

@@ -9,6 +9,7 @@ export interface UpdateCity {
 
 export interface UpdateNeighborhood {
     name?: string;
+    cityId?:number;
 }
 
 export interface UpdateSubTypeForm {

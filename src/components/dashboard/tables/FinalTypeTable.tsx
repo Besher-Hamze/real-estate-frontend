@@ -9,25 +9,22 @@ import Spinner from "@/components/ui/Spinner";
 import ErrorFallback from "@/components/ui/ErrorFallback";
 import { FinalType } from "@/lib/types"; // or wherever your FinalType interface is located
 import { finalTypeTypeApi } from "@/api/finalTypeApi";
+import { useMainType } from "@/lib/hooks/useMainType";
 
 export default function FinalTypeTable() {
-  // Grab finalTypes from hook
   const { finalTypes, isLoading, error, refetch } = useFinalType();
 
-  // Inline-edit states
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
   const [editError, setEditError] = useState<string | null>(null);
 
-  // Delete states
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const { mainTypes } = useMainType();
 
-  // Dialog state for delete confirmation
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
-  // --- Inline Edit Handlers ---
   const handleEdit = (fType: FinalType) => {
     setEditingId(fType.id);
     setEditName(fType.name);
@@ -38,6 +35,16 @@ export default function FinalTypeTable() {
     setEditingId(null);
     setEditName("");
     setEditError(null);
+  };
+
+  const getSubTypeName = (subId: number) => {
+    for (const mainType of mainTypes || []) {
+      const subType = mainType.subtypes?.find(sub => sub.id === subId);
+      if (subType) {
+        return subType.name;
+      }
+    }
+    return "غير معروف";
   };
 
   const handleSaveEdit = async (finalTypeId: number) => {
@@ -84,13 +91,11 @@ export default function FinalTypeTable() {
     }
   };
 
-  // --- Loading / Error States ---
   if (isLoading) return <Spinner />;
   if (error) return <ErrorFallback onRefresh={refetch} />;
 
   return (
     <div className="relative w-full" dir="rtl">
-      {/* Edit or Delete Errors */}
       {editError && (
         <div className="bg-red-50 text-red-600 border border-red-300 p-3 mb-4 rounded-md">
           {editError}
@@ -115,7 +120,7 @@ export default function FinalTypeTable() {
               className="px-6 py-3 text-right text-xs font-medium text-gray-500 
               uppercase tracking-wider"
             >
-              التصنيف الفرعي (subId)
+              التصنيف الفرعي
             </th>
             <th
               className="px-6 py-3 text-right text-xs font-medium text-gray-500 
@@ -150,7 +155,9 @@ export default function FinalTypeTable() {
                 </td>
                 {/* subId display */}
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-500">{fType.subId}</div>
+                  <div className="text-sm text-gray-500">
+                    {getSubTypeName(fType.subId)}
+                  </div>
                 </td>
                 {/* Actions */}
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
