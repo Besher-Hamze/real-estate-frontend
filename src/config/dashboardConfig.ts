@@ -1,4 +1,3 @@
-// config/dashboardConfig.ts
 import { Building2, Home } from 'lucide-react';
 
 export const DASHBOARD_TABS = {

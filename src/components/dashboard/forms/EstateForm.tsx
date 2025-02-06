@@ -4,13 +4,16 @@ import { Plus } from "lucide-react";
 import { FormField } from "@/components/ui/form/FormField";
 import { InputField } from "@/components/ui/form/InputField";
 import { SelectField } from "@/components/ui/form/SelectField";
-import AdditionalFeaturesSelection from "../estate-components/AdditionalSelectionProps";
 import {
+  ADDITIONAL_FEATURES,
+  FEATURES_BY_TYPE,
   FLOOR_OPTIONS,
   FURNISHED_OPTIONS,
+  PAYMENT_OPTIONS,
 } from "@/components/ui/constants/formOptions";
 import { useEstateForm } from "@/lib/hooks/useEstateForm";
-import FeaturesSelection from "../estate-components/FeaturesSelectionProps ";
+import FeaturesSelect from "@/components/ui/FeaturesSelect";
+import RangeInput from "@/components/ui/form/RangePriceInput";
 
 export default function EstateForm() {
   const {
@@ -39,6 +42,18 @@ export default function EstateForm() {
     if (file) handleChange('coverImage', file);
   };
 
+  const isLandType = () => {
+    const selectedSubType = mainTypes
+      ?.find(m => m.id === formData.mainCategoryId)
+      ?.subtypes.find(sub => sub.id === formData.subCategoryId);
+
+    const selectedFinalType = finalTypes.find(type => type.id === formData.finalTypeId);
+
+    return selectedSubType?.name.includes('أرض') || selectedFinalType?.name.includes('أرض');
+  };
+
+  const shouldHideResidentialFields = isLandType();
+
   return (
     <form onSubmit={(e) => {
       e.preventDefault();
@@ -58,21 +73,25 @@ export default function EstateForm() {
         </FormField>
 
         <FormField label="السعر">
-          <InputField
-            type="number"
-            value={formData.price}
-            onChange={(value) => handleChange('price', Number(value))}
-            placeholder="أدخل السعر"
-            required
+          <RangeInput
+            minValue={0}
+            maxValue={1000}
+            step={10}
+            onChange={(value) => {
+              handleChange('price', value);
+            }}
           />
         </FormField>
-
         <FormField label="طريقة الدفع">
-          <InputField
-            type="text"
-            value={formData.paymentMethod}
-            onChange={(value) => handleChange('paymentMethod', value)}
-            placeholder="أدخل طريقة الدفع"
+          <FeaturesSelect
+            features={PAYMENT_OPTIONS}
+            selectedFeatures={formData.paymentMethod.split("، ").filter(Boolean)}
+            onChange={(selected) => handleChange('paymentMethod', selected.join("، "))}
+            placeholder="اختر طريقة الدفع"
+            selectionText={{
+              single: "طريقة دفع",
+              multiple: "طرق دفع"
+            }}
           />
         </FormField>
 
@@ -105,7 +124,6 @@ export default function EstateForm() {
                   label: sub.name
                 })) || []}
               placeholder="اختر الصنف الفرعي"
-              
             />
           </FormField>
         )}
@@ -134,7 +152,6 @@ export default function EstateForm() {
               label: city.name
             }))}
             placeholder="اختر المدينة"
-            
           />
         </FormField>
 
@@ -147,30 +164,68 @@ export default function EstateForm() {
               label: nb.name
             }))}
             placeholder="اختر الحي"
-            
           />
         </FormField>
 
-        {/* Property Details */}
-        <div className="grid grid-cols-2 gap-4">
-          <FormField label="عدد الغرف">
-            <InputField
-              type="number"
-              value={formData.bedrooms}
-              onChange={(value) => handleChange('bedrooms', Number(value))}
-              min={0}
-            />
-          </FormField>
-          <FormField label="عدد الحمامات">
-            <InputField
-              type="number"
-              value={formData.bathrooms}
-              onChange={(value) => handleChange('bathrooms', Number(value))}
-              min={0}
-            />
-          </FormField>
-        </div>
 
+        <FormField label="الأماكن القريبة">
+          <FeaturesSelect
+            features={ADDITIONAL_FEATURES}
+            selectedFeatures={formData.additionalFeatures.split('، ').filter(Boolean)}
+            onChange={(features) => handleChange('nearbyLocations', features.join('، '))}
+            placeholder="اختر الأماكن القريبة"
+            selectionText={{
+              single: "مكان قريبة",
+              multiple: "أماكن قريب"
+            }}
+          />
+        </FormField>
+
+
+        {/* Property Details - Only show if not land type */}
+        {!shouldHideResidentialFields && (
+          <>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField label="عدد الغرف">
+                <InputField
+                  type="number"
+                  value={formData.bedrooms}
+                  onChange={(value) => handleChange('bedrooms', Number(value))}
+                  min={0}
+                />
+              </FormField>
+              <FormField label="عدد الحمامات">
+                <InputField
+                  type="number"
+                  value={formData.bathrooms}
+                  onChange={(value) => handleChange('bathrooms', Number(value))}
+                  min={0}
+                />
+              </FormField>
+            </div>
+
+            {/* Additional Details - Only show if not land type */}
+            <FormField label="الطابق">
+              <SelectField
+                value={formData.floorNumber}
+                onChange={(value) => handleChange('floorNumber', Number(value))}
+                options={FLOOR_OPTIONS}
+                placeholder="اختر الطابق"
+              />
+            </FormField>
+
+            <FormField label="حالة الفرش">
+              <SelectField
+                value={formData.furnished}
+                onChange={(value) => handleChange('furnished', Number(value))}
+                options={FURNISHED_OPTIONS}
+                placeholder="اختر حالة الفرش"
+              />
+            </FormField>
+          </>
+        )}
+
+        {/* Always show area */}
         <FormField label="المساحة">
           <InputField
             type="number"
@@ -180,38 +235,30 @@ export default function EstateForm() {
           />
         </FormField>
 
-        {/* Additional Details */}
-        <FormField label="الطابق">
-          <SelectField
-            value={formData.floorNumber}
-            onChange={(value) => handleChange('floorNumber', Number(value))}
-            options={FLOOR_OPTIONS}
-            placeholder="اختر الطابق"
-          />
-        </FormField>
-
-        <FormField label="حالة الفرش">
-          <SelectField
-            value={formData.furnished}
-            onChange={(value) => handleChange('furnished', Number(value))}
-            options={FURNISHED_OPTIONS}
-            placeholder="اختر حالة الفرش"
-          />
-        </FormField>
-
         {/* Features */}
         <FormField label="الميزات الاساسية">
-          <FeaturesSelection
-            propertyType={getPropertyType()}
+          <FeaturesSelect
+            features={FEATURES_BY_TYPE[getPropertyType()]}
             selectedFeatures={formData.mainFeatures.split('، ').filter(Boolean)}
             onChange={(features) => handleChange('mainFeatures', features.join('، '))}
+            placeholder="اختر الميزات الأساسية"
+            selectionText={{
+              single: "ميزة أساسية",
+              multiple: "ميزات أساسية"
+            }}
           />
         </FormField>
 
         <FormField label="الميزات الإضافية">
-          <AdditionalFeaturesSelection
+          <FeaturesSelect
+            features={ADDITIONAL_FEATURES}
             selectedFeatures={formData.additionalFeatures.split('، ').filter(Boolean)}
             onChange={(features) => handleChange('additionalFeatures', features.join('، '))}
+            placeholder="اختر الميزات الإضافية"
+            selectionText={{
+              single: "ميزة إضافية",
+              multiple: "ميزات إضافية"
+            }}
           />
         </FormField>
 

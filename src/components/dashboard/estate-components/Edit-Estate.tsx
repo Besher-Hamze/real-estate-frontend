@@ -3,9 +3,9 @@ import { Plus, X } from "lucide-react";
 import { FormField } from "@/components/ui/form/FormField";
 import { InputField } from "@/components/ui/form/InputField";
 import { SelectField } from "@/components/ui/form/SelectField";
-import AdditionalFeaturesSelection from "../estate-components/AdditionalSelectionProps";
-import { FLOOR_OPTIONS, FURNISHED_OPTIONS } from "@/components/ui/constants/formOptions";
-import FeaturesSelection from "./FeaturesSelectionProps ";
+import { ADDITIONAL_FEATURES, FEATURES_BY_TYPE, FLOOR_OPTIONS, FURNISHED_OPTIONS, PAYMENT_OPTIONS } from "@/components/ui/constants/formOptions";
+import FeaturesSelect from "@/components/ui/FeaturesSelect";
+import RangeInput from "@/components/ui/form/RangePriceInput";
 
 interface EditEstateFormProps {
     editingEstate: any;
@@ -26,10 +26,19 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
     mainTypes,
     finalTypes,
 }) => {
+    const isLandType = () => {
+        const mainType = mainTypes?.find((m: any) => m.id === editingEstate.mainCategoryId);
+        const subType = mainType?.subtypes.find((st: any) => st.id === editingEstate.subCategoryId);
+        const finalType = finalTypes?.find((f: any) => f.id === editingEstate.finalTypeId);
+
+        return subType?.name.includes("أرض") || finalType?.name.includes("أرض");
+    };
+
     const getPropertyType = (): "residential" | "commercial" | "industrial" | "others" => {
         const mainType = mainTypes?.find((m: any) => m.id === editingEstate.mainCategoryId);
         const subType = mainType?.subtypes.find((st: any) => st.id === editingEstate.subCategoryId);
         const finalType = finalTypes?.find((f: any) => f.id === editingEstate.finalTypeId);
+
         if (subType?.name.includes("سكني") || finalType?.name.includes("سكني")) {
             return "residential";
         } else if (subType?.name.includes("تجاري") || finalType?.name.includes("تجاري")) {
@@ -40,12 +49,12 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
         return "others";
     };
 
-    // Helper to update estate data
+    const shouldHideResidentialFields = isLandType();
+
     const handleChange = (field: string, value: any) => {
         setEditingEstate((prev: any) => ({ ...prev, [field]: value }));
     };
 
-    // File upload handlers
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) handleChange("coverImage", file);
@@ -54,18 +63,6 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files ? Array.from(e.target.files) : null;
         handleChange("files", files);
-    };
-
-    // Delete current cover image
-    const handleDeleteCoverImage = () => {
-        handleChange("coverImage", null);
-    };
-
-    // Delete an additional image by index
-    const handleDeleteAdditionalImage = (index: number) => {
-        const currentFiles = editingEstate.files || [];
-        const updatedFiles = currentFiles.filter((_: any, i: number) => i !== index);
-        handleChange("files", updatedFiles);
     };
 
     return (
@@ -88,23 +85,33 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
             </FormField>
 
             <FormField label="السعر">
-                <InputField
-                    type="number"
-                    value={editingEstate.price}
-                    onChange={(value) => handleChange("price", Number(value))}
-                    placeholder="أدخل السعر"
-                    required
+                <RangeInput
+                    minValue={0}
+                    maxValue={1000}
+                    step={10}
+                    onChange={(value) => {
+                        handleChange('price', value);
+                    }}
+                    initialMax={Number(editingEstate.price.split("-")[0])}
+                    initialMin={Number(editingEstate.price.split("-")[1])}
                 />
             </FormField>
 
+
             <FormField label="طريقة الدفع">
-                <InputField
-                    type="text"
-                    value={editingEstate.paymentMethod}
-                    onChange={(value) => handleChange("paymentMethod", value)}
-                    placeholder="أدخل طريقة الدفع"
+                <FeaturesSelect
+                    features={PAYMENT_OPTIONS}
+                    selectedFeatures={editingEstate.paymentMethod.split("، ").filter(Boolean)}
+                    onChange={(selected) => handleChange('paymentMethod', selected.join("، "))}
+                    placeholder="اختر طريقة الدفع"
+                    selectionText={{
+                        single: "طريقة دفع",
+                        multiple: "طرق دفع"
+                    }}
                 />
             </FormField>
+
+
 
             {/* Categories */}
             <FormField label="التصنيف الرئيسي">
@@ -115,12 +122,10 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                         handleChange("subCategoryId", 0);
                         handleChange("mainFeatures", "");
                     }}
-                    options={
-                        mainTypes?.map((type: any) => ({
-                            value: type.id,
-                            label: type.name,
-                        })) || []
-                    }
+                    options={mainTypes?.map((type: any) => ({
+                        value: type.id,
+                        label: type.name,
+                    })) || []}
                     placeholder="اختر التصنيف الرئيسي"
                 />
             </FormField>
@@ -130,14 +135,12 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                     <SelectField
                         value={editingEstate.subCategoryId}
                         onChange={(value) => handleChange("subCategoryId", Number(value))}
-                        options={
-                            mainTypes
-                                ?.find((m: any) => m.id === editingEstate.mainCategoryId)
-                                ?.subtypes.map((sub: any) => ({
-                                    value: sub.id,
-                                    label: sub.name,
-                                })) || []
-                        }
+                        options={mainTypes
+                            ?.find((m: any) => m.id === editingEstate.mainCategoryId)
+                            ?.subtypes.map((sub: any) => ({
+                                value: sub.id,
+                                label: sub.name,
+                            })) || []}
                         placeholder="اختر التصنيف الفرعي"
                     />
                 </FormField>
@@ -182,26 +185,49 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                 />
             </FormField>
 
-            {/* Property Details */}
-            <div className="grid grid-cols-2 gap-4">
-                <FormField label="عدد الغرف">
-                    <InputField
-                        type="number"
-                        value={editingEstate.bedrooms}
-                        onChange={(value) => handleChange("bedrooms", Number(value))}
-                        min={1}
-                    />
-                </FormField>
-                <FormField label="عدد الحمامات">
-                    <InputField
-                        type="number"
-                        value={editingEstate.bathrooms}
-                        onChange={(value) => handleChange("bathrooms", Number(value))}
-                        min={1}
-                    />
-                </FormField>
-            </div>
+            {/* Property Details - Only show if not land type */}
+            {!shouldHideResidentialFields && (
+                <>
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField label="عدد الغرف">
+                            <InputField
+                                type="number"
+                                value={editingEstate.bedrooms}
+                                onChange={(value) => handleChange("bedrooms", Number(value))}
+                                min={1}
+                            />
+                        </FormField>
+                        <FormField label="عدد الحمامات">
+                            <InputField
+                                type="number"
+                                value={editingEstate.bathrooms}
+                                onChange={(value) => handleChange("bathrooms", Number(value))}
+                                min={1}
+                            />
+                        </FormField>
+                    </div>
 
+                    <FormField label="الطابق">
+                        <SelectField
+                            value={editingEstate.floorNumber}
+                            onChange={(value) => handleChange("floorNumber", Number(value))}
+                            options={FLOOR_OPTIONS}
+                            placeholder="اختر الطابق"
+                        />
+                    </FormField>
+
+                    <FormField label="حالة الفرش">
+                        <SelectField
+                            value={editingEstate.furnished}
+                            onChange={(value) => handleChange("furnished", Number(value))}
+                            options={FURNISHED_OPTIONS}
+                            placeholder="اختر حالة الفرش"
+                        />
+                    </FormField>
+                </>
+            )}
+
+            {/* Always show area */}
             <FormField label="المساحة">
                 <InputField
                     type="number"
@@ -211,63 +237,46 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                 />
             </FormField>
 
-            {/* Additional Details */}
-            <FormField label="الطابق">
-                <SelectField
-                    value={editingEstate.floorNumber}
-                    onChange={(value) => handleChange("floorNumber", Number(value))}
-                    options={FLOOR_OPTIONS}
-                    placeholder="اختر الطابق"
-                />
-            </FormField>
-
-            <FormField label="حالة الفرش">
-                <SelectField
-                    value={editingEstate.furnished}
-                    onChange={(value) => handleChange("furnished", Number(value))}
-                    options={FURNISHED_OPTIONS}
-                    placeholder="اختر حالة الفرش"
-                />
-            </FormField>
-
             {/* Features */}
             <FormField label="الميزات الاساسية">
-                <FeaturesSelection
-                    propertyType={getPropertyType()}
+                <FeaturesSelect
+                    features={FEATURES_BY_TYPE[getPropertyType()]}
                     selectedFeatures={editingEstate.mainFeatures.split("، ").filter(Boolean)}
                     onChange={(features) => handleChange("mainFeatures", features.join("، "))}
+                    placeholder="اختر الميزات الأساسية"
+                    selectionText={{
+                        single: "ميزة أساسية",
+                        multiple: "ميزات أساسية"
+                    }}
                 />
             </FormField>
 
             <FormField label="الميزات الإضافية">
-                <AdditionalFeaturesSelection
+                <FeaturesSelect
+                    features={ADDITIONAL_FEATURES}
                     selectedFeatures={editingEstate.additionalFeatures.split("، ").filter(Boolean)}
                     onChange={(features) => handleChange("additionalFeatures", features.join("، "))}
+                    placeholder="اختر الميزات الإضافية"
+                    selectionText={{
+                        single: "ميزة إضافية",
+                        multiple: "ميزات إضافية"
+                    }}
                 />
             </FormField>
 
-            {/* Preview Current Images */}
+            {/* Image Preview Section */}
             <FormField label="صورة الغلاف الحالية">
                 {editingEstate.coverImage ? (
                     <div className="relative inline-block">
-                        <a
-                            href={`${process.env.NEXT_PUBLIC_API_URL}/${editingEstate.coverImage}`}
+                        <a href={`${process.env.NEXT_PUBLIC_API_URL}/${editingEstate.coverImage}`}
                             target="_blank"
-                            rel="noopener noreferrer"
-                        >
+                            rel="noopener noreferrer">
                             <img
                                 src={`${process.env.NEXT_PUBLIC_API_URL}/${editingEstate.coverImage}`}
                                 alt="Cover Image"
                                 className="w-32 h-32 object-cover rounded-md"
                             />
                         </a>
-                        {/* <button
-                            type="button"
-                            onClick={handleDeleteCoverImage}
-                            className="absolute top-0 right-0 bg-red-600 text-white p-1 rounded-full"
-                        >
-                            <X className="w-4 h-4" />
-                        </button> */}
                     </div>
                 ) : (
                     <p>لا توجد صورة غلاف</p>
@@ -279,24 +288,15 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                     <div className="flex flex-wrap gap-2">
                         {editingEstate.files.map((file: string, index: number) => (
                             <div key={index} className="relative inline-block">
-                                <a
-                                    href={`${process.env.NEXT_PUBLIC_API_URL}/${file}`}
+                                <a href={`${process.env.NEXT_PUBLIC_API_URL}/${file}`}
                                     target="_blank"
-                                    rel="noopener noreferrer"
-                                >
+                                    rel="noopener noreferrer">
                                     <img
                                         src={`${process.env.NEXT_PUBLIC_API_URL}/${file}`}
                                         alt={`Additional Image ${index + 1}`}
                                         className="w-20 h-20 object-cover rounded-md"
                                     />
                                 </a>
-                                {/* <button
-                                    type="button"
-                                    onClick={() => handleDeleteAdditionalImage(index)}
-                                    className="absolute top-0 right-0 bg-red-600 text-white p-1 rounded-full"
-                                >
-                                    <X className="w-3 h-3" />
-                                </button> */}
                             </div>
                         ))}
                     </div>
@@ -304,26 +304,6 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                     <p>لا توجد صور إضافية</p>
                 )}
             </FormField>
-
-            {/* Files Upload */}
-            {/* <FormField label="تحديث صورة الغلاف">
-                <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-            </FormField>
-
-            <FormField label="تحديث ملفات إضافية">
-                <input
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-            </FormField> */}
 
             <button
                 type="submit"

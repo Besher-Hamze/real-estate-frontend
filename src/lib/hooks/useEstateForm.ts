@@ -12,8 +12,8 @@ import { useRealEstate } from './useRealEstate';
 const initialFormState: CreateEstateForm = {
     title: "",
     price: 0,
-    cityId: 1,
-    neighborhoodId: 1,
+    cityId: 0,
+    neighborhoodId: 0,
     bedrooms: 1,
     bathrooms: 1,
     furnished: 2,
@@ -45,7 +45,6 @@ export function useEstateForm() {
     const { mainTypes } = useMainType();
     const { refetch: refetchEstates } = useRealEstate();
 
-    // Fetch cities
     useEffect(() => {
         const fetchCities = async () => {
             try {
@@ -59,7 +58,6 @@ export function useEstateForm() {
         fetchCities();
     }, []);
 
-    // Fetch final types
     useEffect(() => {
         const fetchFinalType = async () => {
             try {
@@ -78,7 +76,6 @@ export function useEstateForm() {
         }
     }, [formData.subCategoryId]);
 
-    // Fetch neighborhoods
     useEffect(() => {
         const fetchNeighborhoods = async () => {
             try {
