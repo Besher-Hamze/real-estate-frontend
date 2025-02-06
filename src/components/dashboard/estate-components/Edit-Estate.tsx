@@ -3,7 +3,7 @@ import { Plus, X } from "lucide-react";
 import { FormField } from "@/components/ui/form/FormField";
 import { InputField } from "@/components/ui/form/InputField";
 import { SelectField } from "@/components/ui/form/SelectField";
-import { ADDITIONAL_FEATURES, FEATURES_BY_TYPE, FLOOR_OPTIONS, FURNISHED_OPTIONS, PAYMENT_OPTIONS } from "@/components/ui/constants/formOptions";
+import { ADDITIONAL_FEATURES, FEATURES_BY_TYPE, FLOOR_OPTIONS, FURNISHED_OPTIONS, NEARBY_LOCATION, PAYMENT_OPTIONS } from "@/components/ui/constants/formOptions";
 import FeaturesSelect from "@/components/ui/FeaturesSelect";
 import RangeInput from "@/components/ui/form/RangePriceInput";
 
@@ -182,6 +182,19 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                         label: nb.name,
                     }))}
                     placeholder="اختر الحي"
+                />
+            </FormField>
+
+            <FormField label="الأماكن القريبة">
+                <FeaturesSelect
+                    features={NEARBY_LOCATION}
+                    selectedFeatures={editingEstate.nearbyLocations.split('، ').filter(Boolean)}
+                    onChange={(features) => handleChange('nearbyLocations', features.join('، '))}
+                    placeholder="اختر الأماكن القريبة"
+                    selectionText={{
+                        single: "مكان قريبة",
+                        multiple: "أماكن قريب"
+                    }}
                 />
             </FormField>
 

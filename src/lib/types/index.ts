@@ -35,7 +35,7 @@ export interface RealEstateData {
   cityId: number;
   neighborhoodId: number;
   title: string;
-  price: number;
+  price: string;
   cityName: string;
   neighborhoodName: string;
   bedrooms: number;

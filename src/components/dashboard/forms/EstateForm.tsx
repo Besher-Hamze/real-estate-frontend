@@ -9,6 +9,7 @@ import {
   FEATURES_BY_TYPE,
   FLOOR_OPTIONS,
   FURNISHED_OPTIONS,
+  NEARBY_LOCATION,
   PAYMENT_OPTIONS,
 } from "@/components/ui/constants/formOptions";
 import { useEstateForm } from "@/lib/hooks/useEstateForm";
@@ -170,8 +171,8 @@ export default function EstateForm() {
 
         <FormField label="الأماكن القريبة">
           <FeaturesSelect
-            features={ADDITIONAL_FEATURES}
-            selectedFeatures={formData.additionalFeatures.split('، ').filter(Boolean)}
+            features={NEARBY_LOCATION}
+            selectedFeatures={formData.nearbyLocations.split('، ').filter(Boolean)}
             onChange={(features) => handleChange('nearbyLocations', features.join('، '))}
             placeholder="اختر الأماكن القريبة"
             selectionText={{

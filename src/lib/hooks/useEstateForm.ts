@@ -11,7 +11,7 @@ import { useRealEstate } from './useRealEstate';
 
 const initialFormState: CreateEstateForm = {
     title: "",
-    price: 0,
+    price: "",
     cityId: 0,
     neighborhoodId: 0,
     bedrooms: 1,
@@ -96,7 +96,7 @@ export function useEstateForm() {
             toast.error("يرجى إدخال عنوان العقار");
             return false;
         }
-        if (formData.price <= 0) {
+        if (formData.price=="") {
             toast.error("يرجى إدخال سعر صحيح");
             return false;
         }
