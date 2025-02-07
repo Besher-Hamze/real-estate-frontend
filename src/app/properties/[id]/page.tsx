@@ -33,9 +33,6 @@ export default function PropertyDetails() {
                     ...data,
                     files: data.files || [`${process.env.NEXT_PUBLIC_API_URL}/${data.coverImage}`]
                 };
-                if (propertyWithFiles.rentalDuration) {
-                    propertyWithFiles.additionalFeatures = propertyWithFiles.additionalFeatures + "، مدة العقد" + " : " + propertyWithFiles.rentalDuration + " شهر "
-                }
                 setProperty(propertyWithFiles);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to fetch property details');
@@ -187,7 +184,7 @@ export default function PropertyDetails() {
                     <h2 className="text-3xl font-bold mb-8 flex items-center gap-4 text-gray-800">
                         <Home className="w-8 h-8 text-blue-500" />
                         <span className="text-xl text-black0">
-                            المميزات الرئيسية
+                            المميزات الإضافية
                         </span>
                     </h2>
 
@@ -271,6 +268,10 @@ export default function PropertyDetails() {
                         <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                             <span className="text-gray-600">مفروش</span>
                             <span className="font-semibold">{property.furnished ? 'نعم' : 'لا'}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                            <span className="text-gray-600">مدة العقد</span>
+                            <span className="font-semibold">{property.rentalDuration}  شهر</span>
                         </div>
                         <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                             <span className="text-gray-600">طرق الدفع </span>
