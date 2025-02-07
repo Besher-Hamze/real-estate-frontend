@@ -74,14 +74,23 @@ export default function EstateForm() {
         </FormField>
 
         <FormField label="السعر">
-          <RangeInput
+
+
+          <InputField
+            type="number"
+            value={formData.price}
+            onChange={(value) => handleChange("price", Number(value))}
+            placeholder="أدخل السعر"
+            required
+          />
+          {/* <RangeInput
             minValue={0}
             maxValue={1000}
             step={10}
             onChange={(value) => {
               handleChange('price', value);
             }}
-          />
+          /> */}
         </FormField>
         <FormField label="طريقة الدفع">
           <FeaturesSelect

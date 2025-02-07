@@ -86,14 +86,14 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
 
             <FormField label="السعر">
 
-                {/* <InputField
+                <InputField
                     type="number"
                     value={editingEstate.price}
                     onChange={(value) => handleChange("price", Number(value))}
                     placeholder="أدخل السعر"
                     required
-                /> */}
-                <RangeInput
+                />
+                {/* <RangeInput
                     minValue={0}
                     maxValue={1000}
                     step={10}
@@ -102,7 +102,7 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                     }}
                     initialMax={Number(editingEstate.price.split("-")[0])}
                     initialMin={Number(editingEstate.price.split("-")[1])}
-                />
+                /> */}
             </FormField>
 
 

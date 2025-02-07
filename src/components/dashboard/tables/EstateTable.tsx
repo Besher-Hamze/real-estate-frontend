@@ -181,8 +181,8 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
       accessorKey: "mainCategoryId",
       cell: (row: RealEstateData) => (
         <>
-          <div className="text-sm text-gray-900">{row.mainCategoryId}</div>
-          <div className="text-sm text-gray-500">{row.subCategoryId}</div>
+          <div className="text-sm text-gray-900">{row.mainCategoryName}</div>
+          <div className="text-sm text-gray-500">{row.subCategoryName}</div>
         </>
       )
     }
