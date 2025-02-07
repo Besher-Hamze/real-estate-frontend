@@ -183,6 +183,7 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
         <>
           <div className="text-sm text-gray-900">{row.mainCategoryName}</div>
           <div className="text-sm text-gray-500">{row.subCategoryName}</div>
+          <div className="text-sm text-gray-500">{row.finalTypeName}</div>
         </>
       )
     }
