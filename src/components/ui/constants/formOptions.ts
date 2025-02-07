@@ -8,8 +8,8 @@ export const FLOOR_OPTIONS = [
 ];
 
 export const FURNISHED_OPTIONS = [
-  { value: 1, label: 'مفروشة' },
-  { value: 0, label: 'غير مفروشة' },
+  { value: 1, label: 'نعم' },
+  { value: 0, label: 'لا' },
 ];
 
 export const VIEW_OPTIONS = [

@@ -3,7 +3,7 @@ import { Plus, X } from "lucide-react";
 import { FormField } from "@/components/ui/form/FormField";
 import { InputField } from "@/components/ui/form/InputField";
 import { SelectField } from "@/components/ui/form/SelectField";
-import { ADDITIONAL_FEATURES, FEATURES_BY_TYPE, FLOOR_OPTIONS, FURNISHED_OPTIONS, NEARBY_LOCATION, PAYMENT_OPTIONS } from "@/components/ui/constants/formOptions";
+import { ADDITIONAL_FEATURES, FEATURES_BY_TYPE, FLOOR_OPTIONS, FURNISHED_OPTIONS, NEARBY_LOCATION, PAYMENT_OPTIONS, RENTAL_DURATION_OPTIONS } from "@/components/ui/constants/formOptions";
 import FeaturesSelect from "@/components/ui/FeaturesSelect";
 import RangeInput from "@/components/ui/form/RangePriceInput";
 
@@ -34,6 +34,12 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
         return subType?.name.includes("أرض") || finalType?.name.includes("أرض");
     };
 
+
+    const isRentalType = () => {
+        const mainType = mainTypes?.find((m: any) => m.id === editingEstate.mainCategoryId);
+        return mainType?.name.includes("إيجار");
+    }
+
     const getPropertyType = (): "residential" | "commercial" | "industrial" | "others" => {
         const mainType = mainTypes?.find((m: any) => m.id === editingEstate.mainCategoryId);
         const subType = mainType?.subtypes.find((st: any) => st.id === editingEstate.subCategoryId);
@@ -50,10 +56,24 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
     };
 
     const shouldHideResidentialFields = isLandType();
+    const shouldShowRentalField = isRentalType();
 
     const handleChange = (field: string, value: any) => {
+        if (field === "title") {
+            const cleanedValue = value.replace(/\d/g, '');
+            setEditingEstate((prev: any) => ({ ...prev, [field]: cleanedValue }));
+            return;
+        }
+        if ((field === "bedrooms" || field === "bathrooms")) {
+            const numValue = Number(value);
+            if (numValue <= 0) {
+                return;
+            }
+        }
         setEditingEstate((prev: any) => ({ ...prev, [field]: value }));
     };
+
+
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -237,7 +257,7 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                         />
                     </FormField>
 
-                    <FormField label="حالة الفرش">
+                    <FormField label="مفروشة">
                         <SelectField
                             value={editingEstate.furnished}
                             onChange={(value) => handleChange("furnished", Number(value))}
@@ -248,6 +268,16 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                 </>
             )}
 
+
+            {shouldShowRentalField && < FormField label="مدة العقد">
+                <SelectField
+                    value={editingEstate.rentalDuration}
+                    onChange={(value) => handleChange('rentalDuration', Number(value))}
+                    options={RENTAL_DURATION_OPTIONS}
+                    placeholder="اختر مدة العقد"
+                />
+            </FormField>
+            }
             {/* Always show area */}
             <FormField label="المساحة">
                 <InputField
@@ -333,7 +363,7 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                 <Plus className="w-5 h-5" />
                 حفظ التعديلات
             </button>
-        </form>
+        </form >
     );
 };
 

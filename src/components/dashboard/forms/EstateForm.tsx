@@ -11,6 +11,7 @@ import {
   FURNISHED_OPTIONS,
   NEARBY_LOCATION,
   PAYMENT_OPTIONS,
+  RENTAL_DURATION_OPTIONS,
 } from "@/components/ui/constants/formOptions";
 import { useEstateForm } from "@/lib/hooks/useEstateForm";
 import FeaturesSelect from "@/components/ui/FeaturesSelect";
@@ -30,6 +31,18 @@ export default function EstateForm() {
   } = useEstateForm();
 
   const handleChange = (field: string, value: any) => {
+    if (field === "title") {
+      const cleanedValue = value.replace(/\d/g, '');
+      setFormData(prev => ({ ...prev, [field]: cleanedValue }));
+      return;
+    }
+
+    if ((field === "bedrooms" || field === "bathrooms")) {
+      const numValue = Number(value);
+      if (numValue <= 0) {
+        return;
+      }
+    }
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -53,7 +66,13 @@ export default function EstateForm() {
     return selectedSubType?.name.includes('أرض') || selectedFinalType?.name.includes('أرض');
   };
 
+  const isRentalType = () => {
+    const mainType = mainTypes?.find((m: any) => m.id === formData.mainCategoryId);
+    return mainType?.name.includes("إيجار");
+  }
+
   const shouldHideResidentialFields = isLandType();
+  const shouldShowRentalField = isRentalType();
 
   return (
     <form onSubmit={(e) => {
@@ -201,7 +220,7 @@ export default function EstateForm() {
                   type="number"
                   value={formData.bedrooms}
                   onChange={(value) => handleChange('bedrooms', Number(value))}
-                  min={0}
+                  min={1}
                 />
               </FormField>
               <FormField label="عدد الحمامات">
@@ -209,7 +228,7 @@ export default function EstateForm() {
                   type="number"
                   value={formData.bathrooms}
                   onChange={(value) => handleChange('bathrooms', Number(value))}
-                  min={0}
+                  min={1}
                 />
               </FormField>
             </div>
@@ -224,7 +243,7 @@ export default function EstateForm() {
               />
             </FormField>
 
-            <FormField label="حالة الفرش">
+            <FormField label="مفروشة">
               <SelectField
                 value={formData.furnished}
                 onChange={(value) => handleChange('furnished', Number(value))}
@@ -235,6 +254,18 @@ export default function EstateForm() {
           </>
         )}
 
+
+
+        {/* Rental Duration */}
+        {shouldShowRentalField && <FormField label="مدة العقد">
+          <SelectField
+            value={formData.rentalDuration}
+            onChange={(value) => handleChange('rentalDuration', Number(value))}
+            options={RENTAL_DURATION_OPTIONS}
+            placeholder="اختر مدة العقد"
+          />
+        </FormField>
+        }
         {/* Always show area */}
         <FormField label="المساحة">
           <InputField
