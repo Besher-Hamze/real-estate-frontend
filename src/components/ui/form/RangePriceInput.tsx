@@ -53,8 +53,8 @@ const RangeInput: React.FC<RangeInputProps> = ({
     const x = Math.max(0, Math.min(e.clientX - left, width));
     const percentage = x / width;
     const value = Math.round((minValue + percentage * (maxValue - minValue)) / step) * step;
-
-    let newRange: [number, number] = [...range];
+    
+    const newRange: [number, number] = [...range];
     if (isDragging === 0) {
       if (value < range[1]) {
         newRange[0] = value;
