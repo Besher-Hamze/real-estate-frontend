@@ -3,7 +3,7 @@ import { Plus, X } from "lucide-react";
 import { FormField } from "@/components/ui/form/FormField";
 import { InputField } from "@/components/ui/form/InputField";
 import { SelectField } from "@/components/ui/form/SelectField";
-import { ADDITIONAL_FEATURES, FEATURES_BY_TYPE, FLOOR_OPTIONS, FURNISHED_OPTIONS, NEARBY_LOCATION, PAYMENT_OPTIONS, RENTAL_DURATION_OPTIONS } from "@/components/ui/constants/formOptions";
+import { ADDITIONAL_FEATURES, FEATURES_BY_TYPE, FLOOR_OPTIONS, FURNISHED_OPTIONS, NEARBY_LOCATION, PAYMENT_OPTIONS, RENTAL_DURATION_OPTIONS, VIEW_OPTIONS } from "@/components/ui/constants/formOptions";
 import FeaturesSelect from "@/components/ui/FeaturesSelect";
 import RangeInput from "@/components/ui/form/RangePriceInput";
 
@@ -264,6 +264,16 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                             options={FURNISHED_OPTIONS}
                             placeholder="اختر حالة الفرش"
                         />
+
+                        <FormField label="الإطلالة">
+                            <SelectField
+                                value={editingEstate.facade}
+                                onChange={(value) => handleChange('facade', Number(value))}
+                                options={VIEW_OPTIONS}
+                                placeholder="اختر الإطلالة"
+                            />
+                        </FormField>
+
                     </FormField>
                 </>
             )}

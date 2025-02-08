@@ -116,20 +116,21 @@ export default function PropertyDetails() {
                     </div>
 
                     <div className="grid grid-cols-3 gap-6 p-4 bg-gray-50 rounded-xl">
-                        <div className="flex items-center gap-3">
-                            <BedDouble className="w-6 h-6 text-blue-600" />
-                            <div>
-                                <div className="text-sm text-gray-500">غرف النوم</div>
-                                <div className="font-semibold">{property.bedrooms}</div>
+                        {(property.subCategoryName != "أرض" && property.finalTypeName != "أرض") && <>
+                            <div className="flex items-center gap-3">
+                                <BedDouble className="w-6 h-6 text-blue-600" />
+                                <div>
+                                    <div className="text-sm text-gray-500">غرف النوم</div>
+                                    <div className="font-semibold">{property.bedrooms}</div>
+                                </div>
                             </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <Bath className="w-6 h-6 text-blue-600" />
-                            <div>
-                                <div className="text-sm text-gray-500">الحمامات</div>
-                                <div className="font-semibold">{property.bathrooms}</div>
-                            </div>
-                        </div>
+                            <div className="flex items-center gap-3">
+                                <Bath className="w-6 h-6 text-blue-600" />
+                                <div>
+                                    <div className="text-sm text-gray-500">الحمامات</div>
+                                    <div className="font-semibold">{property.bathrooms}</div>
+                                </div>
+                            </div></>}
                         <div className="flex items-center gap-3">
                             <Maximize2 className="w-6 h-6 text-blue-600" />
                             <div>
@@ -219,7 +220,7 @@ export default function PropertyDetails() {
                 {/* Nearby Loaction  */}
                 <div className="bg-white rounded-3xl p-8 shadow-xl mb-8 hover:shadow-2xl transition-all duration-300">
                     <h2 className="text-3xl font-bold mb-8 flex items-center gap-4 text-gray-800">
-                        <LocateIcon className="w-8 h-8 text-blue-500" />
+                        <MapPin className="w-6 h-6 text-blue-600" />
                         <span className="text-xl text-black0">
                             الأماكن القريبة
                         </span>
@@ -269,10 +270,11 @@ export default function PropertyDetails() {
                             <span className="text-gray-600">مفروش</span>
                             <span className="font-semibold">{property.furnished ? 'نعم' : 'لا'}</span>
                         </div>
-                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                        {property.mainCategoryName == "إيجار" && <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                             <span className="text-gray-600">مدة العقد</span>
                             <span className="font-semibold">{property.rentalDuration}  شهر</span>
                         </div>
+                        }
                         <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                             <span className="text-gray-600">طرق الدفع </span>
                             <div className="flex gap-2">
@@ -288,7 +290,7 @@ export default function PropertyDetails() {
                 </div>
 
                 {/* Nearby Locations */}
-                {property.nearbyLocations && (
+                {/* {property.nearbyLocations && (
                     <div className="bg-white rounded-2xl p-8 shadow-lg mt-8">
                         <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
                             <MapPin className="w-6 h-6 text-blue-600" />
@@ -298,7 +300,7 @@ export default function PropertyDetails() {
                             {property.nearbyLocations}
                         </div>
                     </div>
-                )}
+                )} */}
             </div>
         </div>
     );

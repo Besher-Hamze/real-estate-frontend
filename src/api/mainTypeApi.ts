@@ -18,7 +18,21 @@ export const mainTypeApi = {
     },
     addMainType: async (formData: FormData) => {
         try {
-            const response = await axios.post('api/maintypes', formData, {
+            
+            console.log("FormData Contents:");
+            for (let [key, value] of formData.entries()) {
+                if (value instanceof File) {
+                    console.log(`${key}:`, {
+                        filename: value.name,
+                        type: value.type,
+                        size: value.size
+                    });
+                } else {
+                    console.log(`${key}:`, value);
+                }
+            }
+    
+            const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/maintypes`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },

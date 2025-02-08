@@ -25,10 +25,12 @@ import CityTable from "./tables/CityTable";
 import NeighborhoodTable from "./tables/NeighborhoodTable";
 import EstateTable from "./tables/EstateTable";
 import FloatingAddButton from "./FloatingAddButton";
+import BuildingMapView from "./BuildingMapView";
+import BuildingMap from "../ui/form/MapBuilding";
 
 export default function DashboardComponent() {
   const [activeTab, setActiveTab] = useState<
-    "mainType" | "subType" | "finalType" | "city" | "neighborhood" | "estate"
+    "mainType" | "subType" | "finalType" | "city" | "neighborhood" | "estate" | "map"
   >("mainType");
 
   const { mainTypes, isLoading: isLoadingMainTypes, refetch: refetchMain } = useMainType();
@@ -52,15 +54,21 @@ export default function DashboardComponent() {
           <div className="w-full ">
             <div className="bg-white rounded-xl shadow-lg border border-gray-200 ">
               {/* Search & Filter Bar */}
-              <div className="sticky top-0 bg-white z-10 rounded-lg shadow-sm mb-4">
+              {/* <div className="sticky top-0 bg-white z-10 rounded-lg shadow-sm mb-4">
                 <SearchFilterBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
-              </div>
+              </div> */}
 
               {/* Data Table */}
-              <div className="max-h-[75vh] overflow-y-auto">
+              <div className="max-h-[90vh] overflow-y-auto">
                 {activeTab === "mainType" && (
                   <MainTypeTable mainTypes={mainTypes} isLoading={isLoadingMainTypes} onRefetch={refetchMain} />
                 )}
+                {activeTab === "map" && (
+                  <div className="w-full">
+                    <BuildingMap />
+                  </div>
+                )}
+
                 {activeTab === "subType" && (
                   <SubTypeTable mainTypes={mainTypes} isLoading={isLoadingMainTypes} onRefetch={refetchMain} />
                 )}

@@ -19,7 +19,9 @@ type DashboardTab =
   | "finalType"
   | "city"
   | "neighborhood"
-  | "estate";
+  | "estate"
+  | "map"
+  ;
 
 type TabsProps = {
   activeTab: DashboardTab;
@@ -131,6 +133,16 @@ export default function Tabs({ activeTab, setActiveTab }: TabsProps) {
             setSidebarOpen(false);
           }}
         />
+        <TabButton
+          label="المباني"
+          icon={<Building2 className="w-5 h-5" />}
+          isActive={activeTab === "map"}
+          onClick={() => {
+            setActiveTab("map");
+            setSidebarOpen(false);
+          }}
+        />
+
       </div>
     </>
   );

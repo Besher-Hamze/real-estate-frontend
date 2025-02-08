@@ -17,7 +17,9 @@ type DashboardTab =
     | "finalType"
     | "city"
     | "neighborhood"
-    | "estate";
+    | "estate"
+    | "map"
+    ;
 
 type Props = {
     activeTab: DashboardTab;

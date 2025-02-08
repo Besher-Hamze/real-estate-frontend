@@ -25,7 +25,7 @@ export interface CreateFinalTypeForm {
 
 export interface CreateEstateForm {
     title: string;
-    price: string;
+    price: number;
     cityId: number;
     neighborhoodId: number;
     bedrooms: number;

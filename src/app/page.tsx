@@ -13,6 +13,7 @@ import {
   Loader2,
   SearchX,
   X,
+  AlertCircle,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -97,7 +98,7 @@ export default function PremiumLanding() {
     neighborhood: "",
     rentalPeriod: "",
     view: "",
-    buildingArea:"",
+    buildingArea: "",
   });
 
   const {
@@ -262,7 +263,7 @@ export default function PremiumLanding() {
 
   // Category Button
   const CategoryButton = ({ mainType }: { mainType: MainType }) => {
-    const IconComponent = getIconComponent(mainType.icon);
+    const [imageError, setImageError] = useState(false);
 
     return (
       <motion.button
@@ -281,11 +282,21 @@ export default function PremiumLanding() {
           : "bg-white text-gray-700 hover:bg-gray-50 shadow-md"
           }`}
       >
-        <IconComponent className="w-5 h-5" />
+        {!imageError ? (
+          <img
+            src={`${process.env.NEXT_PUBLIC_API_URL}/${mainType.icon}`}
+            alt={mainType.name}
+            className="w-5 h-5 object-contain"
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <Building2 className="w-5 h-5 text-white" />
+        )}
         {mainType.name}
       </motion.button>
     );
   };
+
 
   // Updated PropertyCard with camelCase usage
   const PropertyCard = ({
@@ -325,19 +336,22 @@ export default function PremiumLanding() {
           </span>
         </div>
         <div className="flex justify-between items-center bg-gray-50 p-4 rounded-lg mb-4">
-          <div className="flex items-center gap-1">
-            <BedDouble className="w-4 h-4 text-blue-600" />
-            <span className="text-sm text-black font-medium">
-              {item.bedrooms}
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Bath className="w-4 h-4 text-blue-600" />
-            <span className="text-sm text-black font-medium">
-              {item.bathrooms}
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
+          {
+            (item.subCategoryName != "أرض" && item.finalTypeName != "أرض") && <>
+              <div className="flex items-center gap-1">
+                <BedDouble className="w-4 h-4 text-blue-600" />
+                <span className="text-sm text-black font-medium">
+                  {item.bedrooms}
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Bath className="w-4 h-4 text-blue-600" />
+                <span className="text-sm text-black font-medium">
+                  {item.bathrooms}
+                </span>
+              </div>
+            </>
+          }          <div className="flex items-center gap-1">
             <Maximize2 className="w-4 h-4 text-blue-600" />
             <span className="text-sm text-black font-medium">
               {item.buildingArea} م²

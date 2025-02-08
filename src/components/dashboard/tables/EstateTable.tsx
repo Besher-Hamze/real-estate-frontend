@@ -132,7 +132,6 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
     }
   };
 
-  // Table configuration
   const columns = [
     {
       header: "العنوان",
@@ -190,12 +189,12 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
   ];
 
   const actions = [
-    {
-      icon: <Eye className="w-4 h-4" />,
-      label: "عرض",
-      onClick: (row: RealEstateData) => { /* handle view */ },
-      color: "text-green-600"
-    },
+    // {
+    //   icon: <Eye className="w-4 h-4" />,
+    //   label: "عرض",
+    //   onClick: (row: RealEstateData) => { /* handle view */ },
+    //   color: "text-green-600"
+    // },
     {
       icon: <Edit2 className="w-4 h-4" />,
       label: "تعديل",

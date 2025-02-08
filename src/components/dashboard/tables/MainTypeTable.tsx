@@ -15,10 +15,10 @@ interface MainTypeTableProps {
   onRefetch: () => void;
 }
 
-export default function MainTypeTable({ 
-  mainTypes, 
-  isLoading, 
-  onRefetch 
+export default function MainTypeTable({
+  mainTypes,
+  isLoading,
+  onRefetch
 }: MainTypeTableProps) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
@@ -97,18 +97,7 @@ export default function MainTypeTable({
       header: "الأيقونة",
       accessorKey: "icon",
       cell: (row: MainType) => (
-        editingId === row.id ? (
-          <select
-            className="border rounded p-1 text-sm w-full"
-            value={editIcon}
-            onChange={(e) => setEditIcon(e.target.value)}
-          >
-            <option value="Building2">Building2</option>
-            <option value="Home">Home</option>
-          </select>
-        ) : (
-          <div className="text-sm text-gray-500">{row.icon}</div>
-        )
+        <div className="text-sm text-gray-500">{row.icon}</div>
       )
     }
   ];

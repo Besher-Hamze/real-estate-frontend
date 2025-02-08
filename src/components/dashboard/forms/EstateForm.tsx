@@ -12,10 +12,10 @@ import {
   NEARBY_LOCATION,
   PAYMENT_OPTIONS,
   RENTAL_DURATION_OPTIONS,
+  VIEW_OPTIONS,
 } from "@/components/ui/constants/formOptions";
 import { useEstateForm } from "@/lib/hooks/useEstateForm";
 import FeaturesSelect from "@/components/ui/FeaturesSelect";
-import RangeInput from "@/components/ui/form/RangePriceInput";
 
 export default function EstateForm() {
   const {
@@ -184,6 +184,8 @@ export default function EstateForm() {
           />
         </FormField>
 
+
+
         <FormField label="الحي">
           <SelectField
             value={formData.neighborhoodId}
@@ -251,6 +253,17 @@ export default function EstateForm() {
                 placeholder="اختر حالة الفرش"
               />
             </FormField>
+
+
+            <FormField label="الإطلالة">
+              <SelectField
+                value={formData.facade}
+                onChange={(value) => handleChange('facade', Number(value))}
+                options={VIEW_OPTIONS}
+                placeholder="اختر الإطلالة"
+              />
+            </FormField>
+
           </>
         )}
 
