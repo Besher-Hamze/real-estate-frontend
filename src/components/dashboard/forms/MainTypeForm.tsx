@@ -8,19 +8,6 @@ export default function MainTypeForm() {
 
   const handleCreateMainType = async (formData: FormData) => {
     try {
-      // Debug: Log raw FormData entries
-      console.log("Raw FormData Entries:");
-      for (let [key, value] of formData.entries()) {
-        console.log(`${key}:`, value);
-      }
-
-      // Convert FormData to a plain object for more detailed logging
-      const formDataObj: { [key: string]: any } = {};
-      for (let [key, value] of formData.entries()) {
-        formDataObj[key] = value;
-      }
-      console.log("FormData Object:", formDataObj);
-
       const response = await mainTypeApi.addMainType(formData);
       refetchMainTypes();
       toast.success("تم إضافة التصنيف الرئيسي بنجاح!");

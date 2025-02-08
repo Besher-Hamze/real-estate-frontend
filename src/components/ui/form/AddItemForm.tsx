@@ -69,7 +69,7 @@ export function AddItemForm({
         });
 
         console.log("Submitted FormData:");
-        for (let [key, value] of formDataToSubmit.entries()) {
+        for (const [key, value] of formDataToSubmit.entries()) {
             console.log(`${key}:`, value);
         }
 
