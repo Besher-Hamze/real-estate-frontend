@@ -22,6 +22,7 @@ export const BuildingItemList: React.FC<BuildingItemListProps> = ({
   <div className="space-y-3">
     {items.map((item) => (
       <div
+        key={item.id}
         className={`flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200
           ${editingItemId === item.id ? 'ring-2 ring-blue-500' : ''}`}
       >
@@ -81,7 +82,7 @@ export const BuildingItemList: React.FC<BuildingItemListProps> = ({
 
     {items.length === 0 && (
       <div className="text-center py-8 text-gray-500">
-        لا توجد وحدات. انقر على "إضافة وحدة" لإضافة وحدة جديدة.
+        لا توجد وحدات. انقر على إضافة وحدة لإضافة وحدة جديدة.
       </div>
     )}
   </div>

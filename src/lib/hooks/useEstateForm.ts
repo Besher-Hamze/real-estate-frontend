@@ -9,7 +9,7 @@ import { CityType, FinalType, NeighborhoodType, MainType } from '../types';
 import { useMainType } from './useMainType';
 import { useRealEstate } from './useRealEstate';
 
-let initialFormState: CreateEstateForm = {
+const initialFormState: CreateEstateForm = {
     title: "",
     price: 0,
     cityId: 0,
