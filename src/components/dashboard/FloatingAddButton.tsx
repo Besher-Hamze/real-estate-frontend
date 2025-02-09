@@ -9,6 +9,7 @@ import FinalTypeForm from "./forms/FinalTypeForm";
 import CityForm from "./forms/CityForm";
 import NeighborhoodForm from "./forms/NeighborhoodForm";
 import EstateForm from "./forms/EstateForm";
+import BuildingForm from "./forms/BuildingForm";
 
 // Define the available dashboard tabs
 type DashboardTab =
@@ -67,6 +68,7 @@ export default function FloatingAddButton({ activeTab }: Props) {
             case "city": return <CityForm />;
             case "neighborhood": return <NeighborhoodForm />;
             case "estate": return <EstateForm />;
+            case "map": return <BuildingForm />
             default: return null;
         }
     };

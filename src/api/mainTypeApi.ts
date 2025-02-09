@@ -18,9 +18,6 @@ export const mainTypeApi = {
     },
     addMainType: async (formData: FormData) => {
         try {
-            
-      
-    
             const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/maintypes`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',

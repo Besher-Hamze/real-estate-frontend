@@ -45,7 +45,9 @@ export interface CreateEstateForm {
     files: File[] | null;
     rentalDuration: number;
     ceilingHeight: number;
-    totalFloors: number | null;
+    totalFloors: number;
+    viewTime: string;
+    buildingItemId: string;
 }
 
 

@@ -126,6 +126,17 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
             </FormField>
 
 
+            <FormField label="وقت المشاهدة">
+                <InputField
+                    type="text"
+                    value={editingEstate.viewTime}
+                    onChange={(value) => handleChange("viewTime", value)}
+                    placeholder="أدخل وقت المشاهدة"
+                    required
+                />
+            </FormField>
+
+
             <FormField label="طريقة الدفع">
                 <FeaturesSelect
                     features={PAYMENT_OPTIONS}
@@ -248,6 +259,16 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                         </FormField>
                     </div>
 
+                    <FormField label="عدد الطوابق">
+                        <InputField
+                            type="number"
+                            value={editingEstate.totalFloors}
+                            onChange={(value) => handleChange('totalFloors', Number(value))}
+                            min={1}
+                        />
+                    </FormField>
+
+
                     <FormField label="الطابق">
                         <SelectField
                             value={editingEstate.floorNumber}
@@ -256,6 +277,17 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                             placeholder="اختر الطابق"
                         />
                     </FormField>
+
+
+                    <FormField label="إرتفاع السقف">
+                        <InputField
+                            type="number"
+                            value={editingEstate.ceilingHeight}
+                            onChange={(value) => handleChange('ceilingHeight', Number(value))}
+                            min={1}
+                        />
+                    </FormField>
+
 
                     <FormField label="مفروشة">
                         <SelectField

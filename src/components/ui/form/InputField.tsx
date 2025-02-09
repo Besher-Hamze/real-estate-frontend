@@ -6,6 +6,7 @@ interface InputFieldProps {
   required?: boolean;
   min?: number;
   pattern?: string;
+  onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>;
 }
 
 export function InputField({
@@ -15,7 +16,8 @@ export function InputField({
   placeholder,
   required = true, 
   min,
-  pattern
+  pattern,
+  onKeyDown
 }: InputFieldProps) {
   return (
     <input
@@ -26,8 +28,8 @@ export function InputField({
       required={required}
       min={min}
       pattern={pattern}
+      onKeyDown={onKeyDown}
       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
     />
   );
 }
-

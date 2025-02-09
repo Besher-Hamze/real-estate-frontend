@@ -59,6 +59,7 @@ export interface RealEstateData {
   rentalDuration: number;
   ceilingHeight: number;
   totalFloors: number;
+  buildingItemId?: string;
 }
 export interface CityType {
   id: number;
@@ -86,4 +87,58 @@ export interface FinalType {
   id: number;
   name: string;
   subId: number;
+}
+
+
+export interface BuildingItem {
+  id: string;
+  name: string;
+  price: string;
+  area: string;
+  type: 'apartment' | 'shop'
+}
+
+
+export interface Building {
+  id: string;
+  title: string;
+  status: 'مكتمل' | 'قيد الإنشاء' | 'مخطط';
+  location: string;
+  items?: BuildingItem[]
+}
+
+export interface CreateBuilding {
+  title: string;
+  status: Building['status'];
+  location: Building['location'];
+}
+
+export interface UpdateBuilding {
+  title?: string;
+  status?: Building['status'];
+  location?: Building['location'];
+}
+
+export interface BuildingItem {
+  id: string;
+  name: string;
+  price: string;
+  area: string;
+  type: 'apartment' | 'shop';
+  building_id: string;
+}
+
+export interface CreateBuildingItem {
+  name: string;
+  price: string;
+  area: string;
+  type: BuildingItem['type'];
+  building_id: string;
+}
+
+export interface UpdateBuildingItem {
+  name?: string;
+  price?: string;
+  area?: string;
+  type?: BuildingItem['type'];
 }

@@ -16,8 +16,14 @@ import {
 } from "@/components/ui/constants/formOptions";
 import { useEstateForm } from "@/lib/hooks/useEstateForm";
 import FeaturesSelect from "@/components/ui/FeaturesSelect";
+import { BuildingItem } from "@/lib/types";
 
-export default function EstateForm() {
+interface EstateFormProps {
+  buildingItemId?: string;
+}
+export default function EstateForm({
+  buildingItemId,
+}: EstateFormProps) {
   const {
     formData,
     setFormData,
@@ -27,8 +33,9 @@ export default function EstateForm() {
     isLoading,
     handleSubmit,
     mainTypes,
+    isSubmitting,
     getPropertyType
-  } = useEstateForm();
+  } = useEstateForm(buildingItemId);
 
   const handleChange = (field: string, value: any) => {
     if (field === "title") {
@@ -111,6 +118,19 @@ export default function EstateForm() {
             }}
           /> */}
         </FormField>
+
+
+
+        <FormField label="وقت المشاهدة">
+          <InputField
+            type="text"
+            value={formData.viewTime}
+            onChange={(value) => handleChange("viewTime", value)}
+            placeholder="أدخل وقت المشاهدة"
+            required
+          />
+        </FormField>
+
         <FormField label="طريقة الدفع">
           <FeaturesSelect
             features={PAYMENT_OPTIONS}
@@ -236,12 +256,31 @@ export default function EstateForm() {
             </div>
 
             {/* Additional Details - Only show if not land type */}
+
+            <FormField label="عدد الطوابق">
+              <InputField
+                type="number"
+                value={formData.totalFloors}
+                onChange={(value) => handleChange('totalFloors', Number(value))}
+                min={1}
+              />
+            </FormField>
+
             <FormField label="الطابق">
               <SelectField
                 value={formData.floorNumber}
                 onChange={(value) => handleChange('floorNumber', Number(value))}
                 options={FLOOR_OPTIONS}
                 placeholder="اختر الطابق"
+              />
+            </FormField>
+
+            <FormField label="إرتفاع السقف">
+              <InputField
+                type="number"
+                value={formData.ceilingHeight}
+                onChange={(value) => handleChange('ceilingHeight', Number(value))}
+                min={1}
               />
             </FormField>
 
@@ -341,11 +380,11 @@ export default function EstateForm() {
           type="submit"
           className={`w-full bg-blue-600 text-white px-6 py-3 rounded-lg 
             hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 
-            ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
-          disabled={isLoading}
+            ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
+          disabled={isSubmitting}
         >
           <Plus className="w-5 h-5" />
-          {isLoading ? "جارٍ الإضافة..." : "إضافة عقار"}
+          {isSubmitting ? "جارٍ الإضافة..." : "إضافة عقار"}
         </button>
       </div>
     </form>

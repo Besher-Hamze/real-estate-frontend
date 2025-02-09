@@ -26,7 +26,10 @@ import NeighborhoodTable from "./tables/NeighborhoodTable";
 import EstateTable from "./tables/EstateTable";
 import FloatingAddButton from "./FloatingAddButton";
 import BuildingMapView from "./BuildingMapView";
-import BuildingMap from "../ui/form/MapBuilding";
+import BuildingMap from "../ui/form/BuildingsManagement";
+import BuildingsManagement from "../ui/form/BuildingsManagement";
+import BuildingTable from "./tables/BuildingTable";
+import { Building } from "@/lib/types";
 
 export default function DashboardComponent() {
   const [activeTab, setActiveTab] = useState<
@@ -65,7 +68,7 @@ export default function DashboardComponent() {
                 )}
                 {activeTab === "map" && (
                   <div className="w-full">
-                    <BuildingMap />
+                    <BuildingTable />
                   </div>
                 )}
 

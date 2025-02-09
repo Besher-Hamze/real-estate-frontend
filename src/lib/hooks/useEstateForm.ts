@@ -9,7 +9,7 @@ import { CityType, FinalType, NeighborhoodType, MainType } from '../types';
 import { useMainType } from './useMainType';
 import { useRealEstate } from './useRealEstate';
 
-const initialFormState: CreateEstateForm = {
+let initialFormState: CreateEstateForm = {
     title: "",
     price: 0,
     cityId: 0,
@@ -31,10 +31,17 @@ const initialFormState: CreateEstateForm = {
     files: null,
     ceilingHeight: 0,
     rentalDuration: 0,
-    totalFloors: null
+    totalFloors: 0,
+    viewTime: '',
+    buildingItemId: ''
 };
 
-export function useEstateForm() {
+export function useEstateForm(buildingItemId?: string) {
+    console.log(buildingItemId);
+    
+    if(buildingItemId){
+        initialFormState.buildingItemId=buildingItemId;
+    }
     const [formData, setFormData] = useState<CreateEstateForm>(initialFormState);
     const [cities, setCities] = useState<CityType[]>([]);
     const [finalTypes, setFinalTypes] = useState<FinalType[]>([]);
@@ -96,7 +103,7 @@ export function useEstateForm() {
             toast.error("يرجى إدخال عنوان العقار");
             return false;
         }
-        if (formData.price<0) {
+        if (formData.price < 0) {
             toast.error("يرجى إدخال سعر صحيح");
             return false;
         }
@@ -118,7 +125,9 @@ export function useEstateForm() {
     const handleSubmit = async () => {
         if (!validateForm()) return;
         setIsSubmitting(true);
-
+        if (buildingItemId) {
+            formData.buildingItemId = buildingItemId;
+        }
         try {
             const formDataToSend = new FormData();
             Object.entries(formData).forEach(([key, value]) => {

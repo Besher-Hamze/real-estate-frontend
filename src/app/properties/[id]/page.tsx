@@ -28,7 +28,8 @@ export default function PropertyDetails() {
                     throw new Error('Property ID not found');
                 }
                 const data = await RealEstateApi.fetchRealEstateById(Number(propertyId));
-
+                console.log(data);
+                
                 const propertyWithFiles = {
                     ...data,
                     files: data.files || [`${process.env.NEXT_PUBLIC_API_URL}/${data.coverImage}`]
