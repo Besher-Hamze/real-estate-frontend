@@ -33,7 +33,7 @@ export const RealEstateApi = {
     fetchRealEstateById: async (id: number): Promise<RealEstateData> => {
         try {
             const response = await apiClient.get<RealEstateData>(`api/realestate/${id}`);
-            
+
             return response.data;
         } catch (error) {
             console.error("Failed to fetch real estate by ID:", error);
@@ -43,8 +43,12 @@ export const RealEstateApi = {
 
     fetchRealEstateByBuildingItemId: async (buildingItemId: string): Promise<RealEstateData[]> => {
         try {
-            
-            const response = await apiClient.get<RealEstateData[]>(`api/realestate/items/${buildingItemId}`);            
+
+            const response = await apiClient.get<RealEstateData[]>(`api/realestate/items/${buildingItemId}`);
+            if ((response.data as any).message) {
+                return [];
+            }
+
             return response.data;
         } catch (error) {
             console.error("Failed to fetch real estate by ID:", error);
@@ -56,13 +60,13 @@ export const RealEstateApi = {
         try {
             estate.coverImage = undefined;
             estate.files = undefined;
-            estate.cityName=undefined;
-            estate.neighborhoodName=undefined;
-            estate.mainCategoryName=undefined;
-            estate.subCategoryName=undefined;
-            estate.finalTypeName=undefined;
+            estate.cityName = undefined;
+            estate.neighborhoodName = undefined;
+            estate.mainCategoryName = undefined;
+            estate.subCategoryName = undefined;
+            estate.finalTypeName = undefined;
             console.log(estate);
-            
+
             const response = await apiClient.put(`${API_BASE_URL}/api/realestate/${id}`, estate);
             return response.data;
         } catch (error) {
