@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Plus, Home, ShoppingBag } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BuildingItem, CreateBuildingItem } from '@/lib/types';
 import { BuildingItemForm } from './BuildingItemForm';
@@ -8,7 +8,6 @@ import { EstateFormModal } from './EstateFormModal';
 import { toast } from 'react-toastify';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { buildingItemApi } from '@/api/buildingItemApi';
-import { RealEstateApi } from '@/api/realEstateApi';
 import { RealEstateListModal } from './RealEstateListModal';
 
 interface BuildingItemsModalProps {

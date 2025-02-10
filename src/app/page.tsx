@@ -10,10 +10,8 @@ import {
   Bath,
   Maximize2,
   ArrowUp,
-  Loader2,
   SearchX,
   X,
-  AlertCircle,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -252,16 +250,8 @@ export default function PremiumLanding() {
     });
   }, [realEstateData, selectedMainTypeId, selectedSubTypeId, priceRange, filters]);
 
-  // Function to dynamically get icon component by name
-  const getIconComponent = (iconName: string) => {
-    const icons: Record<string, any> = {
-      Building2: Building2,
-      Home: Home,
-    };
-    return icons[iconName] || Building2;
-  };
 
-  // Category Button
+
   const CategoryButton = ({ mainType }: { mainType: MainType }) => {
     const [imageError, setImageError] = useState(false);
 

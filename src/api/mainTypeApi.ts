@@ -1,4 +1,3 @@
-import { CreateMainTypeForm } from "@/lib/types/create";
 import { MainType } from "@/lib/types";
 import apiClient from ".";
 import { UpdateMainTypeForm } from "@/lib/types/update";

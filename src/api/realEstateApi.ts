@@ -1,5 +1,4 @@
 import { RealEstateData } from "@/lib/types";
-import { CreateEstateForm } from "@/lib/types/create";
 import axios from "axios";
 import apiClient from ".";
 

@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query';
 import { Building } from '@/lib/types';
 import Link from 'next/link';
 import { 
-  Building2, 
   List, 
   Home, 
   ShoppingBag, 

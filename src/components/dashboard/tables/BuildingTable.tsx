@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Edit2, Trash2, X, Plus, List } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { Edit2, Trash2, X, Plus, List, QrCode } from "lucide-react";
 import { DataTable } from '@/components/ui/data-table/DataTable';
 import { toast } from 'react-toastify';
 import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
@@ -10,6 +10,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { buildingApi } from "@/api/buidlingApi";
 import { buildingItemApi } from "@/api/buildingItemApi";
 import { BuildingItemsModal } from "../building/BuildingItemsModal";
+import QRCode from 'qrcode';
 
 export default function BuildingsTable() {
   const queryClient = useQueryClient();
@@ -18,12 +19,16 @@ export default function BuildingsTable() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [isItemsModalOpen, setIsItemsModalOpen] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [qrGenerated, setQrGenerated] = useState(false);
 
   // Fetch buildings
   const { data: buildings, isLoading, error } = useQuery({
     queryKey: ['buildings'],
     queryFn: buildingApi.fetchBuildings
   });
+
+
 
   // Delete building mutation
   const deleteMutation = useMutation({
@@ -78,12 +83,56 @@ export default function BuildingsTable() {
     updateBuildingItemsMutation.mutate(item);
   };
 
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const generateQR = async () => {
+      if (showQRModal && selectedBuilding && qrCanvasRef.current && !qrGenerated) {
+        const url = `${process.env.NEXT_PUBLIC_FRONTEND}/buildings/${selectedBuilding.id}`;
+        await QRCode.toCanvas(qrCanvasRef.current, url, {
+          width: 300,
+          margin: 2,
+          color: {
+            dark: '#000',
+            light: '#fff'
+          }
+        });
+        setQrGenerated(true);
+      }
+    };
+
+    generateQR();
+  }, [showQRModal, selectedBuilding]);
+  useEffect(() => {
+    if (!showQRModal) {
+      setQrGenerated(false);
+    }
+  }, [showQRModal]);
+
+
+  
+  const handleGenerateQR = (building: Building) => {
+    setSelectedBuilding(building);
+    setShowQRModal(true);
+  };
+  
+
 
 
   const getApartmentCount = (items: BuildingItem[] = []) => {
     return items.filter(item => item.type === 'apartment').length;
   };
 
+  const handleDownloadQR = () => {
+    if (qrCanvasRef.current && selectedBuilding) {
+      const link = document.createElement('a');
+      link.download = `building-${selectedBuilding.id}-qr.png`;
+      link.href = qrCanvasRef.current.toDataURL('image/png');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
   const getShopCount = (items: BuildingItem[] = []) => {
     return items.filter(item => item.type === 'shop').length;
   };
@@ -140,6 +189,12 @@ export default function BuildingsTable() {
   ];
 
   const actions = [
+    {
+      icon: <QrCode className="w-4 h-4" />,
+      label: "عرض QR",
+      onClick: handleGenerateQR,
+      color: "text-purple-600"
+    },
     {
       icon: <List className="w-4 h-4" />,
       label: "إدارة الوحدات",
@@ -237,6 +292,53 @@ export default function BuildingsTable() {
           buildingId={selectedBuilding.id}
         />
       )}
+      <AnimatePresence>
+        {showQRModal && selectedBuilding && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative"
+            >
+              <button
+                onClick={() => {
+                  setShowQRModal(false);
+                  setSelectedBuilding(null);
+                }}
+                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+
+              <div className="text-center">
+                <h2 className="text-xl font-semibold mb-4">رمز QR للمبنى</h2>
+                <div className="flex justify-center mb-4">
+                  <canvas ref={qrCanvasRef} className="w-48 h-48" />
+                </div>
+                <p className="text-sm text-gray-600 mt-2 mb-4">
+                  امسح الرمز للوصول إلى صفحة المبنى
+                </p>
+                <button
+                  onClick={handleDownloadQR}
+                  className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
+                >
+                  <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  تحميل رمز QR
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
