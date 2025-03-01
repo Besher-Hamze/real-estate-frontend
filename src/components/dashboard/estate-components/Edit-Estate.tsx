@@ -62,7 +62,7 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
     const handleChange = (field: string, value: any) => {
         if (field === 'location') {
             const locationString = `${value.latitude},${value.longitude}`;
-            setEditingEstate((prev:any) => ({ ...prev, [field]: locationString }));
+            setEditingEstate((prev: any) => ({ ...prev, [field]: locationString }));
             return;
         }
         if (field === "title") {
@@ -242,6 +242,15 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                     }}
                 />
             </FormField>
+            <FormField label="تحديد الموقع على الخريطة">
+                <LocationPicker
+                    initialLatitude={editingEstate.location ? parseFloat(editingEstate.location.split(',')[0]) : undefined}
+                    initialLongitude={editingEstate.location ? parseFloat(editingEstate.location.split(',')[1]) : undefined}
+                    onLocationSelect={(latitude, longitude) => {
+                        handleChange('location', { latitude, longitude });
+                    }}
+                />
+            </FormField>
 
             {/* Property Details - Only show if not land type */}
             {!shouldHideResidentialFields && (
@@ -316,15 +325,6 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                 </>
             )}
 
-            <FormField label="تحديد الموقع على الخريطة">
-                <LocationPicker
-                    initialLatitude={editingEstate.location ? parseFloat(editingEstate.location.split(',')[0]) : undefined}
-                    initialLongitude={editingEstate.location ? parseFloat(editingEstate.location.split(',')[1]) : undefined}
-                    onLocationSelect={(latitude, longitude) => {
-                        handleChange('location', { latitude, longitude });
-                    }}
-                />
-            </FormField>
 
 
             {shouldShowRentalField && < FormField label="مدة العقد">
