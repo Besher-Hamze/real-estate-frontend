@@ -3,14 +3,11 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { IoBed, IoExpand, IoCar } from 'react-icons/io5';
-import { FaBath } from 'react-icons/fa'; 
-import { Property } from '@/lib/types';
+import { FaBath } from 'react-icons/fa';
 
-interface PropertyCardProps {
-  property: Property;
-}
 
-const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
+
+const PropertyCard: React.FC<any> = ({ property }) => {
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
       {/* Image Container */}
@@ -44,12 +41,12 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
             {property.title || 'Untitled Property'}
           </h3>
         </Link>
-        
+
         {/* Location */}
         <p className="text-gray-500 text-sm mb-4">
           {property.location || 'Unknown Location'}
         </p>
-        
+
         {/* Price and Rent */}
         <div className="flex justify-between items-center mb-4">
           <span className="text-2xl font-bold text-blue-600">

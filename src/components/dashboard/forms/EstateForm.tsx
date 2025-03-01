@@ -17,6 +17,7 @@ import {
 import { useEstateForm } from "@/lib/hooks/useEstateForm";
 import FeaturesSelect from "@/components/ui/FeaturesSelect";
 import { BuildingItem } from "@/lib/types";
+import LocationPicker from "@/components/map/LocationPicker";
 
 interface EstateFormProps {
   buildingItemId?: string;
@@ -38,6 +39,13 @@ export default function EstateForm({
   } = useEstateForm(buildingItemId);
 
   const handleChange = (field: string, value: any) => {
+    console.log(value);
+    if (field === 'location') {
+      const locationString = `${value.latitude},${value.longitude}`;
+      setFormData(prev => ({ ...prev, [field]: locationString }));
+      return;
+    }
+
     if (field === "title") {
       const cleanedValue = value.replace(/\d/g, '');
       setFormData(prev => ({ ...prev, [field]: cleanedValue }));
@@ -231,6 +239,16 @@ export default function EstateForm({
             }}
           />
         </FormField>
+        <FormField label="تحديد الموقع على الخريطة">
+          <LocationPicker
+            // If you have existing location, pass it
+            initialLatitude={formData.location ? parseFloat(formData.location.split(',')[0]) : undefined}
+            initialLongitude={formData.location ? parseFloat(formData.location.split(',')[1]) : undefined}
+            onLocationSelect={(latitude, longitude) => {
+              handleChange('location', { latitude, longitude });
+            }}
+          />
+        </FormField>
 
 
         {/* Property Details - Only show if not land type */}
@@ -297,7 +315,7 @@ export default function EstateForm({
             <FormField label="الإطلالة">
               <SelectField
                 value={formData.facade}
-                onChange={(value) => handleChange('facade', Number(value))}
+                onChange={(value) => handleChange('facade', value)}
                 options={VIEW_OPTIONS}
                 placeholder="اختر الإطلالة"
               />

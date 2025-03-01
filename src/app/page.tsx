@@ -53,6 +53,8 @@ export default function PremiumLanding(): JSX.Element {
     }
   }, [mainTypes, selectedMainTypeId]);
 
+
+
   const currentMainType = mainTypes.find(
     (type) => type.id === selectedMainTypeId
   );
@@ -68,6 +70,18 @@ export default function PremiumLanding(): JSX.Element {
       filters
     });
   }, [realEstateData, selectedMainTypeId, selectedSubTypeId, priceRange, filters]);
+
+
+  const isRentalType = useMemo(() => {
+    return currentMainType?.name?.includes("إيجار") || false;
+  }, [selectedMainTypeId]);
+
+
+  useEffect(() => {
+    if (!isRentalType && filters.rentalPeriod) {
+      setFilters(prev => ({ ...prev, rentalPeriod: "" }));
+    }
+  }, [isRentalType, filters.rentalPeriod]);
 
   if (isMainTypesError || isRealEstateError) {
     return (
@@ -129,20 +143,13 @@ export default function PremiumLanding(): JSX.Element {
             priceRange={priceRange}
             setPriceRange={setPriceRange}
             subId={selectedSubTypeId}
-          />
-
-          <ActiveFilters
+            isRental={isRentalType}
             currentMainType={currentMainType}
             currentSubType={currentSubType}
-            filters={filters}
-            setFilters={setFilters}
             selectedMainTypeId={selectedMainTypeId}
             setSelectedMainTypeId={setSelectedMainTypeId}
             selectedSubTypeId={selectedSubTypeId}
             setSelectedSubTypeId={setSelectedSubTypeId}
-            priceRange={priceRange}
-            setPriceRange={setPriceRange}
-            resetFilters={resetFilters}
           />
 
           <PropertyGrid

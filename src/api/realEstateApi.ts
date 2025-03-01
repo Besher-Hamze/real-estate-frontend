@@ -40,6 +40,18 @@ export const RealEstateApi = {
         }
     },
 
+
+    fetchSimilarRealEstate: async (id: number): Promise<RealEstateData[]> => {
+        try {
+            const response = await apiClient.get<RealEstateData[]>(`/api/realestate/similar/${id}`);
+            return response.data;
+        } catch (error) {
+            console.error("Failed to fetch similar real estate:", error);
+            return [];
+        }
+    },
+
+
     fetchRealEstateByBuildingItemId: async (buildingItemId: string): Promise<RealEstateData[]> => {
         try {
 

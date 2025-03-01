@@ -48,6 +48,7 @@ export interface CreateEstateForm {
     totalFloors: number;
     viewTime: string;
     buildingItemId: string;
+    location: string;
 }
 
 

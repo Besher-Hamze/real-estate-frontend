@@ -33,14 +33,15 @@ const initialFormState: CreateEstateForm = {
     rentalDuration: 0,
     totalFloors: 0,
     viewTime: '',
-    buildingItemId: ''
+    buildingItemId: '',
+    location: "23.5880,58.3829 "
 };
 
 export function useEstateForm(buildingItemId?: string) {
     console.log(buildingItemId);
-    
-    if(buildingItemId){
-        initialFormState.buildingItemId=buildingItemId;
+
+    if (buildingItemId) {
+        initialFormState.buildingItemId = buildingItemId;
     }
     const [formData, setFormData] = useState<CreateEstateForm>(initialFormState);
     const [cities, setCities] = useState<CityType[]>([]);

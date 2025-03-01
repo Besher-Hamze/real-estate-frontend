@@ -6,6 +6,7 @@ import { SelectField } from "@/components/ui/form/SelectField";
 import { ADDITIONAL_FEATURES, FEATURES_BY_TYPE, FLOOR_OPTIONS, FURNISHED_OPTIONS, NEARBY_LOCATION, PAYMENT_OPTIONS, RENTAL_DURATION_OPTIONS, VIEW_OPTIONS } from "@/components/ui/constants/formOptions";
 import FeaturesSelect from "@/components/ui/FeaturesSelect";
 import RangeInput from "@/components/ui/form/RangePriceInput";
+import LocationPicker from "@/components/map/LocationPicker";
 
 interface EditEstateFormProps {
     editingEstate: any;
@@ -59,6 +60,11 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
     const shouldShowRentalField = isRentalType();
 
     const handleChange = (field: string, value: any) => {
+        if (field === 'location') {
+            const locationString = `${value.latitude},${value.longitude}`;
+            setEditingEstate((prev:any) => ({ ...prev, [field]: locationString }));
+            return;
+        }
         if (field === "title") {
             const cleanedValue = value.replace(/\d/g, '');
             setEditingEstate((prev: any) => ({ ...prev, [field]: cleanedValue }));
@@ -300,7 +306,7 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                         <FormField label="الإطلالة">
                             <SelectField
                                 value={editingEstate.facade}
-                                onChange={(value) => handleChange('facade', Number(value))}
+                                onChange={(value) => handleChange('facade', value)}
                                 options={VIEW_OPTIONS}
                                 placeholder="اختر الإطلالة"
                             />
@@ -309,6 +315,16 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                     </FormField>
                 </>
             )}
+
+            <FormField label="تحديد الموقع على الخريطة">
+                <LocationPicker
+                    initialLatitude={editingEstate.location ? parseFloat(editingEstate.location.split(',')[0]) : undefined}
+                    initialLongitude={editingEstate.location ? parseFloat(editingEstate.location.split(',')[1]) : undefined}
+                    onLocationSelect={(latitude, longitude) => {
+                        handleChange('location', { latitude, longitude });
+                    }}
+                />
+            </FormField>
 
 
             {shouldShowRentalField && < FormField label="مدة العقد">

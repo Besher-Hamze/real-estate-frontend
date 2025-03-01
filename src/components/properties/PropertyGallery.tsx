@@ -76,18 +76,6 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
               onClick={() => setModalOpen(true)}
               priority
             />
-            <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors">
-              <div className="absolute top-4 left-4 flex items-center gap-2">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  className="bg-black/50 text-white px-3 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2"
-                  onClick={() => setModalOpen(true)}
-                >
-                  <ZoomIn className="w-4 h-4" />
-                  عرض الصورة بالحجم الكامل
-                </motion.button>
-              </div>
-            </div>
           </>
         )}
       </div>
@@ -163,7 +151,7 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
                   height={800}
                   className="rounded-lg max-h-[85vh] w-auto"
                 />
-                
+
                 {/* Modal Controls */}
                 <div className="absolute top-4 right-4 flex items-center gap-2">
                   <motion.button
@@ -187,14 +175,14 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
                   <>
                     <motion.button
                       whileHover={{ scale: 1.1 }}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 text-white bg-black/50 p-2 rounded-full"
+                      className="absolute left-4 top-1/2  text-white bg-black/50 p-2 rounded-full"
                       onClick={handlePrevImage}
                     >
                       <ChevronLeft className="w-6 h-6" />
                     </motion.button>
                     <motion.button
                       whileHover={{ scale: 1.1 }}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-white bg-black/50 p-2 rounded-full"
+                      className="absolute right-4 top-1/2  text-white bg-black/50 p-2 rounded-full"
                       onClick={handleNextImage}
                     >
                       <ChevronRight className="w-6 h-6" />

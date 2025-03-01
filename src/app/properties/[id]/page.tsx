@@ -9,10 +9,12 @@ import { RealEstateApi } from '@/api/realEstateApi';
 import Image from 'next/image';
 import { RealEstateData } from '@/lib/types';
 import PropertyGallery from '@/components/properties/PropertyGallery';
-
+import PropertyCard from '@/components/widgets/PropertyGrid/PropertyCard';
+import MapboxViewer from '@/components/map/MapboxViewer';
 
 export default function PropertyDetails() {
     const [property, setProperty] = useState<RealEstateData | null>(null);
+    const [similarProperties, setSimilarProperties] = useState<RealEstateData[]>([]);
     const [activeImage, setActiveImage] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -27,14 +29,35 @@ export default function PropertyDetails() {
                 if (!propertyId) {
                     throw new Error('Property ID not found');
                 }
+
+                // Fetch property details
                 const data = await RealEstateApi.fetchRealEstateById(Number(propertyId));
                 console.log(data);
-                
+
                 const propertyWithFiles = {
                     ...data,
                     files: data.files || [`${process.env.NEXT_PUBLIC_API_URL}/${data.coverImage}`]
                 };
                 setProperty(propertyWithFiles);
+
+                // Fetch similar properties
+                try {
+                    const similarData = await RealEstateApi.fetchSimilarRealEstate(Number(propertyId));
+
+                    // Check if similarData is an array, if not, wrap it in an array
+                    const similarPropertiesArray = Array.isArray(similarData)
+                        ? similarData
+                        : (similarData ? [similarData] : []);
+
+                    // Filter out the current property from similar properties
+                    const filteredSimilarProperties = similarPropertiesArray.filter(
+                        similarProp => similarProp.id !== Number(propertyId)
+                    );
+
+                    setSimilarProperties(filteredSimilarProperties);
+                } catch (similarError) {
+                    console.error('Failed to fetch similar properties:', similarError);
+                }
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to fetch property details');
             } finally {
@@ -45,19 +68,6 @@ export default function PropertyDetails() {
         fetchPropertyDetails();
     }, [params?.id]);
 
-
-    const handleImageError = (index: number) => {
-        // if (property) {
-        //     const updatedFiles = [...property.files];
-        //     updatedFiles[index] = '/images/fallback-property.jpg'; // Add a fallback image to your public folder
-        //     setProperty({ ...property, files: updatedFiles });
-        // }
-    };
-
-    const isVideoFile = (url: string) => {
-        return url.match(/\.(mp4|webm|ogg)$/i);
-    };
-
     if (isLoading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -65,6 +75,7 @@ export default function PropertyDetails() {
             </div>
         );
     }
+
     if (error || !property) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -82,8 +93,6 @@ export default function PropertyDetails() {
         );
     }
 
-
-
     return (
         <div className="min-h-screen bg-gray-50" dir="rtl">
             {/* Property Header Image */}
@@ -93,7 +102,6 @@ export default function PropertyDetails() {
                     files: property.files,
                 }}
             />
-
 
             <div className="max-w-7xl mx-auto px-4 py-12">
                 {/* Property Details */}
@@ -176,10 +184,6 @@ export default function PropertyDetails() {
                         )}
                     </div>
                 </div>
-
-
-
-
 
                 {/* Additional Features */}
                 <div className="bg-white rounded-3xl p-8 shadow-xl mb-8 hover:shadow-2xl transition-all duration-300">
@@ -302,6 +306,56 @@ export default function PropertyDetails() {
                         </div>
                     </div>
                 )} */}
+                {property.location && (
+                    <div className="bg-white rounded-3xl p-8 mt-8 shadow-xl mb-8">
+                        <h2 className="text-3xl font-bold mb-8 flex items-center gap-4 text-gray-800">
+                            <MapPin className="w-8 h-8 text-blue-500" />
+                            <span className="text-xl">الموقع</span>
+                        </h2>
+
+                        <MapboxViewer
+                            latitude={property.location ? parseFloat(property.location.split(',')[0]) : undefined}
+                            longitude={property.location ? parseFloat(property.location.split(',')[1]) : undefined}
+                            cityName={property.cityName}
+                            neighborhoodName={property.neighborhoodName}
+                        />
+                    </div>
+                )}
+
+                {/* Similar Properties Section */}
+                {similarProperties.length > 0 && (
+                    <div className="bg-white rounded-3xl p-8 shadow-xl mt-8">
+                        <h2 className="text-3xl font-bold mb-8 flex items-center gap-4 text-gray-800">
+                            <Home className="w-8 h-8 text-blue-500" />
+                            <span className="text-xl text-black0">
+                                عقارات مشابهة
+                            </span>
+                        </h2>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {similarProperties.slice(0, 3).map((similarProperty) => (
+                                <PropertyCard
+                                    key={similarProperty.id}
+                                    item={similarProperty} mainType={undefined}
+                                />
+                            ))}
+                        </div>
+
+                        {similarProperties.length > 3 && (
+                            <div className="text-center mt-6">
+                                <button
+                                    onClick={() => {
+                                        // You might want to implement a modal or navigate to a page with all similar properties
+                                        console.log('Show all similar properties');
+                                    }}
+                                    className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                                >
+                                    عرض المزيد من العقارات المشابهة
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );

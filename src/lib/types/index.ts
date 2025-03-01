@@ -61,6 +61,7 @@ export interface RealEstateData {
   ceilingHeight: number;
   totalFloors: number;
   buildingItemId?: string;
+  location?: string; // ex: "1.43,1.44"
 }
 export interface CityType {
   id: number;
