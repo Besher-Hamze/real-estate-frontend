@@ -55,7 +55,6 @@ function BuildingItemsContent({ buildingId }: { buildingId: string }) {
             <BuildingHeader building={building} />
 
             {/* Building Items */}
-            
             <div className="mt-8">
                 {items.length === 0 ? (
                     <EmptyState />
