@@ -1,3 +1,4 @@
+
 export interface PropertyFilters {
   type: string;
   status: string;
@@ -142,3 +143,35 @@ export interface UpdateBuildingItem {
   area?: string;
   type?: BuildingItem['type'];
 }
+
+export interface PropertyCardProps {
+  item: RealEstateData;
+  mainType: MainType | undefined;
+  selectedSubType?: SubType | undefined;
+}
+
+export type PriceRange = [number, number];
+
+
+
+export interface Filters {
+  bedrooms: string;
+  bathrooms: string;
+  finalType: string;
+  city: string;
+  neighborhood: string;
+  propertySize: string;
+  isFurnished: boolean;
+  rentalPeriod: string;
+  floor: string;
+  view: string;
+  buildingArea: string;
+}
+export interface FilterParams {
+  selectedMainTypeId: number | null;
+  selectedSubTypeId: number | null;
+  priceRange: PriceRange;
+  filters: Filters;
+}
+
+export type PropertySize = "small" | "medium" | "large" | "xlarge" | "";

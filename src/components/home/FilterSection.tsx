@@ -1,23 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Filter, ChevronDown, Home, Maximize, ChevronsLeftRight, ChevronUp, Building, MapPin, Bath, BedDouble, Clock, Mountain, Layers, LucideIcon, LampFloorIcon, HomeIcon } from 'lucide-react';
 import { finalTypeTypeApi } from '@/api/finalTypeApi';
-import { CityType, FinalType, NeighborhoodType } from '@/lib/types';
+import { CityType, Filters, FinalType, NeighborhoodType } from '@/lib/types';
 import { cityApi } from '@/api/cityApi';
 import { neighborhoodApi } from '@/api/NeighborhoodApi';
-
-export interface Filters {
-  bedrooms: string;
-  bathrooms: string;
-  finalType: string;
-  city: string;
-  neighborhood: string;
-  propertySize: string;
-  isFurnished: boolean;
-  rentalPeriod: string;
-  floor: string;
-  view: string;
-  buildingArea: string;
-}
 
 interface FilterSectionProps {
   filters: Filters;
@@ -298,7 +284,7 @@ const FilterSection = ({ filters = defaultFilters, setFilters, priceRange, setPr
                   onChange={(e) => handlePriceChange('max', e.target.value)}
                   className="w-full accent-blue-600"
                 />
-                
+
                 <div className="flex gap-4">
                   <input
                     type="number"

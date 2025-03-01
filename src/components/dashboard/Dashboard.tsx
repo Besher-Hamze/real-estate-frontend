@@ -2,34 +2,17 @@
 
 import { useState } from "react";
 import { Building2, Home, Loader2, Plus } from "lucide-react";
-
 import { useMainType } from "@/lib/hooks/useMainType";
 import { useRealEstate } from "@/lib/hooks/useRealEstate";
-
 import Tabs from "./Tabs";
-import SearchFilterBar from "./SearchFilterBar";
-
-// Forms
-import MainTypeForm from "./forms/MainTypeForm";
-import SubTypeForm from "./forms/SubTypeForm";
-import FinalTypeForm from "./forms/FinalTypeForm";
-import CityForm from "./forms/CityForm";
-import NeighborhoodForm from "./forms/NeighborhoodForm";
-import EstateForm from "./forms/EstateForm";
-
-// Tables
 import MainTypeTable from "./tables/MainTypeTable";
 import SubTypeTable from "./tables/SubTypeTable";
 import FinalTypeTable from "./tables/FinalTypeTable";
 import CityTable from "./tables/CityTable";
 import NeighborhoodTable from "./tables/NeighborhoodTable";
 import EstateTable from "./tables/EstateTable";
-import FloatingAddButton from "./FloatingAddButton";
-import BuildingMapView from "./BuildingMapView";
-import BuildingMap from "../ui/form/BuildingsManagement";
-import BuildingsManagement from "../ui/form/BuildingsManagement";
 import BuildingTable from "./tables/BuildingTable";
-import { Building } from "@/lib/types";
+import FloatingAddButton from "./FloatingAddButton";
 
 export default function DashboardComponent() {
   const [activeTab, setActiveTab] = useState<
@@ -117,9 +100,6 @@ export default function DashboardComponent() {
   );
 }
 
-/**
- * Empty State Component
- */
 function EmptyState({ icon, title, description, buttonText }: { icon: React.ReactNode; title: string; description: string; buttonText: string }) {
   return (
     <div className="text-center py-8">
