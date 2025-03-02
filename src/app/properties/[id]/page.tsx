@@ -30,7 +30,6 @@ export default function PropertyDetails() {
                     throw new Error('Property ID not found');
                 }
 
-                // Fetch property details
                 const data = await RealEstateApi.fetchRealEstateById(Number(propertyId));
                 console.log(data);
 
@@ -40,7 +39,6 @@ export default function PropertyDetails() {
                 };
                 setProperty(propertyWithFiles);
 
-                // Fetch similar properties
                 try {
                     const similarData = await RealEstateApi.fetchSimilarRealEstate(Number(propertyId));
 
@@ -307,7 +305,8 @@ export default function PropertyDetails() {
                     </div>
                 )} */}
                 {property.location && (
-                    <div className="bg-white rounded-3xl p-8 mt-8 shadow-xl mb-8">
+                    <div id="property-location-section"
+                        className="bg-white rounded-3xl p-8 mt-8 shadow-xl mb-8">
                         <h2 className="text-3xl font-bold mb-8 flex items-center gap-4 text-gray-800">
                             <MapPin className="w-8 h-8 text-blue-500" />
                             <span className="text-xl">الموقع</span>
@@ -318,6 +317,8 @@ export default function PropertyDetails() {
                             longitude={property.location ? parseFloat(property.location.split(',')[1]) : undefined}
                             cityName={property.cityName}
                             neighborhoodName={property.neighborhoodName}
+                            // className="scroll-mt-20" // Adds scroll margin to prevent automatic scrolling
+
                         />
                     </div>
                 )}

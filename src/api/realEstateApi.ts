@@ -28,6 +28,26 @@ export const RealEstateApi = {
             throw error;
         }
     },
+    updateRealEstate: async (id: number, estate: any) => {
+        try {
+            estate.cityName = undefined;
+            estate.neighborhoodName = undefined;
+            estate.mainCategoryName = undefined;
+            estate.subCategoryName = undefined;
+            estate.finalTypeName = undefined;
+            console.log(estate);
+            const response = await axios.put(`${API_BASE_URL}/api/realestate/${id}`, estate, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+
+            });
+            return response.data;
+        } catch (error) {
+            console.error("Failed to update real estate:", error);
+            throw error;
+        }
+    },
 
     fetchRealEstateById: async (id: number): Promise<RealEstateData> => {
         try {
@@ -67,24 +87,7 @@ export const RealEstateApi = {
         }
     },
 
-    updateRealEstate: async (id: number, estate: any) => {
-        try {
-            estate.coverImage = undefined;
-            estate.files = undefined;
-            estate.cityName = undefined;
-            estate.neighborhoodName = undefined;
-            estate.mainCategoryName = undefined;
-            estate.subCategoryName = undefined;
-            estate.finalTypeName = undefined;
-            console.log(estate);
 
-            const response = await apiClient.put(`${API_BASE_URL}/api/realestate/${id}`, estate);
-            return response.data;
-        } catch (error) {
-            console.error("Failed to update real estate:", error);
-            throw error;
-        }
-    },
 
     deleteRealEstate: async (id: number) => {
         try {

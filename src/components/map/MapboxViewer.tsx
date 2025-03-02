@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface MapboxViewerProps {
     latitude?: number;
     longitude?: number;
+    address?: string;
     cityName?: string;
     neighborhoodName?: string;
 }
@@ -27,6 +28,7 @@ interface MapboxViewerProps {
 const MapboxViewer: React.FC<MapboxViewerProps> = ({
     latitude,
     longitude,
+    address,
     cityName,
     neighborhoodName
 }) => {
@@ -135,40 +137,6 @@ const MapboxViewer: React.FC<MapboxViewerProps> = ({
                             <div className="absolute inset-0 animate-ping bg-blue-600 rounded-full opacity-50"></div>
                         </motion.div>
                     </Marker>
-
-                    {/* Popup with Address */}
-                    <AnimatePresence>
-                        {showPopup && (
-                            <Popup
-                                latitude={latitude!}
-                                longitude={longitude!}
-                                anchor="top"
-                                onClose={() => setShowPopup(false)}
-                                maxWidth="300px"
-                                className="custom-popup"
-                            >
-                                <motion.div
-                                    initial={{ opacity: 0, y: -20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -20 }}
-                                    className="p-4 bg-white rounded-xl shadow-lg"
-                                >
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <Navigation className="w-5 h-5 text-blue-600" />
-                                        <h3 className="font-bold text-gray-800">موقع العقار</h3>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="text-gray-600 text-sm">
-                                            <span className="font-semibold">المدينة:</span> {cityName}
-                                        </p>
-                                        <p className="text-gray-600 text-sm">
-                                            <span className="font-semibold">الحي:</span> {neighborhoodName}
-                                        </p>
-                                    </div>
-                                </motion.div>
-                            </Popup>
-                        )}
-                    </AnimatePresence>
                 </Map>
             </div>
         </motion.div>
