@@ -15,10 +15,9 @@ import { CityType, FinalType, MainType, NeighborhoodType, RealEstateData } from 
 import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 import EditEstateForm from "../estate-components/Edit-Estate";
 
-// Import reusable components for bulk operations
-import { BulkActionsBar } from "@/components/Dashboard/BulkActionsBar";
-import { BulkDeleteDialog } from "@/components/Dashboard/BulkDeleteDialog";
 import { useSelectionManager } from "@/lib/hooks/useSelectionManager";
+import { BulkActionsBar } from "../BulkActionsBar";
+import { BulkDeleteDialog } from "../BulkDeleteDialog";
 
 interface EstateTableProps {
   realEstateData: RealEstateData[] | undefined;

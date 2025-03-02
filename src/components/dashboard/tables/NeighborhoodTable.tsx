@@ -9,10 +9,10 @@ import { DataTable } from '@/components/ui/data-table/DataTable';
 import { toast } from 'react-toastify';
 import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 
-import { BulkActionsBar } from "@/components/Dashboard/BulkActionsBar";
-import { BulkDeleteDialog } from "@/components/Dashboard/BulkDeleteDialog";
 import { useSelectionManager } from "@/lib/hooks/useSelectionManager";
 import { NeighborhoodType } from "@/lib/types";
+import { BulkActionsBar } from "../BulkActionsBar";
+import { BulkDeleteDialog } from "../BulkDeleteDialog";
 
 export default function NeighborhoodTable() {
   const { neighborhoods, isLoading, error, refetch } = useNeighborhood();
