@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Edit2, Eye, Trash2, X } from "lucide-react";
+import { Edit2, Eye, Trash2, X, CheckSquare, Square } from "lucide-react";
 import Image from "next/image";
 import { DataTable } from "@/components/ui/data-table/DataTable";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,6 +15,11 @@ import { CityType, FinalType, MainType, NeighborhoodType, RealEstateData } from 
 import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 import EditEstateForm from "../estate-components/Edit-Estate";
 
+// Import reusable components for bulk operations
+import { BulkActionsBar } from "@/components/Dashboard/BulkActionsBar";
+import { BulkDeleteDialog } from "@/components/Dashboard/BulkDeleteDialog";
+import { useSelectionManager } from "@/lib/hooks/useSelectionManager";
+
 interface EstateTableProps {
   realEstateData: RealEstateData[] | undefined;
   isLoading: boolean;
@@ -22,6 +27,15 @@ interface EstateTableProps {
 }
 
 export default function EstateTable({ realEstateData, isLoading, mainTypes }: EstateTableProps) {
+  // Use the selection manager hook
+  const selection = useSelectionManager({
+    items: realEstateData,
+    idExtractor: (estate) => estate.id
+  });
+
+  // Bulk delete dialog state
+  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
+
   const [editingEstate, setEditingEstate] = useState<RealEstateData | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -113,7 +127,7 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
       setIsEditModalOpen(false);
     } catch (error) {
       toast.error("خطأ أثناء تحديث العقار");
-      console.error(error); 
+      console.error(error);
     }
   };
 
@@ -132,25 +146,90 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
     }
   };
 
+  // Bulk delete handler
+  const handleBulkDelete = async () => {
+    if (selection.selectedIds.length === 0) return;
+
+    selection.setIsBulkDeleting(true);
+
+    try {
+      // Delete all selected properties one by one
+      for (const id of selection.selectedIds) {
+        await RealEstateApi.deleteRealEstate(id);
+      }
+
+      // Refetch after deletion
+      client.invalidateQueries({ queryKey: [estateQuery] });
+      selection.clearSelection();
+      toast.success(`تم حذف ${selection.selectedIds.length} عقار بنجاح`);
+    } catch (error) {
+      toast.error("حدث خطأ أثناء حذف العقارات المحددة");
+      console.error(error);
+    } finally {
+      selection.setIsBulkDeleting(false);
+      setIsBulkDeleteDialogOpen(false);
+    }
+  };
+
   const columns = [
+    // Selection column
+    {
+      header: () => (
+        <div className="flex items-center">
+          <button
+            onClick={selection.toggleSelectAll}
+            className="mr-2 text-gray-500 hover:text-blue-600 transition-colors"
+          >
+            {realEstateData && selection.isAllSelected ? (
+              <CheckSquare className="w-5 h-5" />
+            ) : (
+              <Square className="w-5 h-5" />
+            )}
+          </button>
+          <span>تحديد</span>
+        </div>
+      ),
+      accessorKey: "selection",
+      cell: (row: RealEstateData) => (
+        <button
+          onClick={() => selection.toggleSelectItem(row.id)}
+          className="text-gray-500 hover:text-blue-600 transition-colors"
+          disabled={deletingId === row.id}
+        >
+          {selection.isSelected(row.id) ? (
+            <CheckSquare className="w-5 h-5 text-blue-600" />
+          ) : (
+            <Square className="w-5 h-5" />
+          )}
+        </button>
+      )
+    },
     {
       header: "العنوان",
       accessorKey: "title",
       cell: (row: RealEstateData) => (
         <div className="flex items-center">
           <div className="h-10 w-10 flex-shrink-0">
-            <Image
-              src={`${process.env.NEXT_PUBLIC_API_URL}/${row.coverImage}`}
-              alt={row.title}
-              width={40}
-              height={40}
-              className="rounded-md object-cover"
-            />
+            {row.coverImage ? (
+              <Image
+                src={`${process.env.NEXT_PUBLIC_API_URL}/${row.coverImage}`}
+                alt={row.title}
+                width={40}
+                height={40}
+                className="rounded-md object-cover"
+              />
+            ) : (
+              <div className="h-10 w-10 bg-gray-200 rounded-md flex items-center justify-center">
+                <span className="text-xs text-gray-500">لا توجد صورة</span>
+              </div>
+            )}
           </div>
           <div className="mr-4">
             <div className="text-sm font-medium text-gray-900">{row.title}</div>
             <div className="text-sm text-gray-500">
-              {row.bedrooms} غرف · {row.bathrooms} حمام · {row.buildingArea} م²
+              {row.bedrooms ? `${row.bedrooms} غرف · ` : ''}
+              {row.bathrooms ? `${row.bathrooms} حمام · ` : ''}
+              {row.buildingArea} م²
             </div>
           </div>
         </div>
@@ -189,12 +268,6 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
   ];
 
   const actions = [
-    // {
-    //   icon: <Eye className="w-4 h-4" />,
-    //   label: "عرض",
-    //   onClick: (row: RealEstateData) => { /* handle view */ },
-    //   color: "text-green-600"
-    // },
     {
       icon: <Edit2 className="w-4 h-4" />,
       label: "تعديل",
@@ -217,11 +290,22 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
 
   return (
     <div className="relative w-full" dir="rtl">
+      {/* Bulk Actions Bar */}
+      <BulkActionsBar
+        selectedCount={selection.selectedIds.length}
+        onClearSelection={selection.clearSelection}
+        onDelete={() => setIsBulkDeleteDialogOpen(true)}
+        isDeleting={selection.isBulkDeleting}
+        itemName={{ singular: "عقار", plural: "عقارات" }}
+      />
+
+      {/* Data Table */}
       <DataTable
         data={realEstateData || []}
         columns={columns}
         actions={actions}
         isLoading={isLoading}
+        rowClassName={(row) => selection.isSelected(row.id) ? "bg-blue-50" : ""}
       />
 
       {/* Edit Modal using Framer Motion */}
@@ -269,13 +353,23 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
         )}
       </AnimatePresence>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Single Delete Confirmation Dialog */}
       <ConfirmationDialog
         isOpen={isDeleteDialogOpen}
         onClose={() => setIsDeleteDialogOpen(false)}
         onConfirm={handleDelete}
         title="تأكيد الحذف"
         message="هل أنت متأكد أنك تريد حذف هذا العقار؟ لا يمكن التراجع عن هذا القرار."
+      />
+
+      {/* Bulk Delete Dialog */}
+      <BulkDeleteDialog
+        isOpen={isBulkDeleteDialogOpen}
+        onClose={() => setIsBulkDeleteDialogOpen(false)}
+        onConfirm={handleBulkDelete}
+        isDeleting={selection.isBulkDeleting}
+        count={selection.selectedIds.length}
+        itemName={{ singular: "عقار", plural: "عقارات" }}
       />
     </div>
   );

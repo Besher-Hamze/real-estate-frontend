@@ -16,7 +16,7 @@ export function TableHeader<T>({ columns, hasActions }: TableHeaderProps<T>) {
             scope="col"
             className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
           >
-            {column.header}
+            {typeof column.header === 'function' ? column.header() : column.header}
           </th>
         ))}
         {hasActions && (

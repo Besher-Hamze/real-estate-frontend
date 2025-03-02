@@ -111,12 +111,20 @@ export default function EstateForm({
 
 
           <InputField
-            type="number"
-            value={formData.price}
-            onChange={(value) => handleChange("price", Number(value))}
+            type="text"
+            value={formData.price === 0 ? "" : formData.price}
+            onChange={(value) => {
+              const numValue = Number(value);
+              if (isNaN(numValue)) {
+                handleChange("price", ""); // or handle it appropriately
+              } else {
+                handleChange("price", numValue);
+              }
+            }}
             placeholder="أدخل السعر"
             required
           />
+
           {/* <RangeInput
             minValue={0}
             maxValue={1000}
@@ -130,15 +138,68 @@ export default function EstateForm({
 
 
         <FormField label="وقت المشاهدة">
-          <InputField
-            type="text"
-            value={formData.viewTime}
-            onChange={(value) => handleChange("viewTime", value)}
-            placeholder="أدخل وقت المشاهدة"
-            required
-          />
-        </FormField>
+          <div className="space-y-3">
+            {formData.viewTime && formData.viewTime.split(',').map((timeRange, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <div className="flex-1 flex items-center gap-2">
+                  <InputField
+                    type="time"
+                    value={timeRange.split(' to ')[0] || ''}
+                    onChange={(value) => {
+                      const newTimeRanges = formData.viewTime.split(',');
+                      const currentRange = newTimeRanges[index].split(' to ');
+                      newTimeRanges[index] = `${value} to ${currentRange[1] || ''}`;
+                      handleChange("viewTime", newTimeRanges.join(','));
+                    }}
+                    placeholder="من"
+                    className="flex-1"
+                  />
+                  <span className="text-gray-500">إلى</span>
+                  <InputField
+                    type="time"
+                    value={timeRange.split(' to ')[1] || ''}
+                    onChange={(value) => {
+                      const newTimeRanges = formData.viewTime.split(',');
+                      const currentRange = newTimeRanges[index].split(' to ');
+                      newTimeRanges[index] = `${currentRange[0] || ''} to ${value}`;
+                      handleChange("viewTime", newTimeRanges.join(','));
+                    }}
+                    placeholder="إلى"
+                    className="flex-1"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newTimeRanges = formData.viewTime.split(',').filter((_, i) => i !== index);
+                    handleChange("viewTime", newTimeRanges.join(','));
+                  }}
+                  className="p-1.5 bg-red-50 text-red-500 rounded-md hover:bg-red-100 transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            ))}
 
+            <button
+              type="button"
+              onClick={() => {
+                const currentValue = formData.viewTime || '';
+                const newValue = currentValue ? `${currentValue},00:00 to 00:00` : '00:00 to 00:00';
+                handleChange("viewTime", newValue);
+              }}
+              className="text-sm flex items-center gap-1 text-blue-600 hover:text-blue-700 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 8v8M8 12h8" />
+              </svg>
+              إضافة وقت آخر
+            </button>
+          </div>
+        </FormField>
         <FormField label="طريقة الدفع">
           <FeaturesSelect
             features={PAYMENT_OPTIONS}

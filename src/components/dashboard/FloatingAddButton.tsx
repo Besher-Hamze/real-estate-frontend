@@ -19,8 +19,7 @@ type DashboardTab =
     | "city"
     | "neighborhood"
     | "estate"
-    | "map"
-    ;
+    | "map";
 
 type Props = {
     activeTab: DashboardTab;
@@ -30,7 +29,7 @@ export default function FloatingAddButton({ activeTab }: Props) {
     const [isModalOpen, setModalOpen] = useState(false);
     const modalRef = useRef<HTMLDivElement>(null);
 
-    // Keyboard and outside click handling
+    // Keyboard handling (Escape key closes modal)
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'Escape' && isModalOpen) {
@@ -38,24 +37,10 @@ export default function FloatingAddButton({ activeTab }: Props) {
             }
         };
 
-        const handleClickOutside = (event: MouseEvent) => {
-            if (
-                modalRef.current &&
-                !modalRef.current.contains(event.target as Node) &&
-                isModalOpen
-            ) {
-                setModalOpen(false);
-            }
-        };
-
-        // Add event listeners
         document.addEventListener('keydown', handleKeyDown);
-        document.addEventListener('mousedown', handleClickOutside);
-
-        // Cleanup event listeners
+        
         return () => {
             document.removeEventListener('keydown', handleKeyDown);
-            document.removeEventListener('mousedown', handleClickOutside);
         };
     }, [isModalOpen]);
 
@@ -68,7 +53,7 @@ export default function FloatingAddButton({ activeTab }: Props) {
             case "city": return <CityForm />;
             case "neighborhood": return <NeighborhoodForm />;
             case "estate": return <EstateForm />;
-            case "map": return <BuildingForm />
+            case "map": return <BuildingForm />;
             default: return null;
         }
     };
@@ -104,10 +89,18 @@ export default function FloatingAddButton({ activeTab }: Props) {
                             aria-modal="true"
                             role="dialog"
                         >
+                            {/* Close Button */}
+                            <button 
+                                onClick={() => setModalOpen(false)} 
+                                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+                                aria-label="Close modal"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                            
                             <div className="m-8">
                                 {renderForm()}
                             </div>
-
                         </motion.div>
                     </motion.div>
                 )}

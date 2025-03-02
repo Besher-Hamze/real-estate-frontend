@@ -1,5 +1,5 @@
 interface InputFieldProps {
-  type?: "text" | "number";
+  type?: "text" | "number" | "time";
   value: string | number;
   onChange: (value: string | number) => void;
   placeholder?: string;
@@ -7,6 +7,7 @@ interface InputFieldProps {
   min?: number;
   pattern?: string;
   onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>;
+  className?:string
 }
 
 export function InputField({
@@ -29,7 +30,7 @@ export function InputField({
       min={min}
       pattern={pattern}
       onKeyDown={onKeyDown}
-      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${}"
     />
   );
 }

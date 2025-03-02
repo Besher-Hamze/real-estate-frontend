@@ -5,11 +5,17 @@ interface TableRowProps<T> {
     row: T;
     columns: Column<T>[];
     actions?: Action<T>[];
+    className?: string;
 }
 
-export function TableRow<T>({ row, columns, actions }: TableRowProps<T>) {
+export function TableRow<T>({ 
+    row, 
+    columns, 
+    actions, 
+    className = "hover:bg-gray-50" 
+}: TableRowProps<T>) {
     return (
-        <tr className="hover:bg-gray-50">
+        <tr className={className}>
             {columns.map((column, index) => (
                 <td key={index} className="px-6 py-4 whitespace-nowrap">
                     {column.cell ? (

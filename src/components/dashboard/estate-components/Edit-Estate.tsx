@@ -138,25 +138,79 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
 
             <FormField label="السعر">
                 <InputField
-                    type="number"
-                    value={editingEstate.price}
-                    onChange={(value) => handleChange("price", Number(value))}
+                    type="text"
+                    value={editingEstate.price === 0 ? "" : editingEstate.price}
+                    onChange={(value) => {
+                        const numValue = Number(value);
+                        if (isNaN(numValue)) {
+                            handleChange("price", ""); // or handle it appropriately
+                        } else {
+                            handleChange("price", numValue);
+                        }
+                    }}
                     placeholder="أدخل السعر"
                     required
                 />
             </FormField>
 
             <FormField label="وقت المشاهدة">
-                <InputField
-                    type="text"
-                    value={editingEstate.viewTime}
-                    onChange={(value) => handleChange("viewTime", value)}
-                    placeholder="أدخل وقت المشاهدة"
-                    required
-                />
-            </FormField>
+                <div className="space-y-3">
+                    {editingEstate.viewTime && editingEstate.viewTime.split(',').map((timeRange: string, index: number) => (
+                        <div key={index} className="flex items-center gap-2">
+                            <div className="flex-1 flex items-center gap-2">
+                                <InputField
+                                    type="time"
+                                    value={timeRange.split(' to ')[0] || ''}
+                                    onChange={(value) => {
+                                        const newTimeRanges = editingEstate.viewTime.split(',');
+                                        const currentRange = newTimeRanges[index].split(' to ');
+                                        newTimeRanges[index] = `${value} to ${currentRange[1] || ''}`;
+                                        handleChange("viewTime", newTimeRanges.join(','));
+                                    }}
+                                    placeholder="من"
+                                    className="flex-1"
+                                />
+                                <span className="text-gray-500">إلى</span>
+                                <InputField
+                                    type="time"
+                                    value={timeRange.split(' to ')[1] || ''}
+                                    onChange={(value) => {
+                                        const newTimeRanges = editingEstate.viewTime.split(',');
+                                        const currentRange = newTimeRanges[index].split(' to ');
+                                        newTimeRanges[index] = `${currentRange[0] || ''} to ${value}`;
+                                        handleChange("viewTime", newTimeRanges.join(','));
+                                    }}
+                                    placeholder="إلى"
+                                    className="flex-1"
+                                />
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const newTimeRanges = editingEstate.viewTime.split(',').filter((_: any, i: number) => i !== index);
+                                    handleChange("viewTime", newTimeRanges.join(','));
+                                }}
+                                className="p-1.5 bg-red-50 text-red-500 rounded-md hover:bg-red-100 transition-colors"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                    ))}
 
-            <FormField label="طريقة الدفع">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            const currentValue = editingEstate.viewTime || '';
+                            const newValue = currentValue ? `${currentValue},00:00 to 00:00` : '00:00 to 00:00';
+                            handleChange("viewTime", newValue);
+                        }}
+                        className="text-sm flex items-center gap-1 text-blue-600 hover:text-blue-700 transition-colors"
+                    >
+                        <Plus className="w-4 h-4" />
+                        إضافة وقت آخر
+                    </button>
+                </div>
+            </FormField>            <FormField label="طريقة الدفع">
                 <FeaturesSelect
                     features={PAYMENT_OPTIONS}
                     selectedFeatures={editingEstate.paymentMethod?.split("، ").filter(Boolean) || []}

@@ -1,15 +1,27 @@
 "use client";
 
 import React, { useState } from "react";
-import { Edit2, Trash2, Check, X } from "lucide-react";
+import { Edit2, Trash2, Check, X, CheckSquare, Square } from "lucide-react";
 import { useCity } from "@/lib/hooks/useCity";
 import { cityApi } from "@/api/cityApi";
 import { DataTable } from '@/components/ui/data-table/DataTable';
 import { toast } from 'react-toastify';
 import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 
+import { BulkActionsBar } from "@/components/Dashboard/BulkActionsBar";
+import { BulkDeleteDialog } from "@/components/Dashboard/BulkDeleteDialog";
+import { useSelectionManager } from "@/lib/hooks/useSelectionManager";
+
 export default function CityTable() {
   const { cities, isLoading, error, refetch } = useCity();
+
+  const selection = useSelectionManager({
+    items: cities,
+    idExtractor: (city) => city.id
+  });
+
+  // Bulk delete dialog state
+  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
 
   // Edit State
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -43,6 +55,7 @@ export default function CityTable() {
     setEditName("");
   };
 
+  // Single delete handlers
   const openDeleteDialog = (id: number) => {
     setPendingDeleteId(id);
     setIsDialogOpen(true);
@@ -65,7 +78,64 @@ export default function CityTable() {
     }
   };
 
+  // Bulk delete handler
+  const handleBulkDelete = async () => {
+    if (selection.selectedIds.length === 0) return;
+
+    selection.setIsBulkDeleting(true);
+
+    try {
+      // Delete all selected cities one by one
+      for (const id of selection.selectedIds) {
+        await cityApi.deleteCity(id);
+      }
+
+      // Refetch after deletion
+      refetch();
+      selection.clearSelection();
+      toast.success(`تم حذف ${selection.selectedIds.length} مدينة بنجاح`);
+    } catch (error) {
+      toast.error("حدث خطأ أثناء حذف المدن المحددة");
+      console.error(error);
+    } finally {
+      selection.setIsBulkDeleting(false);
+      setIsBulkDeleteDialogOpen(false);
+    }
+  };
+
+  // Add selection column
   const columns = [
+    {
+      header: () => (
+        <div className="flex items-center">
+          <button
+            onClick={selection.toggleSelectAll}
+            className="mr-2 text-gray-500 hover:text-blue-600 transition-colors"
+          >
+            {cities && selection.isAllSelected ? (
+              <CheckSquare className="w-5 h-5" />
+            ) : (
+              <Square className="w-5 h-5" />
+            )}
+          </button>
+          <span>تحديد</span>
+        </div>
+      ),
+      accessorKey: "selection",
+      cell: (row: any) => (
+        <button
+          onClick={() => selection.toggleSelectItem(row.id)}
+          className="text-gray-500 hover:text-blue-600 transition-colors"
+          disabled={editingId === row.id || deletingId === row.id}
+        >
+          {selection.isSelected(row.id) ? (
+            <CheckSquare className="w-5 h-5 text-blue-600" />
+          ) : (
+            <Square className="w-5 h-5" />
+          )}
+        </button>
+      )
+    },
     {
       header: "الاسم",
       accessorKey: "name",
@@ -103,6 +173,15 @@ export default function CityTable() {
 
   return (
     <div className="relative w-full" dir="rtl">
+      {/* Bulk Actions Bar */}
+      <BulkActionsBar
+        selectedCount={selection.selectedIds.length}
+        onClearSelection={selection.clearSelection}
+        onDelete={() => setIsBulkDeleteDialogOpen(true)}
+        isDeleting={selection.isBulkDeleting}
+        itemName={{ singular: "مدينة", plural: "مدن" }}
+      />
+
       <DataTable
         data={cities || []}
         columns={columns}
@@ -110,14 +189,25 @@ export default function CityTable() {
         isLoading={isLoading}
         error={error}
         onRefresh={refetch}
+        rowClassName={(row) => selection.isSelected(row.id) ? "bg-blue-50" : ""}
       />
 
+      {/* Single Delete Confirmation Dialog */}
       <ConfirmationDialog
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
         onConfirm={handleConfirmDelete}
         title="تأكيد الحذف"
         message="هل أنت متأكد أنك تريد حذف هذه المدينة؟ لا يمكن التراجع عن هذا القرار."
+      />
+
+      <BulkDeleteDialog
+        isOpen={isBulkDeleteDialogOpen}
+        onClose={() => setIsBulkDeleteDialogOpen(false)}
+        onConfirm={handleBulkDelete}
+        isDeleting={selection.isBulkDeleting}
+        count={selection.selectedIds.length}
+        itemName={{ singular: "مدينة", plural: "مدن" }}
       />
     </div>
   );
