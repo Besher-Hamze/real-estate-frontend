@@ -92,6 +92,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ item, mainType }) => {
   };
 
   // Share property
+  // Updated Share property function
   const shareProperty = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent navigation to property details
     e.stopPropagation();
@@ -106,7 +107,8 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ item, mainType }) => {
         url: shareUrl,
       })
         .catch((error) => console.log('Error sharing', error));
-    } else {
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      // Check if clipboard API is available
       navigator.clipboard.writeText(shareUrl)
         .then(() => {
           // Show a temporary tooltip or notification
@@ -125,6 +127,33 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ item, mainType }) => {
           }, 2000);
         })
         .catch((error) => console.log('Error copying text', error));
+    } else {
+      // Fallback for environments where neither Share API nor Clipboard API is available
+      try {
+        // Create a temporary input element
+        const tempInput = document.createElement('input');
+        tempInput.value = shareUrl;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+
+        // Show a temporary tooltip
+        const tooltip = document.createElement('div');
+        tooltip.textContent = 'تم نسخ الرابط!';
+        tooltip.className = 'bg-black text-white px-3 py-1 rounded-lg text-sm absolute z-50';
+        tooltip.style.top = '0';
+        tooltip.style.right = '0';
+
+        const shareButton = e.currentTarget;
+        shareButton.appendChild(tooltip);
+
+        // Remove tooltip after 2 seconds
+        setTimeout(() => {
+          tooltip.remove();
+        }, 2000);
+      } catch (err) {
+      }
     }
   };
 
