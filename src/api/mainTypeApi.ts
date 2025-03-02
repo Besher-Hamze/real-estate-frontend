@@ -21,7 +21,7 @@ export const mainTypeApi = {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
-            });            
+            });
             return response.data;
         } catch (error) {
             console.error("Failed to add Main Type:", error);
@@ -30,10 +30,37 @@ export const mainTypeApi = {
     },
     updateMainType: async (id: number, mainType: UpdateMainTypeForm) => {
         try {
-            const response = await apiClient.put(`api/maintypes/${id}`, mainType);
+            // Create FormData for the update
+            const formData = new FormData();
+
+            // Add name field
+            if (mainType.name) {
+                formData.append('name', mainType.name);
+            }
+
+            // Handle icon as a File or string
+            if (mainType.icon) {
+                if ((mainType.icon as any) instanceof File) {
+                    formData.append('icon', mainType.icon);
+                } else if (typeof mainType.icon === 'string') {
+                    // If it's a string but not a new upload, just pass the filename
+                    formData.append('existingIcon', mainType.icon);
+                }
+            }
+
+            // Log FormData keys for debugging
+            console.log("FormData keys for update:");
+            for (const key of formData.keys()) {
+                console.log(`- ${key}: ${formData.get(key) instanceof File ? 'File object' : formData.get(key)}`);
+            }
+            const response = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/api/maintypes/${id}`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
             return response.data;
         } catch (error) {
-            console.error("Failed to fetch Main Types:", error);
+            console.error("Failed to update Main Type:", error);
             throw error;
         }
     },

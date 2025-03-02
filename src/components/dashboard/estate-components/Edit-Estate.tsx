@@ -1,11 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { Plus, X } from "lucide-react";
 import { FormField } from "@/components/ui/form/FormField";
 import { InputField } from "@/components/ui/form/InputField";
 import { SelectField } from "@/components/ui/form/SelectField";
 import { ADDITIONAL_FEATURES, FEATURES_BY_TYPE, FLOOR_OPTIONS, FURNISHED_OPTIONS, NEARBY_LOCATION, PAYMENT_OPTIONS, RENTAL_DURATION_OPTIONS, VIEW_OPTIONS } from "@/components/ui/constants/formOptions";
 import FeaturesSelect from "@/components/ui/FeaturesSelect";
-import RangeInput from "@/components/ui/form/RangePriceInput";
 import LocationPicker from "@/components/map/LocationPicker";
 
 interface EditEstateFormProps {
@@ -27,18 +26,21 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
     mainTypes,
     finalTypes,
 }) => {
+    const [newCoverImage, setNewCoverImage] = useState<File | null>(null);
+    const [newFiles, setNewFiles] = useState<File[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     const isLandType = () => {
         const mainType = mainTypes?.find((m: any) => m.id === editingEstate.mainCategoryId);
         const subType = mainType?.subtypes.find((st: any) => st.id === editingEstate.subCategoryId);
         const finalType = finalTypes?.find((f: any) => f.id === editingEstate.finalTypeId);
 
-        return subType?.name.includes("أرض") || finalType?.name.includes("أرض");
+        return subType?.name?.includes("أرض") || finalType?.name?.includes("أرض");
     };
-
 
     const isRentalType = () => {
         const mainType = mainTypes?.find((m: any) => m.id === editingEstate.mainCategoryId);
-        return mainType?.name.includes("إيجار");
+        return mainType?.name?.includes("إيجار");
     }
 
     const getPropertyType = (): "residential" | "commercial" | "industrial" | "others" => {
@@ -46,11 +48,11 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
         const subType = mainType?.subtypes.find((st: any) => st.id === editingEstate.subCategoryId);
         const finalType = finalTypes?.find((f: any) => f.id === editingEstate.finalTypeId);
 
-        if (subType?.name.includes("سكني") || finalType?.name.includes("سكني")) {
+        if (subType?.name?.includes("سكني") || finalType?.name?.includes("سكني")) {
             return "residential";
-        } else if (subType?.name.includes("تجاري") || finalType?.name.includes("تجاري")) {
+        } else if (subType?.name?.includes("تجاري") || finalType?.name?.includes("تجاري")) {
             return "commercial";
-        } else if (subType?.name.includes("صناعي") || finalType?.name.includes("صناعي")) {
+        } else if (subType?.name?.includes("صناعي") || finalType?.name?.includes("صناعي")) {
             return "industrial";
         }
         return "others";
@@ -79,21 +81,45 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
         setEditingEstate((prev: any) => ({ ...prev, [field]: value }));
     };
 
-
-
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) handleChange("coverImage", file);
+        if (file) {
+            setNewCoverImage(file);
+            handleChange("coverImage", file);
+        }
     };
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files ? Array.from(e.target.files) : null;
+        const files = e.target.files ? Array.from(e.target.files) as File[] : [];
+        setNewFiles(files);
         handleChange("files", files);
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+
+        try {
+            const estateToSubmit = { ...editingEstate };
+
+            if (newCoverImage) {
+                estateToSubmit.coverImage = newCoverImage;
+            }
+            if (newFiles.length > 0) {
+                estateToSubmit.files = newFiles;
+            }
+
+            await onSubmit(estateToSubmit);
+        } catch (error) {
+            console.error("Error submitting form:", error);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
         <form
-            onSubmit={onSubmit}
+            onSubmit={handleSubmit}
             className="space-y-6"
             dir="rtl"
         >
@@ -111,7 +137,6 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
             </FormField>
 
             <FormField label="السعر">
-
                 <InputField
                     type="number"
                     value={editingEstate.price}
@@ -119,18 +144,7 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                     placeholder="أدخل السعر"
                     required
                 />
-                {/* <RangeInput
-                    minValue={0}
-                    maxValue={1000}
-                    step={10}
-                    onChange={(value) => {
-                        handleChange('price', value);
-                    }}
-                    initialMax={Number(editingEstate.price.split("-")[0])}
-                    initialMin={Number(editingEstate.price.split("-")[1])}
-                /> */}
             </FormField>
-
 
             <FormField label="وقت المشاهدة">
                 <InputField
@@ -142,11 +156,10 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                 />
             </FormField>
 
-
             <FormField label="طريقة الدفع">
                 <FeaturesSelect
                     features={PAYMENT_OPTIONS}
-                    selectedFeatures={editingEstate.paymentMethod.split("، ").filter(Boolean)}
+                    selectedFeatures={editingEstate.paymentMethod?.split("، ").filter(Boolean) || []}
                     onChange={(selected) => handleChange('paymentMethod', selected.join("، "))}
                     placeholder="اختر طريقة الدفع"
                     selectionText={{
@@ -155,8 +168,6 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                     }}
                 />
             </FormField>
-
-
 
             {/* Categories */}
             <FormField label="التصنيف الرئيسي">
@@ -233,7 +244,7 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
             <FormField label="الأماكن القريبة">
                 <FeaturesSelect
                     features={NEARBY_LOCATION}
-                    selectedFeatures={editingEstate.nearbyLocations.split('، ').filter(Boolean)}
+                    selectedFeatures={editingEstate.nearbyLocations?.split('، ').filter(Boolean) || []}
                     onChange={(features) => handleChange('nearbyLocations', features.join('، '))}
                     placeholder="اختر الأماكن القريبة"
                     selectionText={{
@@ -283,7 +294,6 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                         />
                     </FormField>
 
-
                     <FormField label="الطابق">
                         <SelectField
                             value={editingEstate.floorNumber}
@@ -292,7 +302,6 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                             placeholder="اختر الطابق"
                         />
                     </FormField>
-
 
                     <FormField label="إرتفاع السقف">
                         <InputField
@@ -303,7 +312,6 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                         />
                     </FormField>
 
-
                     <FormField label="مفروشة">
                         <SelectField
                             value={editingEstate.furnished}
@@ -311,31 +319,30 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                             options={FURNISHED_OPTIONS}
                             placeholder="اختر حالة الفرش"
                         />
+                    </FormField>
 
-                        <FormField label="الإطلالة">
-                            <SelectField
-                                value={editingEstate.facade}
-                                onChange={(value) => handleChange('facade', value)}
-                                options={VIEW_OPTIONS}
-                                placeholder="اختر الإطلالة"
-                            />
-                        </FormField>
-
+                    <FormField label="الإطلالة">
+                        <SelectField
+                            value={editingEstate.facade}
+                            onChange={(value) => handleChange('facade', value)}
+                            options={VIEW_OPTIONS}
+                            placeholder="اختر الإطلالة"
+                        />
                     </FormField>
                 </>
             )}
 
+            {shouldShowRentalField && (
+                <FormField label="مدة العقد">
+                    <SelectField
+                        value={editingEstate.rentalDuration}
+                        onChange={(value) => handleChange('rentalDuration', Number(value))}
+                        options={RENTAL_DURATION_OPTIONS}
+                        placeholder="اختر مدة العقد"
+                    />
+                </FormField>
+            )}
 
-
-            {shouldShowRentalField && < FormField label="مدة العقد">
-                <SelectField
-                    value={editingEstate.rentalDuration}
-                    onChange={(value) => handleChange('rentalDuration', Number(value))}
-                    options={RENTAL_DURATION_OPTIONS}
-                    placeholder="اختر مدة العقد"
-                />
-            </FormField>
-            }
             {/* Always show area */}
             <FormField label="المساحة">
                 <InputField
@@ -350,7 +357,7 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
             <FormField label="الميزات الاساسية">
                 <FeaturesSelect
                     features={FEATURES_BY_TYPE[getPropertyType()]}
-                    selectedFeatures={editingEstate.mainFeatures.split("، ").filter(Boolean)}
+                    selectedFeatures={editingEstate.mainFeatures?.split("، ").filter(Boolean) || []}
                     onChange={(features) => handleChange("mainFeatures", features.join("، "))}
                     placeholder="اختر الميزات الأساسية"
                     selectionText={{
@@ -363,7 +370,7 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
             <FormField label="الميزات الإضافية">
                 <FeaturesSelect
                     features={ADDITIONAL_FEATURES}
-                    selectedFeatures={editingEstate.additionalFeatures.split("، ").filter(Boolean)}
+                    selectedFeatures={editingEstate.additionalFeatures?.split("، ").filter(Boolean) || []}
                     onChange={(features) => handleChange("additionalFeatures", features.join("، "))}
                     placeholder="اختر الميزات الإضافية"
                     selectionText={{
@@ -375,53 +382,131 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
 
             {/* Image Preview Section */}
             <FormField label="صورة الغلاف الحالية">
-                {editingEstate.coverImage ? (
-                    <div className="relative inline-block">
-                        <a href={`${process.env.NEXT_PUBLIC_API_URL}/${editingEstate.coverImage}`}
-                            target="_blank"
-                            rel="noopener noreferrer">
-                            <img
-                                src={`${process.env.NEXT_PUBLIC_API_URL}/${editingEstate.coverImage}`}
-                                alt="Cover Image"
-                                className="w-32 h-32 object-cover rounded-md"
-                            />
-                        </a>
-                    </div>
-                ) : (
-                    <p>لا توجد صورة غلاف</p>
-                )}
-            </FormField>
-
-            <FormField label="الصور الإضافية الحالية">
-                {editingEstate.files && editingEstate.files.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                        {editingEstate.files.map((file: string, index: number) => (
-                            <div key={index} className="relative inline-block">
-                                <a href={`${process.env.NEXT_PUBLIC_API_URL}/${file}`}
+                <div className="flex flex-col gap-2">
+                    {editingEstate.coverImage ? (
+                        <div className="relative inline-block">
+                            {typeof editingEstate.coverImage === 'string' ? (
+                                // If coverImage is a string (existing image URL)
+                                <a href={`${process.env.NEXT_PUBLIC_API_URL}/${editingEstate.coverImage}`}
                                     target="_blank"
                                     rel="noopener noreferrer">
                                     <img
-                                        src={`${process.env.NEXT_PUBLIC_API_URL}/${file}`}
-                                        alt={`Additional Image ${index + 1}`}
-                                        className="w-20 h-20 object-cover rounded-md"
+                                        src={`${process.env.NEXT_PUBLIC_API_URL}/${editingEstate.coverImage}`}
+                                        alt="Cover Image"
+                                        className="w-32 h-32 object-cover rounded-md"
                                     />
                                 </a>
-                            </div>
-                        ))}
+                            ) : (
+                                // If coverImage is a File object (new upload)
+                                <img
+                                    src={URL.createObjectURL(editingEstate.coverImage)}
+                                    alt="New Cover Image"
+                                    className="w-32 h-32 object-cover rounded-md"
+                                />
+                            )}
+                        </div>
+                    ) : (
+                        <p>لا توجد صورة غلاف</p>
+                    )}
+
+                    <div className="mt-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            تغيير صورة الغلاف
+                        </label>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="block w-full text-sm text-gray-500
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-md file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-blue-50 file:text-blue-700
+                    hover:file:bg-blue-100"
+                        />
                     </div>
-                ) : (
-                    <p>لا توجد صور إضافية</p>
-                )}
+                </div>
+            </FormField>
+            <FormField label="الصور الإضافية الحالية">
+                <div className="flex flex-col gap-3">
+                    {editingEstate.files && editingEstate.files.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                            {typeof editingEstate.files[0] === 'string' ? (
+                                editingEstate.files.map((file: string, index: number) => (
+                                    <div key={index} className="relative inline-block">
+                                        <a href={`${process.env.NEXT_PUBLIC_API_URL}/${file}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer">
+                                            <img
+                                                src={`${process.env.NEXT_PUBLIC_API_URL}/${file}`}
+                                                alt={`Additional Image ${index + 1}`}
+                                                className="w-20 h-20 object-cover rounded-md"
+                                            />
+                                        </a>
+                                    </div>
+                                ))
+                            ) : (
+                                // New file uploads
+                                Array.from(editingEstate.files).map((file, index: number) => {
+                                    // Check if file is a File object before using URL.createObjectURL
+                                    if (file instanceof File) {
+                                        return (
+                                            <div key={index} className="relative inline-block">
+                                                <img
+                                                    src={URL.createObjectURL(file)}
+                                                    alt={`New Image ${index + 1}`}
+                                                    className="w-20 h-20 object-cover rounded-md"
+                                                />
+                                            </div>
+                                        );
+                                    }
+                                    // If it's not a File object, return null or a placeholder
+                                    return null;
+                                })
+                            )}
+                        </div>
+                    ) : (
+                        <p>لا توجد صور إضافية</p>
+                    )}
+
+                    <div className="mt-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            إضافة صور جديدة
+                        </label>
+                        <input
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            onChange={handleFileUpload}
+                            className="block w-full text-sm text-gray-500
+                                file:mr-4 file:py-2 file:px-4
+                                file:rounded-md file:border-0
+                                file:text-sm file:font-semibold
+                                file:bg-blue-50 file:text-blue-700
+                                hover:file:bg-blue-100"
+                        />
+                    </div>
+                </div>
             </FormField>
 
             <button
                 type="submit"
-                className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                disabled={isSubmitting}
+                className={`w-full ${isSubmitting ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'} text-white px-6 py-3 rounded-lg transition-colors flex items-center justify-center gap-2`}
             >
-                <Plus className="w-5 h-5" />
-                حفظ التعديلات
+                {isSubmitting ? (
+                    <>
+                        <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
+                        جاري الحفظ...
+                    </>
+                ) : (
+                    <>
+                        <Plus className="w-5 h-5" />
+                        حفظ التعديلات
+                    </>
+                )}
             </button>
-        </form >
+        </form>
     );
 };
 

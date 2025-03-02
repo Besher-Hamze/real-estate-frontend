@@ -108,10 +108,8 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ item, mainType }) => {
       })
         .catch((error) => console.log('Error sharing', error));
     } else if (navigator.clipboard && navigator.clipboard.writeText) {
-      // Check if clipboard API is available
       navigator.clipboard.writeText(shareUrl)
         .then(() => {
-          // Show a temporary tooltip or notification
           const tooltip = document.createElement('div');
           tooltip.textContent = 'تم نسخ الرابط!';
           tooltip.className = 'bg-black text-white px-3 py-1 rounded-lg text-sm absolute z-50';
