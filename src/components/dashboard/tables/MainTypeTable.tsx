@@ -24,7 +24,7 @@ export default function MainTypeTable({
   const [editName, setEditName] = useState("");
   const [editIcon, setEditIcon] = useState<string | File>("");
   const [newIconFile, setNewIconFile] = useState<File | null>(null);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -55,10 +55,10 @@ export default function MainTypeTable({
 
   const handleSaveEdit = async (id: number) => {
     if (isSubmitting) return;
-    
+
     try {
       setIsSubmitting(true);
-      
+
       // Prepare the update object
       const updateData: any = {
         name: editName,
@@ -138,20 +138,20 @@ export default function MainTypeTable({
         <div className="text-sm text-gray-500">
           {editingId === row.id ? (
             <div className="flex items-center space-x-2 space-x-reverse">
-              <div 
+              <div
                 className="cursor-pointer relative w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center border-2 border-dashed border-gray-300 hover:border-blue-500 transition-colors"
                 onClick={handleIconClick}
               >
                 {newIconFile ? (
-                  <img 
-                    src={URL.createObjectURL(newIconFile)} 
-                    alt="New Icon Preview" 
+                  <img
+                    src={URL.createObjectURL(newIconFile)}
+                    alt="New Icon Preview"
                     className="w-full h-full object-contain rounded-md"
                   />
                 ) : row.icon ? (
-                  <img 
-                    src={`${process.env.NEXT_PUBLIC_API_URL}/${row.icon}`} 
-                    alt={row.name} 
+                  <img
+                    src={`${process.env.NEXT_PUBLIC_API_URL}/${row.icon}`}
+                    alt={row.name}
                     className="w-full h-full object-contain rounded-md"
                   />
                 ) : (
@@ -170,9 +170,9 @@ export default function MainTypeTable({
           ) : (
             row.icon ? (
               <div className="w-12 h-12 relative">
-                <img 
-                  src={`${process.env.NEXT_PUBLIC_API_URL}/${row.icon}`} 
-                  alt={row.name} 
+                <img
+                  src={`${process.env.NEXT_PUBLIC_API_URL}/${row.icon}`}
+                  alt={row.name}
                   className="w-full h-full object-contain rounded-md"
                 />
               </div>
