@@ -96,7 +96,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ item, mainType }) => {
     e.preventDefault(); // Prevent navigation to property details
     e.stopPropagation();
 
-    const shareUrl = `${window.location.origin}/properties/${item.id}`;
+    const shareUrl = `${process.env.NEXT_PUBLIC_FRONTEND}/properties/${item.id}`;
 
     // Use Web Share API if available
     if (navigator.share) {
@@ -107,7 +107,6 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ item, mainType }) => {
       })
         .catch((error) => console.log('Error sharing', error));
     } else {
-      // Fallback: Copy to clipboard
       navigator.clipboard.writeText(shareUrl)
         .then(() => {
           // Show a temporary tooltip or notification
@@ -176,7 +175,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ item, mainType }) => {
           loading="lazy"
           className="object-cover transition-transform duration-500 ease-in-out transform group-hover:scale-105"
         />
-        
+
         {/* Property type badge */}
         <div className="absolute top-4 right-4 bg-blue-600 text-white px-3 py-1 rounded-lg text-sm">
           {mainType?.name || item.mainCategoryName}

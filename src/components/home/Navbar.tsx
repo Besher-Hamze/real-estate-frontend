@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ChevronDown, MapPin } from 'lucide-react';
+import { Menu, X, ChevronDown, MapPin, Heart } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Navbar() {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState<any>(null);
+    const [favoritesCount, setFavoritesCount] = useState(0);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -14,6 +15,24 @@ export default function Navbar() {
         };
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    // Load favorites count
+    useEffect(() => {
+        const loadFavoritesCount = () => {
+            const stored = localStorage.getItem('favorites');
+            const favorites = stored ? JSON.parse(stored) : [];
+            setFavoritesCount(favorites.length);
+        };
+
+        loadFavoritesCount();
+        
+        // Update when favorites change
+        window.addEventListener('storage', loadFavoritesCount);
+        
+        return () => {
+            window.removeEventListener('storage', loadFavoritesCount);
+        };
     }, []);
 
     const navigationItems = [
@@ -138,6 +157,24 @@ export default function Navbar() {
 
                         {/* Action Buttons */}
                         <div className="flex items-center gap-4">
+                            {/* Favorites Button */}
+                            <motion.div
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                className="relative"
+                            >
+                                <Link href="/favorites" className="flex items-center">
+                                    <Heart 
+                                        className={`w-6 h-6 ${isScrolled ? 'text-gray-800' : 'text-white'} hover:text-red-500 transition-colors`} 
+                                    />
+                                    {favoritesCount > 0 && (
+                                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                            {favoritesCount}
+                                        </span>
+                                    )}
+                                </Link>
+                            </motion.div>
+
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
@@ -173,6 +210,26 @@ export default function Navbar() {
                             className="md:hidden bg-white border-t border-gray-100 mt-4"
                         >
                             <div className="max-w-7xl mx-auto px-4 py-4">
+                                {/* Favorites Mobile Link */}
+                                <div className="py-2">
+                                    <Link
+                                        href="/favorites"
+                                        className="flex items-center justify-between text-gray-900 hover:text-red-500 transition-colors font-medium"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                    >
+                                        <span>المفضلة</span>
+                                        <div className="relative">
+                                            <Heart className="w-5 h-5" />
+                                            {favoritesCount > 0 && (
+                                                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                                    {favoritesCount}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </Link>
+                                </div>
+                                
+                                {/* Regular Nav Items */}
                                 {navigationItems.map((item) => (
                                     <div key={item.name} className="py-2">
                                         <Link
