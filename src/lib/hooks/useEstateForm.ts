@@ -145,7 +145,15 @@ export function useEstateForm(buildingItemId?: string) {
 
             await RealEstateApi.addRealEstate(formDataToSend);
             toast.success("تمت إضافة العقار بنجاح!");
-            setFormData(initialFormState);
+            setFormData({
+                ...initialFormState,
+                ...(buildingItemId ? { buildingItemId } : {})
+            });
+            const fileInputs = document.querySelectorAll('input[type="file"]');
+            fileInputs.forEach((input) => {
+                (input as HTMLInputElement).value = '';
+            });
+
             refetchEstates();
         } catch (error) {
             console.error("Failed to create estate:", error);
