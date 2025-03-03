@@ -16,6 +16,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ item, mainType }) => {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   // State to track if user is hovering over the card
   const [isHovering, setIsHovering] = useState<boolean>(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   // Create array of all images, starting with coverImage and then adding files
   const images = useMemo(() => {
@@ -41,6 +42,14 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ item, mainType }) => {
     }
   }, [item.id]);
 
+  const isCurrentMediaVideo = useMemo(() => {
+    const currentMedia = images[currentImageIndex];
+    return currentMedia &&
+      (currentMedia.toLowerCase().endsWith('.mp4') ||
+        currentMedia.toLowerCase().endsWith('.mov') ||
+        currentMedia.toLowerCase().endsWith('.avi'));
+  }, [currentImageIndex, images]);
+
   // Effect for image auto-cycling on hover
   useEffect(() => {
     if (isHovering && images.length > 1) {
@@ -61,6 +70,17 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ item, mainType }) => {
       }
     };
   }, [isHovering, images.length]);
+  useEffect(() => {
+    if (videoRef.current) {
+      if (isHovering) {
+        videoRef.current.play();
+      } else {
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
+      }
+    }
+  }, [isHovering, isCurrentMediaVideo]);
+
 
   // Toggle favorite status
   const toggleFavorite = (e: React.MouseEvent) => {
@@ -191,17 +211,29 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ item, mainType }) => {
     >
       <div className="relative h-64">
         {/* Current image in carousel */}
-        <Image
-          src={
-            images[currentImageIndex]
-              ? `${process.env.NEXT_PUBLIC_API_URL}/${images[currentImageIndex]}`
-              : "/images/bg-real.jpg"
-          }
-          alt={`${item.title} - صورة ${currentImageIndex + 1}`}
-          fill
-          loading="lazy"
-          className="object-cover transition-transform duration-500 ease-in-out transform group-hover:scale-105"
-        />
+        {isCurrentMediaVideo ? (
+          <video
+            ref={videoRef}
+            src={`${process.env.NEXT_PUBLIC_API_URL}/${images[currentImageIndex]}`}
+            muted
+            playsInline
+            loop
+            className="w-full h-full object-cover transition-transform duration-500 ease-in-out transform group-hover:scale-105"
+          />
+        ) : (
+          <Image
+            src={
+              images[currentImageIndex]
+                ? `${process.env.NEXT_PUBLIC_API_URL}/${images[currentImageIndex]}`
+                : "/images/bg-real.jpg"
+            }
+            alt={`${item.title} - صورة ${currentImageIndex + 1}`}
+            fill
+            loading="lazy"
+            className="object-cover transition-transform duration-500 ease-in-out transform group-hover:scale-105"
+          />
+        )}
+
 
         {/* Property type badge */}
         <div className="absolute top-4 right-4 bg-blue-600 text-white px-3 py-1 rounded-lg text-sm">

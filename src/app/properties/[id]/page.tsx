@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, BedDouble, Bath, Maximize2, ArrowRight, Home, Info, Star, LocateIcon } from 'lucide-react';
+import { MapPin, BedDouble, Bath, Maximize2, ArrowRight, Home, Info, Star, LocateIcon, Clock } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { RealEstateApi } from '@/api/realEstateApi';
 import Image from 'next/image';
@@ -219,6 +219,36 @@ export default function PropertyDetails() {
                     </div>
                 </div>
 
+                {property.viewTime && property.viewTime.trim() !== '' && (
+                    <div className="bg-white rounded-3xl p-8 shadow-xl my-8">
+                        <h2 className="text-3xl font-bold mb-8 flex items-center gap-4 text-gray-800">
+                            <Clock className="w-8 h-8 text-blue-500" />
+                            <span className="text-xl text-black0">
+                                أوقات المشاهدة
+                            </span>
+                        </h2>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {property.viewTime.split(',').map((timeRange, index) => {
+                                const [startTime, endTime] = timeRange.split(' to ');
+                                return (
+                                    <div
+                                        key={index}
+                                        className="flex items-center justify-between p-4 
+                            bg-blue-50 rounded-xl border border-blue-100"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <Clock className="w-5 h-5 text-blue-600" />
+                                            <span className="font-semibold text-gray-700">
+                                                من {startTime} إلى {endTime}
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
 
                 {/* Nearby Loaction  */}
                 <div className="bg-white rounded-3xl p-8 shadow-xl mb-8 hover:shadow-2xl transition-all duration-300">
@@ -317,7 +347,6 @@ export default function PropertyDetails() {
                             longitude={property.location ? parseFloat(property.location.split(',')[1]) : undefined}
                             cityName={property.cityName}
                             neighborhoodName={property.neighborhoodName}
-                            // className="scroll-mt-20" // Adds scroll margin to prevent automatic scrolling
 
                         />
                     </div>
@@ -334,27 +363,13 @@ export default function PropertyDetails() {
                         </h2>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {similarProperties.slice(0, 3).map((similarProperty) => (
+                            {similarProperties.map((similarProperty) => (
                                 <PropertyCard
                                     key={similarProperty.id}
                                     item={similarProperty} mainType={undefined}
                                 />
                             ))}
                         </div>
-
-                        {similarProperties.length > 3 && (
-                            <div className="text-center mt-6">
-                                <button
-                                    onClick={() => {
-                                        // You might want to implement a modal or navigate to a page with all similar properties
-                                        console.log('Show all similar properties');
-                                    }}
-                                    className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-                                >
-                                    عرض المزيد من العقارات المشابهة
-                                </button>
-                            </div>
-                        )}
                     </div>
                 )}
             </div>

@@ -416,8 +416,8 @@ const FilterSection = ({
               value={filters.bathrooms}
               onChange={(e) => setFilters({ ...filters, bathrooms: e.target.value })}
               options={[
-                { value: '', label: 'الكل' },
-                ...Array.from({ length: 4 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))
+                { value: '', label: 'جميع الحمامات' },
+                ...Array.from({ length: 4 }, (_, i) => ({ value: String(i + 1), label: `${i + 1} ${i === 0 ? 'حمام' : 'حمامات'}` }))
               ]}
             />
 

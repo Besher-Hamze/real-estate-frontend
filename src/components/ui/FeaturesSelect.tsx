@@ -12,11 +12,11 @@ import {
 import { X } from "lucide-react";
 
 interface SelectionProps {
-    features: string[];                      
-    selectedFeatures: string[];              
-    onChange: (features: string[]) => void; 
-    placeholder?: string;                    
-    selectionText?: {                       
+    features: string[];
+    selectedFeatures: string[];
+    onChange: (features: string[]) => void;
+    placeholder?: string;
+    selectionText?: {
         single: string;
         multiple: string;
     };
@@ -68,16 +68,15 @@ const FeaturesSelect: React.FC<SelectionProps> = ({
 
     const getSelectionText = () => {
         if (selectedFeatures.length === 0) return placeholder;
-        return `تم اختيار ${selectedFeatures.length} ${
-            selectedFeatures.length === 1 ? selectionText.single : selectionText.multiple
-        }`;
+        return `تم اختيار ${selectedFeatures.length} ${selectedFeatures.length === 1 ? selectionText.single : selectionText.multiple
+            }`;
     };
 
     return (
         <div className="w-full" dir="rtl" ref={containerRef}>
             <Select>
-                <SelectTrigger 
-                    className="w-full bg-white border border-gray-300 rounded-lg shadow-sm 
+                <SelectTrigger
+                    className="w-full bg-white border  border-gray-300 rounded-lg shadow-sm 
                               hover:border-blue-500 focus:ring-2 focus:ring-blue-500 
                               focus:border-blue-500 transition-all"
                     onClick={toggleDropdown}
@@ -88,7 +87,7 @@ const FeaturesSelect: React.FC<SelectionProps> = ({
                 </SelectTrigger>
 
                 {isOpen && (
-                    <SelectContent 
+                    <SelectContent
                         className="bg-white rounded-lg shadow-lg border border-gray-200 
                                  mt-2 w-full max-h-96">
                         <SelectGroup>

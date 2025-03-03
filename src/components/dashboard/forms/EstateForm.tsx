@@ -1,4 +1,3 @@
-// components/estate/EstateForm.tsx
 import React from "react";
 import { Plus } from "lucide-react";
 import { FormField } from "@/components/ui/form/FormField";
@@ -125,14 +124,6 @@ export default function EstateForm({
             required
           />
 
-          {/* <RangeInput
-            minValue={0}
-            maxValue={1000}
-            step={10}
-            onChange={(value) => {
-              handleChange('price', value);
-            }}
-          /> */}
         </FormField>
 
 
@@ -449,7 +440,7 @@ export default function EstateForm({
           <input
             type="file"
             multiple
-            accept="image/*"
+            accept="image/*, video/*"
             onChange={handleFileUpload}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />

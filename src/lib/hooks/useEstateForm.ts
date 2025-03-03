@@ -34,7 +34,7 @@ const initialFormState: CreateEstateForm = {
     totalFloors: 0,
     viewTime: '',
     buildingItemId: '',
-    location: "23.5880,58.3829 "
+    location: "23.5880,58.3829 ",
 };
 
 export function useEstateForm(buildingItemId?: string) {
