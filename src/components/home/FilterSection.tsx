@@ -267,14 +267,14 @@ const FilterSection = ({
 
             {filters.bedrooms && (
               <FilterChip
-                label={`${filters.bedrooms} ${parseInt(filters.bedrooms) === 1 ? "غرفة" : "غرف"}`}
+                label={`${filters.bedrooms == "-1" ? "اكثر من 8" : filters.bedrooms} ${parseInt(filters.bedrooms) === 1 ? "غرفة" : "غرف"}`}
                 onRemove={() => setFilters({ ...filters, bedrooms: "" })}
               />
             )}
 
             {filters.bathrooms && (
               <FilterChip
-                label={`${filters.bathrooms} ${parseInt(filters.bathrooms) === 1 ? "حمام" : "حمامات"}`}
+                label={`${filters.bathrooms == "-1" ? "اكثر من 4" : filters.bathrooms} ${parseInt(filters.bathrooms) === 1 ? "حمام" : "حمامات"}`}
                 onRemove={() => setFilters({ ...filters, bathrooms: "" })}
               />
             )}
@@ -414,7 +414,8 @@ const FilterSection = ({
               onChange={(e) => setFilters({ ...filters, bedrooms: e.target.value })}
               options={[
                 { value: '', label: 'جميع الغرف' },
-                ...Array.from({ length: 8 }, (_, i) => ({ value: String(i + 1), label: `${i + 1} ${i === 0 ? 'غرفة' : 'غرف'}` }))
+                ...Array.from({ length: 8 }, (_, i) => ({ value: String(i + 1), label: `${i + 1} ${i === 0 ? 'غرفة' : 'غرف'}` })),
+                { value: -1, label: `اكثر من ${8} غرف` },
               ]}
             />
 
@@ -425,7 +426,8 @@ const FilterSection = ({
               onChange={(e) => setFilters({ ...filters, bathrooms: e.target.value })}
               options={[
                 { value: '', label: 'جميع الحمامات' },
-                ...Array.from({ length: 4 }, (_, i) => ({ value: String(i + 1), label: `${i + 1} ${i === 0 ? 'حمام' : 'حمامات'}` }))
+                ...Array.from({ length: 4 }, (_, i) => ({ value: String(i + 1), label: `${i + 1} ${i === 0 ? 'حمام' : 'حمامات'}` })),
+                { value: -1, label: `اكثر من ${4} حمام` },
               ]}
             />
 

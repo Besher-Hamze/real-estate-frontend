@@ -9,6 +9,7 @@ import { toast } from 'react-toastify';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { buildingItemApi } from '@/api/buildingItemApi';
 import { RealEstateListModal } from './RealEstateListModal';
+import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 
 interface BuildingItemsModalProps {
     isOpen: boolean;
@@ -33,6 +34,10 @@ export function BuildingItemsModal({
         area: '',
         type: 'apartment'
     });
+
+    // إضافة حالات مربع حوار تأكيد الحذف
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
     // Fetch building items
     const { data: items = [], isLoading } = useQuery({
@@ -102,9 +107,14 @@ export function BuildingItemsModal({
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['buildingItems', buildingId] });
             toast.success("تم حذف الوحدة بنجاح");
+            // إغلاق مربع حوار التأكيد بعد الحذف
+            setIsDeleteConfirmOpen(false);
+            setItemToDelete(null);
         },
         onError: () => {
             toast.error("فشل حذف الوحدة");
+            // إغلاق مربع حوار التأكيد في حالة الخطأ أيضًا
+            setIsDeleteConfirmOpen(false);
         }
     });
 
@@ -138,8 +148,23 @@ export function BuildingItemsModal({
         setCurrentItem(item);
     };
 
+    // تعديل دالة معالجة حذف العنصر لتظهر مربع حوار التأكيد
     const handleDeleteItem = (itemId: string) => {
-        deleteItemMutation.mutate(itemId);
+        setItemToDelete(itemId);
+        setIsDeleteConfirmOpen(true);
+    };
+
+    // دالة جديدة لتنفيذ الحذف الفعلي بعد التأكيد
+    const confirmDeleteItem = () => {
+        if (itemToDelete) {
+            deleteItemMutation.mutate(itemToDelete);
+        }
+    };
+
+    // دالة لإغلاق مربع حوار التأكيد
+    const closeDeleteConfirm = () => {
+        setIsDeleteConfirmOpen(false);
+        setItemToDelete(null);
     };
 
     const handleAddEstate = (item: BuildingItem) => {
@@ -232,6 +257,17 @@ export function BuildingItemsModal({
                 </motion.div>
             </motion.div>
 
+            <ConfirmationDialog
+                isOpen={isDeleteConfirmOpen}
+                onClose={closeDeleteConfirm}
+                onConfirm={confirmDeleteItem}
+                title="تأكيد حذف الوحدة"
+                message="هل أنت متأكد من رغبتك في حذف هذه الوحدة؟ لا يمكن التراجع عن هذه العملية."
+                confirmText="حذف"
+                cancelText="إلغاء"
+                confirmButtonClass="bg-red-600 hover:bg-red-700"
+            />
+
             <EstateFormModal
                 isOpen={isEstateModalOpen}
                 onClose={handleCloseEstateModal}
@@ -243,7 +279,6 @@ export function BuildingItemsModal({
                 onClose={handleCloseRealEstateListModal}
                 buildingItemId={selectedItem?.id}
             />
-
 
         </AnimatePresence>
     );

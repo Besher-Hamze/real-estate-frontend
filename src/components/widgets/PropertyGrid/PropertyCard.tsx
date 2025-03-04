@@ -2,12 +2,28 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin, BedDouble, Bath, Maximize2, Heart, Share2, ChevronLeft, ChevronRight } from "lucide-react";
+import { MapPin, BedDouble, Bath, Maximize2, Heart, Share2, ChevronLeft, ChevronRight, Copy } from "lucide-react";
 import { RealEstateCardProps } from "@/lib/types";
+import {
+  FacebookShareButton,
+  TwitterShareButton,
+  WhatsappShareButton,
+  TelegramShareButton,
+  EmailShareButton,
+  FacebookIcon,
+  TwitterIcon,
+  WhatsappIcon,
+  TelegramIcon,
+  EmailIcon
+} from 'react-share';
+import { toast } from "react-toastify";
+
 
 const RealEstateCard: React.FC<RealEstateCardProps> = ({ item, mainType }) => {
   // State to manage favorite status
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
+  // State for share options visibility
+  const [showShareOptions, setShowShareOptions] = useState<boolean>(false);
   // State for carousel
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   // Ref to track hover state
@@ -42,6 +58,20 @@ const RealEstateCard: React.FC<RealEstateCardProps> = ({ item, mainType }) => {
     }
   }, [item.id]);
 
+  // Close share options when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showShareOptions && cardRef.current && !cardRef.current.contains(event.target as Node)) {
+        setShowShareOptions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showShareOptions]);
+
   const isCurrentMediaVideo = useMemo(() => {
     const currentMedia = images[currentImageIndex];
     return currentMedia &&
@@ -70,6 +100,7 @@ const RealEstateCard: React.FC<RealEstateCardProps> = ({ item, mainType }) => {
       }
     };
   }, [isHovering, images.length]);
+
   useEffect(() => {
     if (videoRef.current) {
       if (isHovering) {
@@ -80,7 +111,6 @@ const RealEstateCard: React.FC<RealEstateCardProps> = ({ item, mainType }) => {
       }
     }
   }, [isHovering, isCurrentMediaVideo]);
-
 
   // Toggle favorite status
   const toggleFavorite = (e: React.MouseEvent) => {
@@ -111,67 +141,60 @@ const RealEstateCard: React.FC<RealEstateCardProps> = ({ item, mainType }) => {
     setIsFavorite(!isFavorite);
   };
 
-  // Share property
-  // Updated Share property function
+  // Toggle share options visibility
   const shareProperty = (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent navigation to property details
+    e.preventDefault();
     e.stopPropagation();
+    setShowShareOptions(!showShareOptions);
+  };
 
+  // Copy link to clipboard
+  const copyLink = () => {
     const shareUrl = `${process.env.NEXT_PUBLIC_FRONTEND}/properties/${item.id}`;
 
-    // Use Web Share API if available
-    if (navigator.share) {
-      navigator.share({
-        title: item.title,
-        text: `${item.title} - ${item.cityName}, ${item.neighborhoodName}`,
-        url: shareUrl,
-      })
-        .catch((error) => console.log('Error sharing', error));
-    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(shareUrl)
         .then(() => {
-          const tooltip = document.createElement('div');
-          tooltip.textContent = 'تم نسخ الرابط!';
-          tooltip.className = 'bg-black text-white px-3 py-1 rounded-lg text-sm absolute z-50';
-          tooltip.style.top = '0';
-          tooltip.style.right = '0';
-
-          const shareButton = e.currentTarget;
-          shareButton.appendChild(tooltip);
-
-          // Remove tooltip after 2 seconds
-          setTimeout(() => {
-            tooltip.remove();
-          }, 2000);
+          toast.success("تم نسخ الرابط~")
         })
-        .catch((error) => console.log('Error copying text', error));
+        .catch(() => {
+          fallbackCopyText(shareUrl, document.body);
+        });
     } else {
-      // Fallback for environments where neither Share API nor Clipboard API is available
-      try {
-        // Create a temporary input element
-        const tempInput = document.createElement('input');
-        tempInput.value = shareUrl;
-        document.body.appendChild(tempInput);
-        tempInput.select();
-        document.execCommand('copy');
-        document.body.removeChild(tempInput);
+      fallbackCopyText(shareUrl, document.body);
+    }
 
-        // Show a temporary tooltip
-        const tooltip = document.createElement('div');
-        tooltip.textContent = 'تم نسخ الرابط!';
-        tooltip.className = 'bg-black text-white px-3 py-1 rounded-lg text-sm absolute z-50';
-        tooltip.style.top = '0';
-        tooltip.style.right = '0';
+    setShowShareOptions(false);
+  };
 
-        const shareButton = e.currentTarget;
-        shareButton.appendChild(tooltip);
+  // وظيفة مساعدة لنسخ النص بالطريقة البديلة
+  const fallbackCopyText = (text: string, buttonElement: Element) => {
+    try {
+      const tempInput = document.createElement('input');
+      tempInput.style.position = 'absolute';
+      tempInput.style.left = '-9999px';
+      tempInput.value = text;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempInput);
 
-        // Remove tooltip after 2 seconds
-        setTimeout(() => {
-          tooltip.remove();
-        }, 2000);
-      } catch (err) {
-      }
+      // إظهار رسالة نجاح النسخ
+      const tooltip = document.createElement('div');
+      tooltip.textContent = 'تم نسخ الرابط!';
+      tooltip.className = 'absolute -top-10 left-1/2 -translate-x-1/2 bg-black text-white px-3 py-1 rounded-lg text-sm z-50';
+
+      // إضافة الرسالة إلى الزر
+      buttonElement.appendChild(tooltip);
+
+      // إزالة الرسالة بعد ثانيتين
+      setTimeout(() => {
+        tooltip.remove();
+      }, 2000);
+
+      alert("تم نسخ الرابط!");
+    } catch (error) {
+      console.log('خطأ في نسخ الرابط:', error);
     }
   };
 
@@ -199,8 +222,19 @@ const RealEstateCard: React.FC<RealEstateCardProps> = ({ item, mainType }) => {
     setCurrentImageIndex(index);
   };
 
+  // إضافة إحداث مرور وخروج المؤشر
+  const handleMouseEnter = () => {
+    setIsHovering(true);
+  };
 
+  const handleMouseLeave = () => {
+    setIsHovering(false);
+  };
 
+  // Get share URL and info
+  const shareUrl = `${process.env.NEXT_PUBLIC_FRONTEND}/properties/${item.id}`;
+  const shareTitle = item.title;
+  const shareDescription = `${item.title} - ${item.cityName}, ${item.neighborhoodName}`;
 
   return (
     <motion.div
@@ -208,6 +242,8 @@ const RealEstateCard: React.FC<RealEstateCardProps> = ({ item, mainType }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all group"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <div className="relative h-64">
         {/* Current image in carousel */}
@@ -257,15 +293,70 @@ const RealEstateCard: React.FC<RealEstateCardProps> = ({ item, mainType }) => {
             />
           </button>
 
-          {/* Share Button */}
-          <button
-            onClick={shareProperty}
-            className="p-2 rounded-full bg-white/80 hover:bg-white text-gray-700 hover:text-blue-500 backdrop-blur-sm transition-all duration-200"
-            aria-label="مشاركة"
-            title="مشاركة"
-          >
-            <Share2 className="w-5 h-5" />
-          </button>
+          {/* Share Button with dropdown */}
+          <div className="relative">
+            <button
+              onClick={shareProperty}
+              className={`p-2 rounded-full ${showShareOptions
+                ? 'bg-blue-500 text-white'
+                : 'bg-white/80 hover:bg-white text-gray-700 hover:text-blue-500'
+                } backdrop-blur-sm transition-all duration-200`}
+              aria-label="مشاركة"
+              title="مشاركة"
+            >
+              <Share2 className="w-5 h-5" />
+            </button>
+
+            {/* Share options dropdown */}
+            {showShareOptions && (
+              <div className="absolute left-0 -bottom-2 translate-y-full bg-white rounded-xl shadow-xl border border-gray-200 p-3 w-56 z-50">
+                <div className="flex flex-wrap gap-2 justify-around">
+                  <WhatsappShareButton
+                    url={shareUrl}
+                    title={shareDescription}
+                    separator="\n\n"
+                    onClick={() => setShowShareOptions(false)}
+                  >
+                    <WhatsappIcon size={36} round />
+                  </WhatsappShareButton>
+
+                  <FacebookShareButton
+                    url={shareUrl}
+                    onClick={() => setShowShareOptions(false)}
+                  >
+                    <FacebookIcon size={36} round />
+                  </FacebookShareButton>
+
+                  <TelegramShareButton
+                    url={shareUrl}
+                    title={shareTitle}
+                    onClick={() => setShowShareOptions(false)}
+                  >
+                    <TelegramIcon size={36} round />
+                  </TelegramShareButton>
+
+                  <EmailShareButton
+                    url={shareUrl}
+                    subject={shareTitle}
+                    body={`${shareDescription}\n\n`}
+                    onClick={() => setShowShareOptions(false)}
+                  >
+                    <EmailIcon size={36} round />
+                  </EmailShareButton>
+                </div>
+
+                <div className="mt-3 pt-2 border-t border-gray-200">
+                  <button
+                    onClick={copyLink}
+                    className="flex items-center justify-center gap-2 w-full px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm transition-colors text-gray-700"
+                  >
+                    <Copy className="w-4 h-4" />
+                    نسخ الرابط
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Carousel navigation buttons - only show if there are multiple images */}

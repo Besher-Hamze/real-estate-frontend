@@ -30,9 +30,16 @@ export const filterRealEstateData = (
     }
 
     // 5) bedrooms
-    if (filters.bedrooms && item.bedrooms.toString() !== filters.bedrooms) {
-      return false;
+    if (filters.bedrooms) {
+      if (filters.bedrooms === "-1") {
+        if (item.bedrooms <= 8) {
+          return false;
+        }
+      } else if (item.bedrooms.toString() !== filters.bedrooms) {
+        return false;
+      }
     }
+
 
     // 6) propertySize (buildingArea)
     if (filters.propertySize) {
@@ -54,9 +61,16 @@ export const filterRealEstateData = (
     }
 
     // 7) Bathrooms
-    if (filters.bathrooms && item.bathrooms.toString() !== filters.bathrooms) {
-      return false;
+    if (filters.bathrooms) {
+      if (filters.bathrooms === "-1") {
+        if (item.bathrooms <= 4) {
+          return false;
+        }
+      } else if (item.bathrooms.toString() !== filters.bathrooms) {
+        return false;
+      }
     }
+
 
     // 8) City
     if (filters.city && filters.city !== "") {

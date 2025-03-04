@@ -10,6 +10,7 @@ import { RealEstateData } from '@/lib/types';
 import RealEstateCard from '@/components/widgets/PropertyGrid/PropertyCard';
 import { mainTypeApi } from '@/api/mainTypeApi';
 import EditEstateForm from '../estate-components/Edit-Estate';
+import { toast } from 'react-toastify';
 
 interface RealEstateListModalProps {
     isOpen: boolean;
@@ -59,13 +60,13 @@ export function RealEstateListModal({
         enabled: !!editingEstate && !!editingEstate.subCategoryId
     });
 
-    // Update mutation
     const updateEstateMutation = useMutation({
         mutationFn: (updatedEstate: any) => {
-            return RealEstateApi.updateRealEstate(updatedEstate, updatedEstate.id);
+            return RealEstateApi.updateRealEstate(updatedEstate.id, updatedEstate);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['realEstates', buildingItemId] });
+            toast.success("تم التعديل بنجاح");
             setEditingEstate(null);
         }
     });
