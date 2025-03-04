@@ -63,9 +63,9 @@ export default function NeighborhoodTable() {
       setEditingId(null);
       setEditName("");
       setEditCityId(null);
-      toast.success("تم تحديث الحي بنجاح");
+      toast.success("تم تحديث المدينة بنجاح");
     } catch (error) {
-      toast.error("حدث خطأ أثناء تحديث الحي");
+      toast.error("حدث خطأ أثناء تحديث المدينة");
       console.error(error);
     }
   };
@@ -88,9 +88,9 @@ export default function NeighborhoodTable() {
       setDeletingId(pendingDeleteId);
       await neighborhoodApi.deleteNeighborhood(pendingDeleteId);
       refetch();
-      toast.success("تم حذف الحي بنجاح");
+      toast.success("تم حذف المدينة بنجاح");
     } catch (error) {
-      toast.error("حدث خطأ أثناء حذف الحي");
+      toast.error("حدث خطأ أثناء حذف المدينة");
       console.error(error);
     } finally {
       setDeletingId(null);
@@ -114,9 +114,9 @@ export default function NeighborhoodTable() {
       // Refetch after deletion
       refetch();
       selection.clearSelection();
-      toast.success(`تم حذف ${selection.selectedIds.length} حي بنجاح`);
+      toast.success(`تم حذف ${selection.selectedIds.length} مدينة بنجاح`);
     } catch (error) {
-      toast.error("حدث خطأ أثناء حذف الأحياء المحددة");
+      toast.error("حدث خطأ أثناء حذف المدن المحددة");
       console.error(error);
     } finally {
       selection.setIsBulkDeleting(false);
@@ -158,7 +158,7 @@ export default function NeighborhoodTable() {
       )
     },
     {
-      header: "الحي",
+      header: "المدينة",
       accessorKey: "name",
       cell: (row: NeighborhoodType) => (
         editingId === row.id ? (
@@ -175,7 +175,7 @@ export default function NeighborhoodTable() {
       )
     },
     {
-      header: "المدينة",
+      header: "المحافظة",
       accessorKey: "cityId",
       cell: (row: NeighborhoodType) => (
         editingId === row.id ? (
@@ -185,7 +185,7 @@ export default function NeighborhoodTable() {
             value={editCityId || ""}
             onChange={(e) => setEditCityId(Number(e.target.value))}
           >
-            <option value="">اختر المدينة</option>
+            <option value="">اختر المحافظة</option>
             {cities?.map((city) => (
               <option key={city.id} value={city.id}>
                 {city.name}
@@ -227,7 +227,7 @@ export default function NeighborhoodTable() {
         onClearSelection={selection.clearSelection}
         onDelete={() => setIsBulkDeleteDialogOpen(true)}
         isDeleting={selection.isBulkDeleting}
-        itemName={{ singular: "حي", plural: "أحياء" }}
+        itemName={{ singular: "حي", plural: "مدن" }}
       />
 
       <DataTable
@@ -246,7 +246,7 @@ export default function NeighborhoodTable() {
         onClose={() => setIsDialogOpen(false)}
         onConfirm={handleConfirmDelete}
         title="تأكيد الحذف"
-        message="هل أنت متأكد أنك تريد حذف هذا الحي؟ لا يمكن التراجع عن هذا القرار."
+        message="هل أنت متأكد أنك تريد حذف هذا المدينة؟ لا يمكن التراجع عن هذا القرار."
       />
 
       <BulkDeleteDialog
@@ -255,7 +255,7 @@ export default function NeighborhoodTable() {
         onConfirm={handleBulkDelete}
         isDeleting={selection.isBulkDeleting}
         count={selection.selectedIds.length}
-        itemName={{ singular: "حي", plural: "أحياء" }}
+        itemName={{ singular: "حي", plural: "مدن" }}
       />
     </div>
   );

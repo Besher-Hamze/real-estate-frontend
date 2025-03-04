@@ -1,5 +1,5 @@
 import { SearchX } from "lucide-react";
-import PropertyCard from "./PropertyCard";
+import RealEstateCard from "./PropertyCard";
 import { RealEstateData, MainType, SubType } from "@/lib/types";
 import { PropertyCardSkeleton } from "@/components/home/home";
 
@@ -33,7 +33,7 @@ const PropertyGrid: React.FC<PropertyGridProps> = ({
           ))
         ) : filteredData.length > 0 ? (
           filteredData.map((item) => (
-            <PropertyCard
+            <RealEstateCard
               key={item.id}
               item={item}
               mainType={currentMainType}

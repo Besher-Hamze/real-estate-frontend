@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useMemo, JSX } from "react";
 import { motion } from "framer-motion";
-import { Filters } from "@/lib/types";
+import { Filters, SortOption } from "@/lib/types";
 import { useMainType } from "@/lib/hooks/useMainType";
 import { useRealEstate } from "@/lib/hooks/useRealEstate";
 import Navbar from "@/components/home/Navbar";
@@ -13,13 +13,16 @@ import SubTypeSelector from "@/components/widgets/SubTypeSelector";
 import ActiveFilters from "@/components/widgets/ActiveFilters";
 import PropertyGrid from "@/components/widgets/PropertyGrid";
 import ScrollToTop from "@/components/widgets/ScrollToTop";
-import { filterRealEstateData, initialFilterState } from "@/utils/filterUtils";
+import { filterRealEstateData, initialFilterState, initialSortOption } from "@/utils/filterUtils";
+import SortComponent from "@/components/home/SortComponent";
 
 export default function PremiumLanding(): JSX.Element {
   const [selectedMainTypeId, setSelectedMainTypeId] = useState<number | null>(null);
   const [selectedSubTypeId, setSelectedSubTypeId] = useState<number | null>(null);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000000]);
   const [filters, setFilters] = useState<Filters>(initialFilterState);
+  // إضافة حالة خيار الترتيب
+  const [sortOption, setSortOption] = useState<SortOption>(initialSortOption);
 
   const {
     mainTypes = [],
@@ -40,6 +43,8 @@ export default function PremiumLanding(): JSX.Element {
     setSelectedSubTypeId(null);
     setFilters(initialFilterState);
     setPriceRange([0, 1000000]);
+    // إعادة تعيين خيار الترتيب إلى الافتراضي
+    setSortOption(initialSortOption);
   };
 
   useEffect(() => {
@@ -52,8 +57,6 @@ export default function PremiumLanding(): JSX.Element {
       }
     }
   }, [mainTypes, selectedMainTypeId]);
-
-
 
   const currentMainType = mainTypes.find(
     (type) => type.id === selectedMainTypeId
@@ -68,14 +71,12 @@ export default function PremiumLanding(): JSX.Element {
       selectedSubTypeId,
       priceRange,
       filters
-    });
-  }, [realEstateData, selectedMainTypeId, selectedSubTypeId, priceRange, filters]);
-
+    }, sortOption); // تمرير خيار الترتيب إلى دالة الفلترة
+  }, [realEstateData, selectedMainTypeId, selectedSubTypeId, priceRange, filters, sortOption]); // إضافة sortOption للتبعيات
 
   const isRentalType = useMemo(() => {
     return currentMainType?.name?.includes("إيجار") || false;
   }, [selectedMainTypeId]);
-
 
   useEffect(() => {
     if (!isRentalType && filters.rentalPeriod) {
@@ -150,8 +151,9 @@ export default function PremiumLanding(): JSX.Element {
             setSelectedMainTypeId={setSelectedMainTypeId}
             selectedSubTypeId={selectedSubTypeId}
             setSelectedSubTypeId={setSelectedSubTypeId}
+            sortOption={sortOption} // إرسال خيار الترتيب
+            setSortOption={setSortOption} // إرسال دالة تحديث خيار الترتيب
           />
-
           <PropertyGrid
             filteredData={filteredRealEstateData}
             isLoading={isLoadingRealEstate}

@@ -13,9 +13,9 @@ export default function CityForm() {
       client.invalidateQueries({
         queryKey: [cityQuery]
       });
-      toast.success("تم إضافة المدينة بنجاح!");
+      toast.success("تم إضافة المحافظة بنجاح!");
     } catch (error) {
-      toast.error("فشل في إضافة المدينة");
+      toast.error("فشل في إضافة المحافظة");
       console.error(error);
     }
   };
@@ -23,16 +23,16 @@ export default function CityForm() {
   const fields = [
     {
       name: 'name',
-      label: 'اسم المدينة',
+      label: 'اسم المحافظة',
       type: 'text' as const,
-      placeholder: 'أدخل اسم المدينة'
+      placeholder: 'أدخل اسم المحافظة'
     }
   ];
 
   return (
     <AddItemForm
-      title="إضافة مدينة"
-      buttonText="إضافة مدينة"
+      title="إضافة محافظة"
+      buttonText="إضافة محافظة"
       fields={fields}
       onSubmit={handleAddCity}
     />

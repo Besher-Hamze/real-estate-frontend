@@ -3,9 +3,9 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { MapPin, BedDouble, Bath, Maximize2, Heart, Share2, ChevronLeft, ChevronRight } from "lucide-react";
-import { PropertyCardProps } from "@/lib/types";
+import { RealEstateCardProps } from "@/lib/types";
 
-const PropertyCard: React.FC<PropertyCardProps> = ({ item, mainType }) => {
+const RealEstateCard: React.FC<RealEstateCardProps> = ({ item, mainType }) => {
   // State to manage favorite status
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   // State for carousel
@@ -361,4 +361,4 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ item, mainType }) => {
   );
 };
 
-export default PropertyCard;
+export default RealEstateCard;

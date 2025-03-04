@@ -244,7 +244,7 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
       )
     },
     {
-      header: "المدينة",
+      header: "المحافظة",
       accessorKey: "cityName",
       cell: (row: RealEstateData) => (
         <>

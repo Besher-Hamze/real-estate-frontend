@@ -136,6 +136,16 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                 />
             </FormField>
 
+            <FormField label="وصف العقار">
+                <InputField
+                    type="textArea"
+                    value={editingEstate.description}
+                    onChange={(value) => handleChange("description", value)}
+                    placeholder="أدخل وصف العقار"
+                    required
+                />
+            </FormField>
+
             <FormField label="السعر">
                 <InputField
                     type="text"
@@ -210,7 +220,8 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                         إضافة وقت آخر
                     </button>
                 </div>
-            </FormField>            <FormField label="طريقة الدفع">
+            </FormField>
+            <FormField label="طريقة الدفع">
                 <FeaturesSelect
                     features={PAYMENT_OPTIONS}
                     selectedFeatures={editingEstate.paymentMethod?.split("، ").filter(Boolean) || []}
@@ -271,7 +282,7 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
             )}
 
             {/* Location */}
-            <FormField label="المدينة">
+            <FormField label="المحافظة">
                 <SelectField
                     value={editingEstate.cityId}
                     onChange={(value) => handleChange("cityId", Number(value))}
@@ -279,11 +290,11 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                         value: city.id,
                         label: city.name,
                     }))}
-                    placeholder="اختر المدينة"
+                    placeholder="اختر المحافظة"
                 />
             </FormField>
 
-            <FormField label="الحي">
+            <FormField label="المدينة">
                 <SelectField
                     value={editingEstate.neighborhoodId}
                     onChange={(value) => handleChange("neighborhoodId", Number(value))}
@@ -291,7 +302,7 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                         value: nb.id,
                         label: nb.name,
                     }))}
-                    placeholder="اختر الحي"
+                    placeholder="اختر المدينة"
                 />
             </FormField>
 
@@ -402,7 +413,13 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                 <InputField
                     type="number"
                     value={editingEstate.buildingArea}
-                    onChange={(value) => handleChange("buildingArea", value)}
+                    onChange={(value) => {
+                        if (Number(value) > 0) {
+                            handleChange('buildingArea', value);
+                        } else {
+                            handleChange('buildingArea', "");
+                        }
+                    }}
                     placeholder="المساحة بالمتر المربع"
                 />
             </FormField>

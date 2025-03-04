@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Filter, ChevronDown, Home, Maximize, ChevronsLeftRight, ChevronUp, Building, MapPin, Bath, BedDouble, Clock, Mountain, Layers, LucideIcon, LampFloorIcon, HomeIcon, LayersIcon, Building2Icon, RotateCcw, X } from 'lucide-react';
+import { Filter, ChevronDown, ChevronsLeftRight, ChevronUp, Building, MapPin, Bath, BedDouble, Clock, Mountain, LucideIcon, HomeIcon, LayersIcon, Building2Icon, X } from 'lucide-react';
 import { finalTypeTypeApi } from '@/api/finalTypeApi';
-import { CityType, Filters, FinalType, NeighborhoodType, MainType, SubType, PriceRange, PropertySize } from '@/lib/types';
+import { CityType, Filters, FinalType, NeighborhoodType, MainType, SubType, PropertySize, SortOption } from '@/lib/types';
 import { cityApi } from '@/api/cityApi';
 import { neighborhoodApi } from '@/api/NeighborhoodApi';
 import { getPropertySizeLabel } from '@/utils/filterUtils';
+import SortComponent from './SortComponent';
 
 interface FilterChipProps {
   label: string;
@@ -33,6 +34,8 @@ interface FilterSectionProps {
   setSelectedMainTypeId?: (id: number | null) => void;
   selectedSubTypeId?: number | null;
   setSelectedSubTypeId?: (id: number | null) => void;
+  sortOption: SortOption;
+  setSortOption: (option: SortOption) => void;
 }
 
 interface SelectOption {
@@ -76,7 +79,9 @@ const FilterSection = ({
   selectedMainTypeId,
   setSelectedMainTypeId,
   selectedSubTypeId,
-  setSelectedSubTypeId
+  setSelectedSubTypeId,
+  sortOption,
+  setSortOption
 }: FilterSectionProps) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [minInput, setMinInput] = useState(priceRange[0].toString());
@@ -84,7 +89,7 @@ const FilterSection = ({
   const [finalTypes, setFinalTypes] = useState<FinalType[]>([]);
   const [neighborhoods, setNeighborhoods] = useState<NeighborhoodType[]>([]);
   const [cities, setCities] = useState<CityType[]>([]);
-  
+
   useEffect(() => {
     if (subId) {
       finalTypeTypeApi.fetchFinalTypeBySubId(subId).then(setFinalTypes);
@@ -103,10 +108,7 @@ const FilterSection = ({
     }
   }, [filters.city]);
 
-  const formatPrice = (value: string): string => {
-    const digits = value.replace(/\D/g, '');
-    return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  };
+
 
   const handlePriceChange = (type: 'min' | 'max', value: string): void => {
     const cleanValue = value.replace(/,/g, '');
@@ -185,13 +187,13 @@ const FilterSection = ({
     filters.view ||
     filters.rentalPeriod;
 
-  // الحصول على اسم المدينة بناءً على الرقم التعريفي
+  // الحصول على اسم المحافظة بناءً على الرقم التعريفي
   const getCityName = (cityId: string): string => {
     const city = cities.find(c => c.id.toString() === cityId);
     return city ? city.name : cityId;
   };
 
-  // الحصول على اسم الحي بناءً على الرقم التعريفي
+  // الحصول على اسم المدينة بناءً على الرقم التعريفي
   const getNeighborhoodName = (neighborhoodId: string): string => {
     const neighborhood = neighborhoods.find(n => n.id.toString() === neighborhoodId);
     return neighborhood ? neighborhood.name : neighborhoodId;
@@ -293,14 +295,14 @@ const FilterSection = ({
 
             {filters.city && (
               <FilterChip
-                label={`المدينة: ${getCityName(filters.city)}`}
+                label={`المحافظة: ${getCityName(filters.city)}`}
                 onRemove={() => setFilters({ ...filters, city: "", neighborhood: "" })}
               />
             )}
 
             {filters.neighborhood && (
               <FilterChip
-                label={`الحي: ${getNeighborhoodName(filters.neighborhood)}`}
+                label={`المدينة: ${getNeighborhoodName(filters.neighborhood)}`}
                 onRemove={() => setFilters({ ...filters, neighborhood: "" })}
               />
             )}
@@ -359,7 +361,6 @@ const FilterSection = ({
           </div>
 
           <div className="flex items-center gap-3">
-
             {isExpanded ? (
               <ChevronUp className="w-5 h-5 text-blue-600 transition-transform duration-300" />
             ) : (
@@ -368,11 +369,18 @@ const FilterSection = ({
           </div>
         </div>
       </div>
+      <SortComponent
+        currentSort={sortOption}
+        onSortChange={setSortOption}
+        className="p-4"
+      />
       {/* عرض الفلاتر النشطة */}
       {renderActiveFilters()}
+
       <div className={`transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
         <div className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+
             <SelectField
               label="التصنيف"
               icon={Building}
@@ -382,7 +390,7 @@ const FilterSection = ({
             />
 
             <SelectField
-              label="المدينة"
+              label="المحافظة"
               icon={MapPin}
               value={filters.city}
               onChange={(e) => setFilters({ ...filters, city: e.target.value, neighborhood: '' })}
@@ -390,7 +398,7 @@ const FilterSection = ({
             />
 
             <SelectField
-              label="الحي"
+              label="المدينة"
               icon={Building2Icon}
               value={filters.neighborhood}
               onChange={(e) => setFilters({ ...filters, neighborhood: e.target.value })}

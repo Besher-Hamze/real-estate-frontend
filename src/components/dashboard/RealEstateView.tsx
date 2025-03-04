@@ -28,8 +28,8 @@ export default function RealEstateView() {
         <div className="p-6">
             <h1 className="text-2xl font-bold mb-4">{estate.title}</h1>
             <p className="text-gray-700 mb-2">السعر: {estate.price} ريال</p>
-            <p className="text-gray-700 mb-2">المدينة: {estate.cityId}</p>
-            <p className="text-gray-700 mb-2">الحي: {estate.neighborhoodId}</p>
+            <p className="text-gray-700 mb-2">المخافظة: {estate.cityId}</p>
+            <p className="text-gray-700 mb-2">المدينة: {estate.neighborhoodId}</p>
             <p className="text-gray-700 mb-2">عدد الغرف: {estate.bedrooms}</p>
             <p className="text-gray-700 mb-2">عدد الحمامات: {estate.bathrooms}</p>
             <p className="text-gray-700 mb-2">المساحة: {estate.buildingArea} متر مربع</p>

@@ -9,7 +9,7 @@ import { RealEstateApi } from '@/api/realEstateApi';
 import Image from 'next/image';
 import { RealEstateData } from '@/lib/types';
 import PropertyGallery from '@/components/properties/PropertyGallery';
-import PropertyCard from '@/components/widgets/PropertyGrid/PropertyCard';
+import RealEstateCard from '@/components/widgets/PropertyGrid/PropertyCard';
 import MapboxViewer from '@/components/map/MapboxViewer';
 
 export default function PropertyDetails() {
@@ -122,7 +122,7 @@ export default function PropertyDetails() {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-6 p-4 bg-gray-50 rounded-xl">
+                    <div className="grid grid-cols-3 gap-6 p-4 bg-gray-50 rounded-xl mb-6">
                         {(property.subCategoryName != "أرض" && property.finalTypeName != "أرض") && <>
                             <div className="flex items-center gap-3">
                                 <BedDouble className="w-6 h-6 text-blue-600" />
@@ -144,6 +144,15 @@ export default function PropertyDetails() {
                                 <div className="text-sm text-gray-500">المساحة</div>
                                 <div className="font-semibold">{property.buildingArea} م²</div>
                             </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-6">
+                        <h2 className="text-xl font-semibold text-gray-900 mb-3">الوصف</h2>
+                        <div className="bg-gray-50 p-4 rounded-xl">
+                            <p className="text-gray-700 leading-relaxed">
+                                {property.description || "لا يوجد وصف متاح لهذا العقار"}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -364,7 +373,7 @@ export default function PropertyDetails() {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             {similarProperties.map((similarProperty) => (
-                                <PropertyCard
+                                <RealEstateCard
                                     key={similarProperty.id}
                                     item={similarProperty} mainType={undefined}
                                 />

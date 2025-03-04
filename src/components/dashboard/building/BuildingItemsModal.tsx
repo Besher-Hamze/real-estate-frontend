@@ -212,7 +212,7 @@ export function BuildingItemsModal({
                                         name: '',
                                         price: '',
                                         area: '',
-                                        type: 'apartment'
+                                        type: 'apartment',
                                     });
                                 }}
                                 onSubmit={editingItemId ? handleUpdateItem : handleAddItem}

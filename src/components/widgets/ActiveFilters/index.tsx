@@ -75,13 +75,13 @@ const ActiveFilters: React.FC<ActiveFiltersProps> = ({
     return null;
   }
   
-  // الحصول على اسم المدينة بناءً على الرقم التعريفي
+  // الحصول على اسم المحافظة بناءً على الرقم التعريفي
   const getCityName = (cityId: string): string => {
     const city = cities.find(c => c.id.toString() === cityId);
     return city ? city.name : cityId;
   };
 
-  // الحصول على اسم الحي بناءً على الرقم التعريفي
+  // الحصول على اسم المدينة بناءً على الرقم التعريفي
   const getNeighborhoodName = (neighborhoodId: string): string => {
     const neighborhood = neighborhoods.find(n => n.id.toString() === neighborhoodId);
     return neighborhood ? neighborhood.name : neighborhoodId;
@@ -174,14 +174,14 @@ const ActiveFilters: React.FC<ActiveFiltersProps> = ({
 
       {filters.city && (
         <FilterChip
-          label={`المدينة: ${getCityName(filters.city)}`}
+          label={`المحافظة: ${getCityName(filters.city)}`}
           onRemove={() => setFilters({ ...filters, city: "", neighborhood: "" })}
         />
       )}
 
       {filters.neighborhood && (
         <FilterChip
-          label={`الحي: ${getNeighborhoodName(filters.neighborhood)}`}
+          label={`المدينة: ${getNeighborhoodName(filters.neighborhood)}`}
           onRemove={() => setFilters({ ...filters, neighborhood: "" })}
         />
       )}

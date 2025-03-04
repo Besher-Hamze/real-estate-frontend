@@ -4,7 +4,7 @@ import { BuildingItem, CreateBuildingItem, UpdateBuildingItem } from "@/lib/type
 export const buildingItemApi = {
     fetchBuildingItems: async (buildingId: string): Promise<BuildingItem[]> => {
         try {
-            const response = await apiClient.get<BuildingItem[]>(`api/buildings/${buildingId}/items`);
+            const response = await apiClient.get<BuildingItem[]>(`api/buildings/${buildingId}/items`);            
             return response.data;
         } catch (error) {
             console.error("Failed to fetch building items:", error);

@@ -9,7 +9,7 @@ import ScrollToTop from "@/components/widgets/ScrollToTop";
 import { RealEstateData } from "@/lib/types";
 import { useRealEstate } from "@/lib/hooks/useRealEstate";
 import { useMainType } from "@/lib/hooks/useMainType";
-import PropertyCard from "@/components/widgets/PropertyGrid/PropertyCard";
+import RealEstateCard from "@/components/widgets/PropertyGrid/PropertyCard";
 
 export default function FavoritesPage() {
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
@@ -178,7 +178,7 @@ export default function FavoritesPage() {
                     transition={{ duration: 0.2 }}
                     className={viewMode === 'list' ? "w-full" : ""}
                   >
-                    <PropertyCard
+                    <RealEstateCard
                       key={item.id}
                       item={item}
                       mainType={getMainTypeForProperty(item.mainCategoryId)}

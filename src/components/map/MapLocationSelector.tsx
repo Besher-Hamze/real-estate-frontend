@@ -1,215 +1,163 @@
-// components/map/MapLocationSelector.tsx
-import React, { useState, useCallback, useEffect, KeyboardEvent } from 'react';
-import { MapPin, Search, Loader2 } from 'lucide-react';
-import { GoogleMap, Marker, useLoadScript } from '@react-google-maps/api';
-import { FormField } from '@/components/ui/form/FormField';
-import { InputField } from '@/components/ui/form/InputField';
+import React, { useState, useCallback, useRef } from 'react';
+import Map, { Marker, NavigationControl } from 'react-map-gl/mapbox';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import { MapPin, Target } from 'lucide-react';
 
 interface MapLocationSelectorProps {
   initialLocation?: string;
   onChange: (location: string) => void;
 }
 
-const libraries: ("places" | "geometry" | "drawing" | "visualization")[] = ["places", "geometry"];
-
-const mapContainerStyle = {
-  width: '100%',
-  height: '400px',
-  borderRadius: '0.5rem'
-};
-
-const defaultCenter = {
-  lat: 23.5880,
-  lng: 58.3829
-};
-
 export function MapLocationSelector({ initialLocation, onChange }: MapLocationSelectorProps) {
-  const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
-    libraries,
-    version: "weekly",
-    language: "ar",
-    region: "OM"
+  const mapRef = useRef<any>(null);
 
+  // Parse initial location or use default
+  const initialLat = initialLocation ? parseFloat(initialLocation.split(',')[0]) : 23.5880;
+  const initialLng = initialLocation ? parseFloat(initialLocation.split(',')[1]) : 58.3829;
+
+  const [viewport, setViewport] = useState({
+    latitude: initialLat,
+    longitude: initialLng,
+    zoom: initialLocation ? 14 : 10
   });
 
-  const [map, setMap] = useState<google.maps.Map | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState<google.maps.LatLngLiteral>(() => {
-    if (initialLocation) {
-      const [lat, lng] = initialLocation.split(',').map(Number);
-      return { lat, lng };
-    }
-    return defaultCenter;
+  const [markerPosition, setMarkerPosition] = useState({
+    latitude: initialLat,
+    longitude: initialLng
   });
-  const [address, setAddress] = useState<string>('');
-  const [isSearching, setIsSearching] = useState(false);
 
-  // Convert location to string format
-  const locationToString = (location: google.maps.LatLngLiteral): string => {
-    return `${location.lat},${location.lng}`;
-  };
+  // Handle map click
+  const handleMapClick = useCallback((event: any) => {
+    const { lat, lng } = event.lngLat;
+    setMarkerPosition({ latitude: lat, longitude: lng });
+    onChange(`${lat},${lng}`);
 
-  const onMapLoad = useCallback((map: google.maps.Map) => {
-    setMap(map);
-  }, []);
-
-  const handleMapClick = useCallback((e: google.maps.MapMouseEvent) => {
-    if (e.latLng) {
-      const newLocation = {
-        lat: e.latLng.lat(),
-        lng: e.latLng.lng()
-      };
-      setSelectedLocation(newLocation);
-      onChange(locationToString(newLocation));
-      getAddressFromCoordinates(newLocation);
-    }
+    setViewport(prev => ({
+      ...prev,
+      latitude: lat,
+      longitude: lng,
+      zoom: 14
+    }));
   }, [onChange]);
 
-  const getAddressFromCoordinates = async (location: google.maps.LatLngLiteral) => {
-    if (!isLoaded) return;
-
-    try {
-      const geocoder = new window.google.maps.Geocoder();
-      const result = await geocoder.geocode({
-        location: location
-      });
-
-      if (result.results[0]) {
-        setAddress(result.results[0].formatted_address);
-      }
-    } catch (error) {
-      console.error('Error getting address:', error);
-    }
-  };
-
-  const handleSearch = async () => {
-    if (!searchQuery.trim() || !isLoaded) return;
-
-    setIsSearching(true);
-    try {
-      const geocoder = new window.google.maps.Geocoder();
-      const result = await geocoder.geocode({ address: searchQuery });
-
-      if (result.results[0]?.geometry?.location) {
-        const newLocation = {
-          lat: result.results[0].geometry.location.lat(),
-          lng: result.results[0].geometry.location.lng()
-        };
-
-        setSelectedLocation(newLocation);
-        setAddress(result.results[0].formatted_address);
-        onChange(locationToString(newLocation));
-
-        map?.panTo(newLocation);
-        map?.setZoom(15);
-      }
-    } catch (error) {
-      console.error('Error searching location:', error);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+  // Get current location
+  const handleCurrentLocation = (e?: React.MouseEvent) => {
+    // Prevent default form submission if event is passed
+    if (e) {
       e.preventDefault();
-      handleSearch();
+      e.stopPropagation();
+    }
+
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+
+          // Update marker position
+          setMarkerPosition({ latitude, longitude });
+
+          // Call location select callback
+          onChange(`${latitude},${longitude}`);
+
+          // Update viewport
+          setViewport({
+            latitude,
+            longitude,
+            zoom: 14
+          });
+
+          // If map ref exists, fly to the location
+          if (mapRef.current) {
+            mapRef.current.flyTo({
+              center: [longitude, latitude],
+              zoom: 14,
+              duration: 2000 // 2 seconds smooth transition
+            });
+          }
+        },
+        (error) => {
+          console.error("Error getting location", error);
+
+          // Detailed error handling in Arabic
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              alert("الموقع مرفوض. يرجى السماح بالوصول إلى الموقع.");
+              break;
+            case error.POSITION_UNAVAILABLE:
+              alert("معلومات الموقع غير متاحة.");
+              break;
+            case error.TIMEOUT:
+              alert("انتهى وقت طلب الموقع.");
+              break;
+            default:
+              alert("حدث خطأ في تحديد الموقع.");
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0
+        }
+      );
+    } else {
+      alert("الموقع الجغرافي غير مدعوم في هذا المتصفح.");
     }
   };
-
-  useEffect(() => {
-    if (initialLocation && map) {
-      const [lat, lng] = initialLocation.split(',').map(Number);
-      const location = { lat, lng };
-      setSelectedLocation(location);
-      map.panTo(location);
-      map.setZoom(15);
-      getAddressFromCoordinates(location);
-    }
-  }, [initialLocation, map, isLoaded]);
-
-  if (loadError) {
-    return (
-      <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
-        Error loading Google Maps. Please check your API key and try again.
-      </div>
-    );
-  }
-
-  if (!isLoaded) {
-    return (
-      <div className="h-[400px] flex items-center justify-center bg-gray-50 border border-gray-200 rounded-lg">
-        <div className="flex items-center gap-2 text-gray-600">
-          <Loader2 className="w-5 h-5 animate-spin" />
-          <span>Loading map...</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-[1fr,auto] gap-4">
-        <FormField label="البحث عن موقع">
-          <div className="relative">
-            <InputField
-              type="text"
-              value={searchQuery}
-              onChange={(value: any) => setSearchQuery(value)}
-              placeholder="أدخل العنوان للبحث"
-              onKeyDown={handleKeyDown}
-              required={false}
-            />
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          </div>
-        </FormField>
-        <button
-          type="button"
-          onClick={handleSearch}
-          disabled={isSearching}
-          className="h-10 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 self-end"
-        >
-          {isSearching && <Loader2 className="w-4 h-4 animate-spin" />}
-          بحث
-        </button>
-      </div>
-
-      <GoogleMap
-        mapContainerStyle={mapContainerStyle}
-        center={selectedLocation}
-        zoom={13}
-        onClick={handleMapClick}
-        onLoad={onMapLoad}
-        options={{
-          streetViewControl: false,
-          mapTypeControl: false,
-          fullscreenControl: true,
-          zoomControl: true,
-        }}
+    <div className="w-full h-96 relative rounded-2xl overflow-hidden shadow-lg">
+      {/* Current Location Button */}
+      <button
+        type="button" // Prevent form submission
+        onClick={handleCurrentLocation}
+        className="absolute top-4 left-4 z-10 bg-white/80 backdrop-blur-sm p-2 rounded-full shadow-md hover:bg-white transition-colors"
+        aria-label="الموقع الحالي"
       >
+        <Target className="w-5 h-5 text-blue-600" />
+      </button>
+
+      <Map
+        ref={(ref) => {
+          if (ref) {
+            mapRef.current = ref.getMap();
+          }
+        }}
+        mapboxAccessToken={process.env.NEXT_PUBLIC_MAP_BOX_API_KEY}
+        initialViewState={viewport}
+        style={{ width: '100%', height: '100%' }}
+        mapStyle="mapbox://styles/mapbox/streets-v11"
+        onClick={handleMapClick}
+        onMove={evt => setViewport(evt.viewState)}
+      >
+        <NavigationControl position="bottom-right" />
+
+        {/* Marker */}
         <Marker
-          position={selectedLocation}
-          icon={{
-            path: window.google.maps.SymbolPath.CIRCLE,
-            scale: 7,
-            fillColor: '#2563EB',
-            fillOpacity: 1,
-            strokeColor: '#ffffff',
-            strokeWeight: 2,
+          latitude={markerPosition.latitude}
+          longitude={markerPosition.longitude}
+          draggable
+          onDragEnd={(event) => {
+            const { lat, lng } = event.lngLat;
+            setMarkerPosition({ latitude: lat, longitude: lng });
+            onChange(`${lat},${lng}`);
           }}
-        />
-      </GoogleMap>
+        >
+          <div className="relative group">
+            <MapPin
+              size={48}
+              className="fill-blue-600 stroke-white stroke-2 drop-shadow-lg group-hover:scale-110 transition-transform"
+            />
+            <div className="absolute inset-0 animate-ping bg-blue-600 rounded-full opacity-50"></div>
+          </div>
+        </Marker>
+      </Map>
 
-      {address && (
-        <div className="flex items-start gap-2 mt-2 text-sm text-gray-600">
-          <MapPin className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-          <p>{address}</p>
-        </div>
-      )}
-
-      <div className="text-sm text-gray-600">
-        <span className="font-medium">الإحداثيات:</span> {locationToString(selectedLocation)}
+      {/* Location Info */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-md">
+        <p className="text-sm text-gray-800">
+          خط العرض: {markerPosition.latitude.toFixed(4)},
+          خط الطول: {markerPosition.longitude.toFixed(4)}
+        </p>
       </div>
     </div>
   );

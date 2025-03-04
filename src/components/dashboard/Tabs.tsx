@@ -107,7 +107,7 @@ export default function Tabs({ activeTab, setActiveTab }: TabsProps) {
           }}
         />
         <TabButton
-          label="المدن"
+          label="المحافظات"
           icon={<MapPin className="w-5 h-5" />}
           isActive={activeTab === "city"}
           onClick={() => {
@@ -116,7 +116,7 @@ export default function Tabs({ activeTab, setActiveTab }: TabsProps) {
           }}
         />
         <TabButton
-          label="الأحياء"
+          label="المدن"
           icon={<Landmark className="w-5 h-5" />}
           isActive={activeTab === "neighborhood"}
           onClick={() => {

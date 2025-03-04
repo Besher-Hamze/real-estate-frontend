@@ -85,6 +85,7 @@ export default function EstateForm({
     return mainType?.name.includes("إيجار");
   }
 
+
   const shouldHideResidentialFields = isLandType();
   const shouldShowRentalField = isRentalType();
 
@@ -102,6 +103,17 @@ export default function EstateForm({
             value={formData.title}
             onChange={(value) => handleChange('title', value)}
             placeholder="أدخل عنوان العقار"
+            required
+          />
+        </FormField>
+
+
+        <FormField label="وصف العقار">
+          <InputField
+            type="textArea"
+            value={formData.description}
+            onChange={(value) => handleChange('description', value)}
+            placeholder="أدخل وصف العقار"
             required
           />
         </FormField>
@@ -252,7 +264,7 @@ export default function EstateForm({
         )}
 
         {/* Location */}
-        <FormField label="المدينة">
+        <FormField label="المحافظة">
           <SelectField
             value={formData.cityId}
             onChange={(value) => handleChange('cityId', Number(value))}
@@ -260,13 +272,13 @@ export default function EstateForm({
               value: city.id,
               label: city.name
             }))}
-            placeholder="اختر المدينة"
+            placeholder="اختر المحافظة"
           />
         </FormField>
 
 
 
-        <FormField label="الحي">
+        <FormField label="المدينة">
           <SelectField
             value={formData.neighborhoodId}
             onChange={(value) => handleChange('neighborhoodId', Number(value))}
@@ -274,7 +286,7 @@ export default function EstateForm({
               value: nb.id,
               label: nb.name
             }))}
-            placeholder="اختر الحي"
+            placeholder="اختر المدينة"
           />
         </FormField>
 
@@ -391,9 +403,15 @@ export default function EstateForm({
         {/* Always show area */}
         <FormField label="المساحة">
           <InputField
-            type="number"
+            type="text"
             value={formData.buildingArea}
-            onChange={(value) => handleChange('buildingArea', value)}
+            onChange={(value) => {
+              if (Number(value) > 0) {
+                handleChange('buildingArea', value);
+              } else {
+                handleChange('buildingArea', "");
+              }
+            }}
             placeholder="المساحة بالمتر المربع"
           />
         </FormField>

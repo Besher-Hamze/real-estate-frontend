@@ -27,9 +27,9 @@ export default function NeighborhoodForm() {
     try {
       await neighborhoodApi.addNeighborhood(formData);
       queryClient.invalidateQueries({ queryKey: ["neighborhoods"] });
-      toast.success("تم إضافة الحي بنجاح");
+      toast.success("تم إضافة المدينة بنجاح");
     } catch (error) {
-      toast.error("فشل في إضافة الحي");
+      toast.error("فشل في إضافة المدينة");
       console.error(error);
     }
   };
@@ -37,9 +37,9 @@ export default function NeighborhoodForm() {
   const fields = [
     {
       name: "cityId",
-      label: "المدينة",
+      label: "المحافظة",
       type: "select" as const, 
-      placeholder: "اختر المدينة",
+      placeholder: "اختر المحافظة",
       options: cities.map((city) => ({
         value: city.id,
         label: city.name,
@@ -47,16 +47,16 @@ export default function NeighborhoodForm() {
     },
     {
       name: "name",
-      label: "اسم الحي",
+      label: "اسم المدينة",
       type: "text" as const, 
-      placeholder: "أدخل اسم الحي",
+      placeholder: "أدخل اسم المدينة",
     },
   ];
 
   return (
     <AddItemForm
-      title="إضافة حي"
-      buttonText="إضافة حي"
+      title="إضافة مدينة"
+      buttonText="إضافة مدينة"
       fields={fields}
       onSubmit={handleAddNeighborhood}
     />

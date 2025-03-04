@@ -1,5 +1,5 @@
 
-export interface PropertyFilters {
+export interface RealEstateFilters {
   type: string;
   status: string;
   minPrice: string;
@@ -36,6 +36,7 @@ export interface RealEstateData {
   cityId: number;
   neighborhoodId: number;
   title: string;
+  description: string;
   price: number;
   cityName: string;
   neighborhoodName: string;
@@ -98,7 +99,8 @@ export interface BuildingItem {
   name: string;
   price: string;
   area: string;
-  type: 'apartment' | 'shop'
+  type: 'apartment' | 'shop',
+  realestateCount: number;
 }
 
 
@@ -129,6 +131,7 @@ export interface BuildingItem {
   area: string;
   type: 'apartment' | 'shop';
   building_id: string;
+  realestateCount: number;
 }
 
 export interface CreateBuildingItem {
@@ -146,9 +149,9 @@ export interface UpdateBuildingItem {
   type?: BuildingItem['type'];
 }
 
-export interface PropertyCardProps {
+export interface RealEstateCardProps {
   item: RealEstateData;
-  mainType: MainType | undefined;
+  mainType: Partial<MainType> | undefined;
   selectedSubType?: SubType | undefined;
 }
 
@@ -169,11 +172,23 @@ export interface Filters {
   view: string;
   buildingArea: string;
 }
+
+export type SortField = 'price' | 'createdAt' | 'buildingArea' | 'bedrooms';
+
+export type SortDirection = 'asc' | 'desc';
+
+export interface SortOption {
+  field: SortField;
+  direction: SortDirection;
+  label: string;
+}
+
 export interface FilterParams {
   selectedMainTypeId: number | null;
   selectedSubTypeId: number | null;
-  priceRange: PriceRange;
+  priceRange: [number, number];
   filters: Filters;
+  sortOption?: SortOption;
 }
 
 export type PropertySize = "small" | "medium" | "large" | "xlarge" | "";

@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ChevronDown, MapPin, Heart } from 'lucide-react';
 import Link from 'next/link';
+import { useRealEstate } from '@/lib/hooks/useRealEstate';
 
 export default function Navbar() {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState<any>(null);
-    const [favoritesCount, setFavoritesCount] = useState(0);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -17,23 +17,7 @@ export default function Navbar() {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    // Load favorites count
-    useEffect(() => {
-        const loadFavoritesCount = () => {
-            const stored = localStorage.getItem('favorites');
-            const favorites = stored ? JSON.parse(stored) : [];
-            setFavoritesCount(favorites.length);
-        };
 
-        loadFavoritesCount();
-        
-        // Update when favorites change
-        window.addEventListener('storage', loadFavoritesCount);
-        
-        return () => {
-            window.removeEventListener('storage', loadFavoritesCount);
-        };
-    }, []);
 
     const navigationItems = [
         {
@@ -82,8 +66,8 @@ export default function Navbar() {
                 initial={{ y: -100 }}
                 animate={{ y: 0 }}
                 className={`fixed w-full z-50 transition-all duration-300 ${isScrolled
-                        ? 'bg-white shadow-lg py-4'
-                        : 'bg-transparent py-6'
+                    ? 'bg-white shadow-lg py-4'
+                    : 'bg-transparent py-6'
                     }`}
             >
                 <div className="max-w-7xl mx-auto px-4">
@@ -164,14 +148,9 @@ export default function Navbar() {
                                 className="relative"
                             >
                                 <Link href="/favorites" className="flex items-center">
-                                    <Heart 
-                                        className={`w-6 h-6 ${isScrolled ? 'text-gray-800' : 'text-white'} hover:text-red-500 transition-colors`} 
+                                    <Heart
+                                        className={`w-6 h-6 ${isScrolled ? 'text-gray-800' : 'text-white'} hover:text-red-500 transition-colors`}
                                     />
-                                    {favoritesCount > 0 && (
-                                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                                            {favoritesCount}
-                                        </span>
-                                    )}
                                 </Link>
                             </motion.div>
 
@@ -220,15 +199,12 @@ export default function Navbar() {
                                         <span>المفضلة</span>
                                         <div className="relative">
                                             <Heart className="w-5 h-5" />
-                                            {favoritesCount > 0 && (
-                                                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                                                    {favoritesCount}
-                                                </span>
-                                            )}
+                                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                            </span>
                                         </div>
                                     </Link>
                                 </div>
-                                
+
                                 {/* Regular Nav Items */}
                                 {navigationItems.map((item) => (
                                     <div key={item.name} className="py-2">

@@ -1,10 +1,30 @@
-// // schemas/estateSchema.ts
-// import * as yup from 'yup';
+import * as yup from "yup";
 
-// export const estateSchema = yup.object({
-//     title: yup.string().required('العنوان مطلوب'),
-//     price: yup.number().required('السعر مطلوب').min(0, 'السعر يجب أن يكون أكبر من 0'),
-//     city_id: yup.number().required('المدينة مطلوبة'),
-//     neighborhood_id: yup.number().required('الحي مطلوب'),
-//     // ... add other validations
-// });
+export const estateSchema = yup.object({
+    title: yup.string().trim().max(30, "يجب أن يكون العنوان أقل من 30 حرفًا").required("يرجى إدخال عنوان العقار"),
+    description: yup.string().trim().required("يرجى إدخال وصف العقار"),
+    price: yup.number().min(0, "يرجى إدخال سعر صحيح").required("السعر مطلوب"),
+    cityId: yup.number().min(1, "يرجى اختيار المحافظة").required(),
+    neighborhoodId: yup.number().min(1, "يرجى اختيار المدينة").required(),
+    mainCategoryId: yup.number().min(1, "يرجى اختيار التصنيف الرئيسي").required(),
+    subCategoryId: yup.number().min(1, "يرجى اختيار التصنيف الفرعي").required(),
+    finalTypeId: yup.number().min(1, "يرجى اختيار التصنيف النهائي").required(),
+    bedrooms: yup.number().min(0, "عدد الغرف غير صحيح"),
+    bathrooms: yup.number().min(0, "عدد الحمامات غير صحيح"),
+    furnished: yup.boolean(),
+    buildingArea: yup.string().required("يرجى إدخال مساحة العقار"),
+    floorNumber: yup.number().min(0, "يرجى إدخال رقم الطابق الصحيح"),
+    facade: yup.string().nullable(),
+    paymentMethod: yup.string().nullable(),
+    mainFeatures: yup.string().nullable(),
+    additionalFeatures: yup.string().nullable(),
+    nearbyLocations: yup.string().nullable(),
+    coverImage: yup.mixed().required("يرجى اختيار صورة الغلاف"),
+    files: yup.mixed().nullable(),
+    ceilingHeight: yup.number().nullable(),
+    rentalDuration: yup.number().nullable(),
+    totalFloors: yup.number().nullable(),
+    viewTime: yup.string().nullable(),
+    buildingItemId: yup.string().nullable(),
+    location: yup.string().required("يرجى تحديد الموقع"),
+});

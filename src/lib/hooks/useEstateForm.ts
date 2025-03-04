@@ -11,12 +11,13 @@ import { useRealEstate } from './useRealEstate';
 
 const initialFormState: CreateEstateForm = {
     title: "",
+    description: "",
     price: 0,
     cityId: 0,
     neighborhoodId: 0,
     bedrooms: 1,
     bathrooms: 1,
-    furnished: 2,
+    furnished: 1,
     buildingArea: "",
     floorNumber: 0,
     facade: "",
@@ -30,7 +31,7 @@ const initialFormState: CreateEstateForm = {
     coverImage: null,
     files: null,
     ceilingHeight: 0,
-    rentalDuration: 0,
+    rentalDuration: 1,
     totalFloors: 0,
     viewTime: '',
     buildingItemId: '',
@@ -60,7 +61,7 @@ export function useEstateForm(buildingItemId?: string) {
                 setCities(response.data);
             } catch (error) {
                 console.error("Failed to fetch cities:", error);
-                toast.error("فشل في تحميل المدن");
+                toast.error("فشل في تحميل المحافظة");
             }
         };
         fetchCities();
@@ -91,7 +92,7 @@ export function useEstateForm(buildingItemId?: string) {
                 setNeighborhoods(response.data);
             } catch (error) {
                 console.error("Failed to fetch neighborhoods:", error);
-                toast.error("فشل في تحميل الأحياء");
+                toast.error("فشل في تحميل المدن");
             }
         };
         if (formData.cityId) {
@@ -104,16 +105,31 @@ export function useEstateForm(buildingItemId?: string) {
             toast.error("يرجى إدخال عنوان العقار");
             return false;
         }
+        if (!formData.description.trim()) {
+            toast.error("يرجى إدخال وصف العقار");
+            return false;
+        }
+        if (formData.title.length > 30) {
+            toast.error("يجب ان يكون عدد الاحرف اقل من 30 حرف");
+            return false;
+        }
         if (formData.price < 0) {
             toast.error("يرجى إدخال سعر صحيح");
             return false;
         }
+        
         if (!formData.mainCategoryId || !formData.subCategoryId) {
             toast.error("يرجى اختيار التصنيف الرئيسي والفرعي");
             return false;
         }
+        
+        if (!formData.finalTypeId) {
+            toast.error("يرجى اختيار النهائي");
+            return false;
+        }
+        
         if (!formData.cityId || !formData.neighborhoodId) {
-            toast.error("يرجى اختيار المدينة والحي");
+            toast.error("يرجى اختيار المحافظة والمدينة");
             return false;
         }
         if (!formData.coverImage) {

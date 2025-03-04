@@ -1,12 +1,15 @@
-import React from 'react';
-import { X, MapPin, BedDouble, Bath, Maximize2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Edit2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Image from 'next/image';
-import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { RealEstateApi } from '@/api/realEstateApi';
+import { cityApi } from '@/api/cityApi';
+import { neighborhoodApi } from '@/api/NeighborhoodApi';
+import { finalTypeTypeApi } from '@/api/finalTypeApi';
 import { RealEstateData } from '@/lib/types';
-import { toast } from 'react-toastify';
+import RealEstateCard from '@/components/widgets/PropertyGrid/PropertyCard';
+import { mainTypeApi } from '@/api/mainTypeApi';
+import EditEstateForm from '../estate-components/Edit-Estate';
 
 interface RealEstateListModalProps {
     isOpen: boolean;
@@ -19,6 +22,10 @@ export function RealEstateListModal({
     onClose,
     buildingItemId
 }: RealEstateListModalProps) {
+    const queryClient = useQueryClient();
+    const [editingEstate, setEditingEstate] = useState<RealEstateData | null>(null);
+
+    // Fetch real estates associated with the building item
     const { data: realEstates = [], isLoading, error } = useQuery({
         queryKey: ['realEstates', buildingItemId],
         queryFn: () => buildingItemId
@@ -26,6 +33,54 @@ export function RealEstateListModal({
             : Promise.resolve([]),
         enabled: isOpen && !!buildingItemId
     });
+
+    // Fetch data for edit form
+    const { data: cities = [] } = useQuery({
+        queryKey: ['cities'],
+        queryFn: () => cityApi.fetchCity(),
+        enabled: !!editingEstate
+    });
+
+    const { data: neighborhoods = [] } = useQuery({
+        queryKey: ['neighborhoods', editingEstate?.cityId],
+        queryFn: () => neighborhoodApi.fetchNeighborhoodByCityId(editingEstate?.cityId || 0),
+        enabled: !!editingEstate && !!editingEstate.cityId
+    });
+
+    const { data: mainTypes = [] } = useQuery({
+        queryKey: ['mainTypes'],
+        queryFn: () => mainTypeApi.fetchMainType(),
+        enabled: !!editingEstate
+    });
+
+    const { data: finalTypes = [] } = useQuery({
+        queryKey: ['finalTypes', editingEstate?.subCategoryId],
+        queryFn: () => finalTypeTypeApi.fetchFinalTypeBySubId(editingEstate?.subCategoryId || 0),
+        enabled: !!editingEstate && !!editingEstate.subCategoryId
+    });
+
+    // Update mutation
+    const updateEstateMutation = useMutation({
+        mutationFn: (updatedEstate: any) => {
+            return RealEstateApi.updateRealEstate(updatedEstate, updatedEstate.id);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['realEstates', buildingItemId] });
+            setEditingEstate(null);
+        }
+    });
+
+    const handleEditClick = (estate: RealEstateData) => {
+        setEditingEstate(estate);
+    };
+
+    const handleEditSubmit = async (updatedEstate: any) => {
+        await updateEstateMutation.mutateAsync(updatedEstate);
+    };
+
+    const handleCloseEdit = () => {
+        setEditingEstate(null);
+    };
 
     if (!isOpen) return null;
 
@@ -43,125 +98,73 @@ export function RealEstateListModal({
                     exit={{ scale: 0.95, opacity: 0 }}
                     className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto"
                 >
-                    <div className="sticky top-0 bg-white p-4 border-b flex justify-between items-center z-10">
-                        <h2 className="text-xl font-semibold">العقارات المرتبطة</h2>
-                        <button
-                            onClick={onClose}
-                            className="text-gray-500 hover:text-gray-700"
-                        >
-                            <X className="w-6 h-6" />
-                        </button>
-                    </div>
-
-                    <div className="p-6">
-                        {isLoading ? (
-                            <p className="text-center">جارٍ التحميل...</p>
-                        ) : error ? (
-                            <p className="text-center text-red-500">حدث خطأ في جلب العقارات</p>
-                        ) : realEstates && realEstates.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {(Array.isArray(realEstates) ? realEstates : [realEstates]).map((item: RealEstateData) => (
-                                    <PropertyCard
-                                        key={item.id}
-                                        item={item}
-                                        mainType={{
-                                            name: item.mainCategoryName || 'عقار'
-                                        }}
-                                        selectedSubType={undefined}
-                                    />
-                                ))}
+                    {editingEstate ? (
+                        <>
+                            <div className="sticky top-0 bg-white p-4 border-b flex justify-between items-center z-10">
+                                <h2 className="text-xl font-semibold">تعديل العقار</h2>
+                                <button
+                                    onClick={handleCloseEdit}
+                                    className="text-gray-500 hover:text-gray-700"
+                                >
+                                    <X className="w-6 h-6" />
+                                </button>
                             </div>
-                        ) : (
-                            <p className="text-center text-gray-500">لا توجد عقارات مرتبطة</p>
-                        )}
-                    </div>
+                            <div className="p-6">
+                                <EditEstateForm
+                                    editingEstate={editingEstate}
+                                    setEditingEstate={setEditingEstate}
+                                    onSubmit={handleEditSubmit}
+                                    cities={cities}
+                                    neighborhoods={neighborhoods}
+                                    mainTypes={mainTypes}
+                                    finalTypes={finalTypes}
+                                />
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div className="sticky top-0 bg-white p-4 border-b flex justify-between items-center z-10">
+                                <h2 className="text-xl font-semibold">العقارات المرتبطة</h2>
+                                <button
+                                    onClick={onClose}
+                                    className="text-gray-500 hover:text-gray-700"
+                                >
+                                    <X className="w-6 h-6" />
+                                </button>
+                            </div>
+                            <div className="p-6">
+                                {isLoading ? (
+                                    <div className="flex justify-center py-8">
+                                        <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+                                    </div>
+                                ) : error ? (
+                                    <p className="text-center text-red-500 py-6">حدث خطأ في جلب العقارات</p>
+                                ) : realEstates && realEstates.length > 0 ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {(Array.isArray(realEstates) ? realEstates : [realEstates]).map((item: RealEstateData) => (
+                                            <div key={item.id} className="relative group">
+                                                <RealEstateCard
+                                                    item={item}
+                                                    mainType={{ name: item.mainCategoryName }}
+                                                />
+                                                <button
+                                                    onClick={() => handleEditClick(item)}
+                                                    className="absolute top-2 right-2 bg-white/80 backdrop-blur-sm p-2 rounded-full shadow opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    title="تعديل العقار"
+                                                >
+                                                    <Edit2 className="w-4 h-4 text-blue-600" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-center text-gray-500 py-8">لا توجد عقارات مرتبطة</p>
+                                )}
+                            </div>
+                        </>
+                    )}
                 </motion.div>
             </motion.div>
         </AnimatePresence>
     );
 }
-
-// PropertyCard component (copied from your previous implementation)
-const PropertyCard = ({
-    item,
-    mainType,
-    selectedSubType,
-}: {
-    item: RealEstateData;
-    mainType: { name: string };
-    selectedSubType?: any;
-}) => (
-    <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all group"
-    >
-        <div className="relative h-64">
-            <Image
-                src={
-                    item.coverImage
-                        ? `${process.env.NEXT_PUBLIC_API_URL}/${item.coverImage}`
-                        : "/images/bg-real.jpg"
-                }
-                alt={item.title}
-                fill
-                loading="lazy"
-                className="object-cover transition-transform duration-300 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="absolute top-4 right-4 bg-blue-600 text-white px-3 py-1 rounded-lg text-sm">
-                {mainType?.name}
-            </div>
-        </div>
-        <div className="p-6">
-            <h3 className="text-xl font-bold mb-2">{item.title}</h3>
-            <div className="flex items-center gap-2 text-gray-600 mb-4">
-                <MapPin className="w-4 h-4" />
-                <span>
-                    {item.cityName} - {item.neighborhoodName}
-                </span>
-            </div>
-            <div className="flex justify-between items-center bg-gray-50 p-4 rounded-lg mb-4">
-                {
-                    (item.subCategoryName != "أرض" && item.finalTypeName != "أرض") && <>
-                        <div className="flex items-center gap-1">
-                            <BedDouble className="w-4 h-4 text-blue-600" />
-                            <span className="text-sm text-black font-medium">
-                                {item.bedrooms}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <Bath className="w-4 h-4 text-blue-600" />
-                            <span className="text-sm text-black font-medium">
-                                {item.bathrooms}
-                            </span>
-                        </div>
-                    </>
-                }
-                <div className="flex items-center gap-1">
-                    <Maximize2 className="w-4 h-4 text-blue-600" />
-                    <span className="text-sm text-black font-medium">
-                        {item.buildingArea} م²
-                    </span>
-                </div>
-            </div>
-            <div className="flex justify-between items-center">
-                <div>
-                    <span className="text-sm text-gray-600">السعر</span>
-                    <div className="flex items-center gap-1">
-                        <span className="text-xl font-bold text-blue-600">
-                            {item.price.toLocaleString()}
-                        </span>
-                        <span className="text-sm font-medium text-gray-600">ر.ع</span>
-                    </div>
-                </div>
-                <Link
-                    href={`/properties/${item.id}`}
-                    className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                    التفاصيل
-                </Link>
-            </div>
-        </div>
-    </motion.div>
-);

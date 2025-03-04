@@ -43,9 +43,9 @@ export default function CityTable() {
       refetch();
       setEditingId(null);
       setEditName("");
-      toast.success("تم تحديث المدينة بنجاح");
+      toast.success("تم تحديث المحافظة بنجاح");
     } catch (error) {
-      toast.error("حدث خطأ أثناء تحديث المدينة");
+      toast.error("حدث خطأ أثناء تحديث المحافظة");
       console.error(error);
     }
   };
@@ -67,9 +67,9 @@ export default function CityTable() {
       setDeletingId(pendingDeleteId);
       await cityApi.deleteCity(pendingDeleteId);
       refetch();
-      toast.success("تم حذف المدينة بنجاح");
+      toast.success("تم حذف المحافظة بنجاح");
     } catch (error) {
-      toast.error("حدث خطأ أثناء حذف المدينة");
+      toast.error("حدث خطأ أثناء حذف المحافظة");
       console.error(error);
     } finally {
       setDeletingId(null);
@@ -93,7 +93,7 @@ export default function CityTable() {
       // Refetch after deletion
       refetch();
       selection.clearSelection();
-      toast.success(`تم حذف ${selection.selectedIds.length} مدينة بنجاح`);
+      toast.success(`تم حذف ${selection.selectedIds.length} محافظة بنجاح`);
     } catch (error) {
       toast.error("حدث خطأ أثناء حذف المدن المحددة");
       console.error(error);
@@ -179,7 +179,7 @@ export default function CityTable() {
         onClearSelection={selection.clearSelection}
         onDelete={() => setIsBulkDeleteDialogOpen(true)}
         isDeleting={selection.isBulkDeleting}
-        itemName={{ singular: "مدينة", plural: "مدن" }}
+        itemName={{ singular: "محافظة", plural: "مدن" }}
       />
 
       <DataTable
@@ -198,7 +198,7 @@ export default function CityTable() {
         onClose={() => setIsDialogOpen(false)}
         onConfirm={handleConfirmDelete}
         title="تأكيد الحذف"
-        message="هل أنت متأكد أنك تريد حذف هذه المدينة؟ لا يمكن التراجع عن هذا القرار."
+        message="هل أنت متأكد أنك تريد حذف هذه المحافظة؟ لا يمكن التراجع عن هذا القرار."
       />
 
       <BulkDeleteDialog
@@ -207,7 +207,7 @@ export default function CityTable() {
         onConfirm={handleBulkDelete}
         isDeleting={selection.isBulkDeleting}
         count={selection.selectedIds.length}
-        itemName={{ singular: "مدينة", plural: "مدن" }}
+        itemName={{ singular: "محافظة", plural: "مدن" }}
       />
     </div>
   );
