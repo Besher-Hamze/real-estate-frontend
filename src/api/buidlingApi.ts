@@ -11,7 +11,6 @@ export const buildingApi = {
             throw error;
         }
     },
-
     
     fetchBuildingById: async (id: string): Promise<Building> => {
         try {

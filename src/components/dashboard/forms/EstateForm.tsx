@@ -17,6 +17,8 @@ import { useEstateForm } from "@/lib/hooks/useEstateForm";
 import FeaturesSelect from "@/components/ui/FeaturesSelect";
 import { BuildingItem } from "@/lib/types";
 import LocationPicker from "@/components/map/LocationPicker";
+import EnhancedImageUpload from "./EnhancedImageUpload";
+import ImageUploadModal from "./EnhancedImageUpload";
 
 interface EstateFormProps {
   buildingItemId?: string;
@@ -130,9 +132,13 @@ export default function EstateForm({
   const shouldShowRentalField = isRentalType();
 
   return (
-    <form onSubmit={(e) => {
+    <form onSubmit={async (e) => {
       e.preventDefault();
-      handleSubmit();
+      await handleSubmit().then(() => {
+        setAdditionalFileTypes([]);
+        setAdditionalImagePreviews([]);
+        setCoverImagePreview(null);
+      });
     }}>
       <h2 className="text-xl font-semibold mb-6">إضافة عقار جديد</h2>
       <div className="space-y-4">
@@ -483,79 +489,15 @@ export default function EstateForm({
           />
         </FormField>
 
-        {/* Files */}
         <FormField label="صور العقار">
-          <div className="grid grid-cols-4 gap-2">
-            {/* Cover Image Upload Box */}
-            <div className="relative col-span-1 border border-gray-300 rounded-lg h-32 flex flex-col items-center justify-center bg-gray-50 overflow-hidden">
-              <div className="absolute top-0 right-0 bg-black text-white text-xs px-2 py-1 rounded-bl-lg z-10">
-                صورة الغلاف
-              </div>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
-                required
-              />
-
-              {coverImagePreview ? (
-                <img
-                  src={coverImagePreview}
-                  alt="Cover preview"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <Camera className="text-blue-500 w-8 h-8" />
-              )}
-            </div>
-
-            {/* Additional Image Upload Boxes */}
-            {Array.from({ length: 30 }).map((_, index) => (
-              <div
-                key={index}
-                className="relative col-span-1 border border-gray-300 rounded-lg h-32 flex items-center justify-center bg-gray-50 overflow-hidden"
-              >
-                <input
-                  type="file"
-                  accept="image/* , video/*"
-                  onChange={(e) => handleFileUpload(e, index)}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                />
-
-                {additionalImagePreviews[index] ? (
-                  additionalFileTypes[index]?.startsWith('video/') ? (
-                    <div className="relative w-full h-full">
-                      <video
-                        src={additionalImagePreviews[index]}
-                        className="w-full h-full object-cover"
-                        controls={false}
-                        muted
-                        onMouseOver={(e) => (e.target as HTMLVideoElement).play()}
-                        onMouseOut={(e) => (e.target as HTMLVideoElement).pause()}
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="bg-black bg-opacity-50 rounded-full p-1">
-                          <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                        </svg>
-                      </div>
-                    </div>
-                  ) : (
-                    <img
-                      src={additionalImagePreviews[index]}
-                      alt={`File ${index + 1}`}
-                      className="w-full h-full object-cover cursor-move"
-                    />
-                  )
-                ) : (
-                  <Camera className="text-blue-500 w-8 h-8" />
-                )}
-              </div>
-            ))}
-          </div>
-          <p className="text-xs text-gray-500 mt-2">يمكنك تحميل صورة واحدة للغلاف و حتى 30 صور إضافية للعقار</p>
+          <ImageUploadModal
+            additionalImagePreviews={additionalImagePreviews}
+            additionalFileTypes={additionalFileTypes}
+            handleFileUpload={handleFileUpload}
+            coverImagePreview={coverImagePreview}
+            handleImageUpload={handleImageUpload}
+          />
         </FormField>
-
 
 
         <button

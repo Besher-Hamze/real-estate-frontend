@@ -6,6 +6,7 @@ import { SelectField } from "@/components/ui/form/SelectField";
 import { ADDITIONAL_FEATURES, FEATURES_BY_TYPE, FLOOR_OPTIONS, FURNISHED_OPTIONS, NEARBY_LOCATION, PAYMENT_OPTIONS, RENTAL_DURATION_OPTIONS, VIEW_OPTIONS } from "@/components/ui/constants/formOptions";
 import FeaturesSelect from "@/components/ui/FeaturesSelect";
 import LocationPicker from "@/components/map/LocationPicker";
+import ImageUploadModal from "../forms/EnhancedImageUpload";
 
 interface EditEstateFormProps {
     editingEstate: any;
@@ -505,8 +506,19 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                 />
             </FormField>
 
+
+            <FormField label="صور العقار">
+                <ImageUploadModal
+                    additionalImagePreviews={additionalImagePreviews}
+                    additionalFileTypes={additionalFileTypes}
+                    handleFileUpload={handleFileUpload}
+                    coverImagePreview={coverImagePreview}
+                    handleImageUpload={handleImageUpload}
+                />
+            </FormField>
+
             {/* Image Preview Section */}
-            <FormField label="صورة الغلاف">
+            {/* <FormField label="صورة الغلاف">
                 <div className="relative col-span-1 border border-gray-300 rounded-lg h-32 w-32 flex flex-col items-center justify-center bg-gray-50 overflow-hidden">
                     <input
                         type="file"
@@ -543,10 +555,10 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                     )}
                 </div>
                 <p className="text-xs text-gray-500 mt-1">انقر لتغيير صورة الغلاف</p>
-            </FormField>
+            </FormField> */}
 
             {/* Replace the existing additional images section with this */}
-            <FormField label="صور وفيديوهات العقار">
+            {/* <FormField label="صور وفيديوهات العقار">
                 <div className="grid grid-cols-4 gap-2">
                     {Array.from({ length: 30 }).map((_, index) => (
                         <div
@@ -611,7 +623,7 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                     ))}
                 </div>
                 <p className="text-xs text-gray-500 mt-2">يمكنك تحميل صورة واحدة للغلاف و حتى 30 صورة وفيديو إضافية للعقار</p>
-            </FormField>
+            </FormField> */}
 
 
             <button

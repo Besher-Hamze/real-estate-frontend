@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, X, ChevronLeft, ChevronRight, ZoomIn, Download } from 'lucide-react';
@@ -15,7 +14,13 @@ interface PropertyGalleryProps {
 const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
   const [activeImage, setActiveImage] = useState<number>(0);
   const [isModalOpen, setModalOpen] = useState<boolean>(false);
+  const [isZoomed, setIsZoomed] = useState<boolean>(false);
   const router = useRouter();
+
+  // Reset zoom when changing images
+  useEffect(() => {
+    setIsZoomed(false);
+  }, [activeImage]);
 
   const handlePrevImage = () => {
     setActiveImage((prev) => (prev === 0 ? property.files.length - 1 : prev - 1));
@@ -125,74 +130,115 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
         عودة
       </motion.button>
 
-      {/* Enhanced Modal */}
+      {/* Fixed Size Modal */}
       <AnimatePresence>
         {isModalOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/90 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center"
             onClick={(e) => {
               if (e.target === e.currentTarget) setModalOpen(false);
             }}
           >
-            <div className="relative max-w-7xl mx-auto px-4">
+            {/* Fixed size container that takes up the entire viewport */}
+            <div className="fixed inset-0 flex items-center justify-center">
               <motion.div
                 initial={{ scale: 0.9 }}
                 animate={{ scale: 1 }}
                 exit={{ scale: 0.9 }}
-                className="relative"
+                className="relative w-full h-full flex items-center justify-center"
               >
-                <Image
-                  src={`${process.env.NEXT_PUBLIC_API_URL}/${property.files[activeImage]}`}
-                  alt={property.title}
-                  width={1200}
-                  height={800}
-                  className="rounded-lg max-h-[85vh] w-auto"
-                />
+                {/* Image Container */}
+                <div className="relative w-full h-full flex items-center justify-center p-8">
+                  {isVideoFile(property.files[activeImage]) ? (
+                    <video
+                      src={`${process.env.NEXT_PUBLIC_API_URL}/${property.files[activeImage]}`}
+                      autoPlay
+                      controls
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  ) : (
+                    <div 
+                      className="relative max-w-full max-h-full mb-8"
+                      onClick={() => setIsZoomed(!isZoomed)}
+                    >
+                      <img
+                        src={`${process.env.NEXT_PUBLIC_API_URL}/${property.files[activeImage]}`}
+                        alt={property.title}
+                        height={800}
+                        className={`max-w-full max-h-full object-contain ${isZoomed ? 'cursor-zoom-out scale-150 transition-transform duration-300' : 'cursor-zoom-in'}`}
+                      />
+                    </div>
+                  )}
 
-                {/* Modal Controls */}
-                <div className="absolute top-4 right-4 flex items-center gap-2">
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    className="text-white bg-black/50 p-2 rounded-full"
-                    onClick={handleDownload}
-                  >
-                    <Download className="w-5 h-5" />
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    className="text-white bg-black/50 p-2 rounded-full"
-                    onClick={() => setModalOpen(false)}
-                  >
-                    <X className="w-5 h-5" />
-                  </motion.button>
-                </div>
-
-                {/* Navigation Arrows */}
-                {property.files.length > 1 && (
-                  <>
+                  {/* Modal Controls */}
+                  <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
                     <motion.button
                       whileHover={{ scale: 1.1 }}
-                      className="absolute left-4 top-1/2  text-white bg-black/50 p-2 rounded-full"
-                      onClick={handlePrevImage}
+                      className="text-white bg-black/50 p-2 rounded-full"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsZoomed(!isZoomed);
+                      }}
                     >
-                      <ChevronLeft className="w-6 h-6" />
+                      <ZoomIn className="w-5 h-5" />
                     </motion.button>
                     <motion.button
                       whileHover={{ scale: 1.1 }}
-                      className="absolute right-4 top-1/2  text-white bg-black/50 p-2 rounded-full"
-                      onClick={handleNextImage}
+                      className="text-white bg-black/50 p-2 rounded-full"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownload();
+                      }}
                     >
-                      <ChevronRight className="w-6 h-6" />
+                      <Download className="w-5 h-5" />
                     </motion.button>
-                  </>
-                )}
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      className="text-white bg-black/50 p-2 rounded-full"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setModalOpen(false);
+                      }}
+                    >
+                      <X className="w-5 h-5" />
+                    </motion.button>
+                  </div>
 
-                {/* Image Counter */}
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white bg-black/50 px-3 py-1 rounded-full text-sm">
-                  {activeImage + 1} / {property.files.length}
+                  {/* Navigation Arrows */}
+                  {property.files.length > 1 && (
+                    <>
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-white bg-black/50 p-2 rounded-full z-10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePrevImage();
+                        }}
+                      >
+                        <ChevronLeft className="w-6 h-6" />
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-white bg-black/50 p-2 rounded-full z-10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleNextImage();
+                        }}
+                      >
+                        <ChevronRight className="w-6 h-6" />
+                      </motion.button>
+                    </>
+                  )}
+
+                  {/* Image Counter */}
+                  <div 
+                    className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white bg-black/50 px-3 py-1 rounded-full text-sm z-10"
+                  >
+                    {activeImage + 1} / {property.files.length}
+                  </div>
                 </div>
               </motion.div>
             </div>
