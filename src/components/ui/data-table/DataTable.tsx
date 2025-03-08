@@ -41,7 +41,7 @@ export function DataTable<T>({
   if (error) return <ErrorFallback onRefresh={onRefresh} />;
 
   return (
-    <div className="relative overflow-x-auto shadow-md sm:rounded-lg" dir="rtl">
+    <div className="relative  shadow-md sm:rounded-lg" dir="rtl">
       <table className="min-w-full text-sm text-gray-700">
         <TableHeader columns={columns} hasActions={!!actions?.length} />
         <tbody className="bg-white divide-y divide-gray-200">

@@ -9,7 +9,8 @@ const INITIAL_BUILDING_STATE: Omit<Building, 'id'> = {
   title: '',
   items: [],
   status: 'مخطط',
-  location: "23.5880,58.3829"
+  location: "23.5880,58.3829",
+  buildingAge: ""
 };
 
 const INITIAL_ITEM_STATE: Omit<BuildingItem, 'id'> = {
@@ -17,7 +18,8 @@ const INITIAL_ITEM_STATE: Omit<BuildingItem, 'id'> = {
   price: '',
   area: '',
   type: 'apartment',
-  building_id: ''
+  building_id: '',
+  realestateCount: 0
 };
 
 interface UseBuildingFormProps {
@@ -33,7 +35,8 @@ export function useBuildingForm({ onSuccess, mode = 'create', initialData }: Use
       title: initialData.title,
       status: initialData.status,
       items: initialData.items || [],
-      location: initialData.location || "1,1"
+      location: initialData.location || "1,1",
+      buildingAge: initialData.buildingAge,
     } : INITIAL_BUILDING_STATE
   );
   const [currentItem, setCurrentItem] = useState<Omit<BuildingItem, 'id'>>(INITIAL_ITEM_STATE);

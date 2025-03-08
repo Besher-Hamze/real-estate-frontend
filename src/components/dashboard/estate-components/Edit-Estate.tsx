@@ -81,19 +81,73 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
         setEditingEstate((prev: any) => ({ ...prev, [field]: value }));
     };
 
+
+
+    const [additionalFileTypes, setAdditionalFileTypes] = useState<string[]>([]);
+    const [coverImagePreview, setCoverImagePreview] = useState<string | null>(
+        editingEstate.coverImage && typeof editingEstate.coverImage === 'string'
+            ? `${process.env.NEXT_PUBLIC_API_URL}/${editingEstate.coverImage}`
+            : null
+    );
+    const [additionalImagePreviews, setAdditionalImagePreviews] = useState<string[]>(
+        editingEstate.files && editingEstate.files.length > 0 && typeof editingEstate.files[0] === 'string'
+            ? editingEstate.files.map((file: string) => `${process.env.NEXT_PUBLIC_API_URL}/${file}`)
+            : []
+    );
+
+
+
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            // Create preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                if (e.target?.result) {
+                    setCoverImagePreview(e.target.result as string);
+                }
+            };
+            reader.readAsDataURL(file);
+
+            // Store file
             setNewCoverImage(file);
-            handleChange("coverImage", file);
+            handleChange('coverImage', file);
         }
     };
 
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files ? Array.from(e.target.files) as File[] : [];
-        setNewFiles(files);
-        handleChange("files", files);
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            // Detect file type
+            const fileType = file.type;
+            const newTypes = [...additionalFileTypes];
+            newTypes[index] = fileType;
+            setAdditionalFileTypes(newTypes);
+
+            // Create preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                if (e.target?.result) {
+                    const newPreviews = [...additionalImagePreviews];
+                    newPreviews[index] = e.target.result as string;
+                    setAdditionalImagePreviews(newPreviews);
+                }
+            };
+            reader.readAsDataURL(file);
+
+            // Update files array
+            const updatedFiles = Array.isArray(editingEstate.files) ? [...editingEstate.files] : [];
+            updatedFiles[index] = file;
+            handleChange('files', updatedFiles);
+
+            // Also update newFiles state for submission
+            const updatedNewFiles = [...newFiles];
+            updatedNewFiles[index] = file;
+            setNewFiles(updatedNewFiles);
+        }
     };
+
+
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -452,113 +506,113 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
             </FormField>
 
             {/* Image Preview Section */}
-            <FormField label="صورة الغلاف الحالية">
-                <div className="flex flex-col gap-2">
-                    {editingEstate.coverImage ? (
-                        <div className="relative inline-block">
-                            {typeof editingEstate.coverImage === 'string' ? (
-                                // If coverImage is a string (existing image URL)
-                                <a href={`${process.env.NEXT_PUBLIC_API_URL}/${editingEstate.coverImage}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer">
-                                    <img
-                                        src={`${process.env.NEXT_PUBLIC_API_URL}/${editingEstate.coverImage}`}
-                                        alt="Cover Image"
-                                        className="w-32 h-32 object-cover rounded-md"
-                                    />
-                                </a>
-                            ) : (
-                                // If coverImage is a File object (new upload)
-                                <img
-                                    src={URL.createObjectURL(editingEstate.coverImage)}
-                                    alt="New Cover Image"
-                                    className="w-32 h-32 object-cover rounded-md"
-                                />
-                            )}
-                        </div>
-                    ) : (
-                        <p>لا توجد صورة غلاف</p>
-                    )}
+            <FormField label="صورة الغلاف">
+                <div className="relative col-span-1 border border-gray-300 rounded-lg h-32 w-32 flex flex-col items-center justify-center bg-gray-50 overflow-hidden">
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                    />
 
-                    <div className="mt-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            تغيير صورة الغلاف
-                        </label>
-                        <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                            className="block w-full text-sm text-gray-500
-                    file:mr-4 file:py-2 file:px-4
-                    file:rounded-md file:border-0
-                    file:text-sm file:font-semibold
-                    file:bg-blue-50 file:text-blue-700
-                    hover:file:bg-blue-100"
+                    {coverImagePreview ? (
+                        <img
+                            src={coverImagePreview}
+                            alt="Cover preview"
+                            className="w-full h-full object-cover"
                         />
-                    </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="text-blue-500 mb-1"
+                            >
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                <circle cx="12" cy="13" r="4"></circle>
+                            </svg>
+                            <span className="text-xs text-gray-500">صورة الغلاف</span>
+                        </div>
+                    )}
                 </div>
+                <p className="text-xs text-gray-500 mt-1">انقر لتغيير صورة الغلاف</p>
             </FormField>
-            <FormField label="الصور الإضافية الحالية">
-                <div className="flex flex-col gap-3">
-                    {editingEstate.files && editingEstate.files.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                            {typeof editingEstate.files[0] === 'string' ? (
-                                editingEstate.files.map((file: string, index: number) => (
-                                    <div key={index} className="relative inline-block">
-                                        <a href={`${process.env.NEXT_PUBLIC_API_URL}/${file}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer">
-                                            <img
-                                                src={`${process.env.NEXT_PUBLIC_API_URL}/${file}`}
-                                                alt={`Additional Image ${index + 1}`}
-                                                className="w-20 h-20 object-cover rounded-md"
-                                            />
-                                        </a>
+
+            {/* Replace the existing additional images section with this */}
+            <FormField label="صور وفيديوهات العقار">
+                <div className="grid grid-cols-4 gap-2">
+                    {Array.from({ length: 30 }).map((_, index) => (
+                        <div
+                            key={index}
+                            className="relative col-span-1 border border-gray-300 rounded-lg h-32 flex items-center justify-center bg-gray-50 overflow-hidden"
+                        >
+                            <input
+                                type="file"
+                                accept="image/*, video/*"
+                                onChange={(e) => handleFileUpload(e, index)}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                            />
+
+                            {additionalImagePreviews[index] ? (
+                                additionalFileTypes[index]?.startsWith('video/') ||
+                                    (typeof editingEstate.files[index] === 'string' &&
+                                        editingEstate.files[index].toLowerCase().endsWith('.mp4')) ? (
+                                    <div className="relative w-full h-full">
+                                        <video
+                                            src={additionalImagePreviews[index]}
+                                            className="w-full h-full object-cover"
+                                            controls={false}
+                                            muted
+                                            onMouseOver={(e) => (e.target as HTMLVideoElement).play()}
+                                            onMouseOut={(e) => (e.target as HTMLVideoElement).pause()}
+                                        />
+                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="bg-black bg-opacity-50 rounded-full p-1">
+                                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                            </svg>
+                                        </div>
+                                        <div className="absolute top-2 left-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded-lg">
+                                            فيديو
+                                        </div>
                                     </div>
-                                ))
+                                ) : (
+                                    <img
+                                        src={additionalImagePreviews[index]}
+                                        alt={`File ${index + 1}`}
+                                        className="w-full h-full object-cover"
+                                    />
+                                )
                             ) : (
-                                // New file uploads
-                                Array.from(editingEstate.files).map((file, index: number) => {
-                                    // Check if file is a File object before using URL.createObjectURL
-                                    if (file instanceof File) {
-                                        return (
-                                            <div key={index} className="relative inline-block">
-                                                <img
-                                                    src={URL.createObjectURL(file)}
-                                                    alt={`New Image ${index + 1}`}
-                                                    className="w-20 h-20 object-cover rounded-md"
-                                                />
-                                            </div>
-                                        );
-                                    }
-                                    // If it's not a File object, return null or a placeholder
-                                    return null;
-                                })
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    className="text-blue-500"
+                                >
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                </svg>
                             )}
                         </div>
-                    ) : (
-                        <p>لا توجد صور إضافية</p>
-                    )}
-
-                    <div className="mt-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            إضافة صور جديدة
-                        </label>
-                        <input
-                            type="file"
-                            multiple
-                            accept="image/*"
-                            onChange={handleFileUpload}
-                            className="block w-full text-sm text-gray-500
-                                file:mr-4 file:py-2 file:px-4
-                                file:rounded-md file:border-0
-                                file:text-sm file:font-semibold
-                                file:bg-blue-50 file:text-blue-700
-                                hover:file:bg-blue-100"
-                        />
-                    </div>
+                    ))}
                 </div>
+                <p className="text-xs text-gray-500 mt-2">يمكنك تحميل صورة واحدة للغلاف و حتى 30 صورة وفيديو إضافية للعقار</p>
             </FormField>
+
 
             <button
                 type="submit"

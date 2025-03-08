@@ -21,7 +21,6 @@ export default function PremiumLanding(): JSX.Element {
   const [selectedSubTypeId, setSelectedSubTypeId] = useState<number | null>(null);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000000]);
   const [filters, setFilters] = useState<Filters>(initialFilterState);
-  // إضافة حالة خيار الترتيب
   const [sortOption, setSortOption] = useState<SortOption>(initialSortOption);
 
   const {
@@ -43,7 +42,6 @@ export default function PremiumLanding(): JSX.Element {
     setSelectedSubTypeId(null);
     setFilters(initialFilterState);
     setPriceRange([0, 1000000]);
-    // إعادة تعيين خيار الترتيب إلى الافتراضي
     setSortOption(initialSortOption);
   };
 
@@ -126,7 +124,10 @@ export default function PremiumLanding(): JSX.Element {
           <CategorySelector
             mainTypes={mainTypes}
             selectedMainTypeId={selectedMainTypeId}
-            setSelectedMainTypeId={setSelectedMainTypeId}
+            setSelectedMainTypeId={(id: number | null) => {
+              setSelectedMainTypeId(id);
+              resetFilters()
+            }}
             setSelectedSubTypeId={setSelectedSubTypeId}
             isLoading={isLoadingMainTypes}
           />

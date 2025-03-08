@@ -331,21 +331,9 @@ export default function PropertyDetails() {
                     </div>
                 </div>
 
-                {/* Nearby Locations */}
-                {/* {property.nearbyLocations && (
-                    <div className="bg-white rounded-2xl p-8 shadow-lg mt-8">
-                        <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                            <MapPin className="w-6 h-6 text-blue-600" />
-                            المواقع القريبة
-                        </h2>
-                        <div className="prose max-w-none text-gray-600">
-                            {property.nearbyLocations}
-                        </div>
-                    </div>
-                )} */}
+                {/* bg-white rounded-3xl p-8 mt-8 shadow-xl mb-8" */}
                 {property.location && (
-                    <div id="property-location-section"
-                        className="bg-white rounded-3xl p-8 mt-8 shadow-xl mb-8">
+                    <div id="property-location-section" className='p-8 mt-8 mb-8'>
                         <h2 className="text-3xl font-bold mb-8 flex items-center gap-4 text-gray-800">
                             <MapPin className="w-8 h-8 text-blue-500" />
                             <span className="text-xl">الموقع</span>
@@ -363,7 +351,7 @@ export default function PropertyDetails() {
 
                 {/* Similar Properties Section */}
                 {similarProperties.length > 0 && (
-                    <div className="bg-white rounded-3xl p-8 shadow-xl mt-8">
+                    <div className=" p-8  mt-8">
                         <h2 className="text-3xl font-bold mb-8 flex items-center gap-4 text-gray-800">
                             <Home className="w-8 h-8 text-blue-500" />
                             <span className="text-xl text-black0">

@@ -1,3 +1,4 @@
+import { LucideIcon } from "lucide-react";
 
 export interface RealEstateFilters {
   type: string;
@@ -109,6 +110,7 @@ export interface Building {
   title: string;
   status: 'مكتمل' | 'قيد الإنشاء' | 'مخطط';
   location: string;
+  buildingAge: string;
   items?: BuildingItem[]
 }
 
@@ -192,3 +194,41 @@ export interface FilterParams {
 }
 
 export type PropertySize = "small" | "medium" | "large" | "xlarge" | "";
+
+
+export interface FilterChipProps {
+  label: string;
+  onRemove: () => void;
+}
+
+export interface FilterSectionProps {
+  filters: Filters;
+  subId: number | null;
+  setFilters: (filters: Filters) => void;
+  priceRange: [number, number];
+  setPriceRange: (range: [number, number]) => void;
+  isRental: boolean;
+  currentMainType?: MainType;
+  currentSubType?: SubType;
+  selectedMainTypeId?: number | null;
+  setSelectedMainTypeId?: (id: number | null) => void;
+  selectedSubTypeId?: number | null;
+  setSelectedSubTypeId?: (id: number | null) => void;
+  sortOption: SortOption;
+  setSortOption: (option: SortOption) => void;
+}
+
+export interface SelectOption {
+  value: string | number;
+  label: string;
+}
+
+export interface SelectFieldProps {
+  label: string;
+  icon: LucideIcon;
+  value: string;
+  onChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
+  options: SelectOption[];
+  className?: string;
+  enable?: boolean;
+}

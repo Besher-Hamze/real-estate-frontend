@@ -215,7 +215,7 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
                 alt={row.title}
                 width={40}
                 height={40}
-                className="rounded-md object-cover"
+                className="rounded-md object-cover max-w-[40px] max-h-[40px]"
               />
             ) : (
               <div className="h-10 w-10 bg-gray-200 rounded-md flex items-center justify-center">

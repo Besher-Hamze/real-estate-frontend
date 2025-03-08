@@ -111,11 +111,30 @@ export const FEATURES_BY_TYPE = {
 };
 
 export const NEARBY_LOCATION = [
-  "مكان 1 ",
-  "مكان 2 ",
-  "مكان 3 ",
-  "مكان 4 ",
-  "مكان 5 ",
-  "مكان 6 ",
-  "مكان 7 ",
+  "مطعم",
+  "مدرسة",
+  "سوبر ماركت",
+  "مول / مركز تسوق",
+  "صالة رياضية / جيم",
+  "مستشفى",
+  "مسجد",
+  "داري كلين",
+  "موقف سيارات",
+  "بنك / صراف الالي",
+  "صيدلية"
 ];
+
+export const STATUS_OPTIONS = [
+  { value: 'مكتمل', label: 'مكتمل' },
+  { value: 'قيد الإنشاء', label: 'قيد الإنشاء' },
+  { value: 'مخطط', label: 'مخطط' }
+];
+
+export const BUILDING_AGE_OPTION = [
+  { value: "0-11,m", label: "0-11 شهر" },
+  { value: "1-5,y", label: "1-5 سنوات" },
+  { value: "6-9,y", label: "6-9 سنوات" },
+  { value: "10-19,y", label: "10-19 سنوات" },
+  { value: "20,y", label: "20+ سنة" },
+]
+

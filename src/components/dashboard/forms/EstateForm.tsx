@@ -1,5 +1,5 @@
-import React from "react";
-import { Plus } from "lucide-react";
+import React, { useState } from "react";
+import { Camera, Plus } from "lucide-react";
 import { FormField } from "@/components/ui/form/FormField";
 import { InputField } from "@/components/ui/form/InputField";
 import { SelectField } from "@/components/ui/form/SelectField";
@@ -60,15 +60,55 @@ export default function EstateForm({
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files ? Array.from(e.target.files) : null;
-    handleChange('files', files);
+  const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
+  const [additionalImagePreviews, setAdditionalImagePreviews] = useState<string[]>([]);
+  const [additionalFileTypes, setAdditionalFileTypes] = useState<string[]>([]);
+
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Use FileReader to read the file
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          const newPreviews = [...additionalImagePreviews];
+          newPreviews[index] = e.target.result as string;
+          setAdditionalImagePreviews(newPreviews);
+        }
+      };
+      reader.readAsDataURL(file);
+
+      const files = Array.isArray(formData.files) ? [...formData.files] : [];
+      files[index] = file;
+      const newFileTypes = [...additionalFileTypes];
+      newFileTypes[index] = file.type;
+      setAdditionalFileTypes(newFileTypes);
+
+
+      handleChange('files', files);
+    }
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) handleChange('coverImage', file);
+    if (file) {
+      // Use FileReader to read the file
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          setCoverImagePreview(e.target.result as string);
+        }
+      };
+
+      reader.readAsDataURL(file);
+
+      // Update form data
+      handleChange('coverImage', file);
+    }
   };
+
+
 
   const isLandType = () => {
     const selectedSubType = mainTypes
@@ -444,25 +484,79 @@ export default function EstateForm({
         </FormField>
 
         {/* Files */}
-        <FormField label="صورة الغلاف">
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            required
-          />
+        <FormField label="صور العقار">
+          <div className="grid grid-cols-4 gap-2">
+            {/* Cover Image Upload Box */}
+            <div className="relative col-span-1 border border-gray-300 rounded-lg h-32 flex flex-col items-center justify-center bg-gray-50 overflow-hidden">
+              <div className="absolute top-0 right-0 bg-black text-white text-xs px-2 py-1 rounded-bl-lg z-10">
+                صورة الغلاف
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                required
+              />
+
+              {coverImagePreview ? (
+                <img
+                  src={coverImagePreview}
+                  alt="Cover preview"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <Camera className="text-blue-500 w-8 h-8" />
+              )}
+            </div>
+
+            {/* Additional Image Upload Boxes */}
+            {Array.from({ length: 30 }).map((_, index) => (
+              <div
+                key={index}
+                className="relative col-span-1 border border-gray-300 rounded-lg h-32 flex items-center justify-center bg-gray-50 overflow-hidden"
+              >
+                <input
+                  type="file"
+                  accept="image/* , video/*"
+                  onChange={(e) => handleFileUpload(e, index)}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                />
+
+                {additionalImagePreviews[index] ? (
+                  additionalFileTypes[index]?.startsWith('video/') ? (
+                    <div className="relative w-full h-full">
+                      <video
+                        src={additionalImagePreviews[index]}
+                        className="w-full h-full object-cover"
+                        controls={false}
+                        muted
+                        onMouseOver={(e) => (e.target as HTMLVideoElement).play()}
+                        onMouseOut={(e) => (e.target as HTMLVideoElement).pause()}
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="bg-black bg-opacity-50 rounded-full p-1">
+                          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                      </div>
+                    </div>
+                  ) : (
+                    <img
+                      src={additionalImagePreviews[index]}
+                      alt={`File ${index + 1}`}
+                      className="w-full h-full object-cover cursor-move"
+                    />
+                  )
+                ) : (
+                  <Camera className="text-blue-500 w-8 h-8" />
+                )}
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-gray-500 mt-2">يمكنك تحميل صورة واحدة للغلاف و حتى 30 صور إضافية للعقار</p>
         </FormField>
 
-        <FormField label="ملفات إضافية">
-          <input
-            type="file"
-            multiple
-            accept="image/*, video/*"
-            onChange={handleFileUpload}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </FormField>
+
 
         <button
           type="submit"

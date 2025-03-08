@@ -1,57 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Filter, ChevronDown, ChevronsLeftRight, ChevronUp, Building, MapPin, Bath, BedDouble, Clock, Mountain, LucideIcon, HomeIcon, LayersIcon, Building2Icon, X } from 'lucide-react';
+import { Filter, ChevronDown, ChevronsLeftRight, ChevronUp, Building, MapPin, Bath, BedDouble, Clock, Mountain, HomeIcon, LayersIcon, Building2Icon, X } from 'lucide-react';
 import { finalTypeTypeApi } from '@/api/finalTypeApi';
-import { CityType, Filters, FinalType, NeighborhoodType, MainType, SubType, PropertySize, SortOption } from '@/lib/types';
+import { CityType, Filters, FinalType, NeighborhoodType, PropertySize, FilterSectionProps } from '@/lib/types';
 import { cityApi } from '@/api/cityApi';
 import { neighborhoodApi } from '@/api/NeighborhoodApi';
 import { getPropertySizeLabel } from '@/utils/filterUtils';
 import SortComponent from './SortComponent';
-
-interface FilterChipProps {
-  label: string;
-  onRemove: () => void;
-}
-
-const FilterChip: React.FC<FilterChipProps> = ({ label, onRemove }) => (
-  <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center gap-1">
-    {label}
-    <button onClick={onRemove} className="hover:text-blue-900">
-      <X className="w-4 h-4" />
-    </button>
-  </span>
-);
-
-interface FilterSectionProps {
-  filters: Filters;
-  subId: number | null;
-  setFilters: (filters: Filters) => void;
-  priceRange: [number, number];
-  setPriceRange: (range: [number, number]) => void;
-  isRental: boolean;
-  currentMainType?: MainType;
-  currentSubType?: SubType;
-  selectedMainTypeId?: number | null;
-  setSelectedMainTypeId?: (id: number | null) => void;
-  selectedSubTypeId?: number | null;
-  setSelectedSubTypeId?: (id: number | null) => void;
-  sortOption: SortOption;
-  setSortOption: (option: SortOption) => void;
-}
-
-interface SelectOption {
-  value: string | number;
-  label: string;
-}
-
-interface SelectFieldProps {
-  label: string;
-  icon: LucideIcon;
-  value: string;
-  onChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
-  options: SelectOption[];
-  className?: string;
-  enable?: boolean;
-}
+import { FilterChip } from './home';
+import { SelectField } from './SelectField';
 
 const defaultFilters: Filters = {
   bedrooms: '',
@@ -143,34 +99,10 @@ const FilterSection = ({
     }
   };
 
-  const SelectField: React.FC<SelectFieldProps> = ({ label, icon: Icon, value, onChange, options, className = '', enable = true }) => (
-    <div className="relative group">
-      <label className="block text-sm font-medium text-gray-700 mb-2 mr-1">
-        <div className="flex items-center gap-2">
-          <Icon className="w-4 h-4 text-blue-600" />
-          {label}
-        </div>
-      </label>
-      <div className="relative">
-        <select
-          value={value}
-          onChange={onChange}
-          className={`w-full appearance-none bg-white text-gray-700 rounded-xl px-4 py-3 border border-gray-200 
-                    focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200
-                    hover:border-blue-300 ${className}`}
-        >
-          {options.map((option) => (
-            <option key={option.value} value={option.value}>{option.label}</option>
-          ))}
-        </select>
-        <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-      </div>
-    </div>
-  );
+
 
   // === Active Filters Logic ===
 
-  // التحقق مما إذا كانت هناك فلاتر نشطة
   const hasActiveFilters =
     selectedMainTypeId ||
     selectedSubTypeId ||
@@ -187,25 +119,21 @@ const FilterSection = ({
     filters.view ||
     filters.rentalPeriod;
 
-  // الحصول على اسم المحافظة بناءً على الرقم التعريفي
   const getCityName = (cityId: string): string => {
     const city = cities.find(c => c.id.toString() === cityId);
     return city ? city.name : cityId;
   };
 
-  // الحصول على اسم المدينة بناءً على الرقم التعريفي
   const getNeighborhoodName = (neighborhoodId: string): string => {
     const neighborhood = neighborhoods.find(n => n.id.toString() === neighborhoodId);
     return neighborhood ? neighborhood.name : neighborhoodId;
   };
 
-  // الحصول على اسم التصنيف النهائي بناءً على الرقم التعريفي
   const getFinalTypeName = (finalTypeId: string): string => {
     const finalType = finalTypes.find(f => f.id.toString() === finalTypeId);
     return finalType ? finalType.name : finalTypeId;
   };
 
-  // الحصول على تسمية الطابق بناءً على القيمة
   const getFloorLabel = (floor: string): string => {
     const floorLabels: Record<string, string> = {
       '0': 'أرضي',
@@ -219,7 +147,6 @@ const FilterSection = ({
     return floorLabels[floor] || floor;
   };
 
-  // الحصول على تسمية فترة الإيجار بناءً على القيمة
   const getRentalPeriodLabel = (period: string): string => {
     const periodLabels: Record<string, string> = {
       '1': 'شهر',
@@ -233,7 +160,6 @@ const FilterSection = ({
 
   const renderActiveFilters = () => {
     if (!hasActiveFilters) return null;
-
     return (
       <div className="mb-6 px-6 pb-0 pt-0">
         <div className="border-t border-gray-200 pt-4">

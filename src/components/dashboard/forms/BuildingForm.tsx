@@ -12,12 +12,9 @@ import { useBuildingForm } from "@/lib/hooks/useBuildingForm";
 import { EstateFormModal } from "../building/EstateFormModal";
 import { MapLocationSelector } from "@/components/map/MapLocationSelector";
 import { BuildingItemsModal } from "../building/BuildingItemsModal";
+import { BUILDING_AGE_OPTION, STATUS_OPTIONS } from "@/components/ui/constants/formOptions";
 
-const STATUS_OPTIONS = [
-  { value: 'مكتمل', label: 'مكتمل' },
-  { value: 'قيد الإنشاء', label: 'قيد الإنشاء' },
-  { value: 'مخطط', label: 'مخطط' }
-];
+
 
 interface BuildingFormProps {
   onSuccess?: () => void;
@@ -70,6 +67,16 @@ export default function BuildingForm({
                 onChange={(value) => handleChange('status', value)}
                 options={STATUS_OPTIONS}
                 placeholder="اختر حالة المبنى"
+              />
+            </FormField>
+
+            {/* Building Age  */}
+            <FormField label="عمر البناء">
+              <SelectField
+                value={formData.buildingAge}
+                onChange={(value) => handleChange('buildingAge', value)}
+                options={BUILDING_AGE_OPTION}
+                placeholder="اختر عمر المبنى"
               />
             </FormField>
           </div>
