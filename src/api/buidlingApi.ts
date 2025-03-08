@@ -12,6 +12,7 @@ export const buildingApi = {
         }
     },
 
+    
     fetchBuildingById: async (id: string): Promise<Building> => {
         try {
             const response = await apiClient.get<Building>(`api/buildings/${id}`);
