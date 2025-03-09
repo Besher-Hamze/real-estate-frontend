@@ -43,7 +43,7 @@ const ImageUploadModal: React.FC<EnhancedImageUploadProps> = ({
             accept="image/*"
             onChange={handleImageUpload}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
-            required
+            
           />
 
           {coverImagePreview ? (

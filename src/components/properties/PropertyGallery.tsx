@@ -87,7 +87,9 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
 
       {/* Image Gallery Thumbnails */}
       {property.files.length > 1 && (
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-4 max-w-full px-4 overflow-x-auto pb-2">
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-4 max-w-full px-4 overflow-x-auto pb-2"
+        onClick={() => setModalOpen(true)}
+        >
           {property.files.map((file: string, index: number) => (
             <motion.button
               key={index}

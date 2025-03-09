@@ -381,20 +381,20 @@ const RealEstateCard: React.FC<RealEstateCardProps> = ({ item, mainType }) => {
             </button>
 
             {/* Dots navigation */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center justify-center gap-1.5 transition-opacity duration-300 opacity-0 group-hover:opacity-100">
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 py-2 px-3 bg-black/30 backdrop-blur-sm rounded-full transition-all duration-300 opacity-0 group-hover:opacity-100 shadow-lg">
               {images.map((_, index) => (
                 <button
                   key={index}
                   onClick={(e) => goToImage(index, e)}
-                  className={`w-2.5 h-2.5 rounded-full transition-all duration-200 ${currentImageIndex === index
-                    ? 'bg-white scale-110'
-                    : 'bg-white/50 hover:bg-white/80'
+                  className={`w-3 h-3 rounded-full transition-all duration-200 ${currentImageIndex === index
+                      ? 'bg-white scale-125 shadow-glow'
+                      : 'bg-white/50 hover:bg-white/80'
                     }`}
-                  aria-label={`صورة ${index + 1}`}
+                  aria-label={`عرض الصورة ${index + 1} من ${images.length}`}
+                  aria-current={currentImageIndex === index ? 'true' : 'false'}
                 />
               ))}
-            </div>
-          </>
+            </div>          </>
         )}
       </div>
 

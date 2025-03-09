@@ -19,7 +19,7 @@ export default function PropertyDetails() {
     const [error, setError] = useState<string | null>(null);
     const params = useParams();
     const router = useRouter();
-
+    
     useEffect(() => {
         const fetchPropertyDetails = async () => {
             try {
@@ -89,6 +89,7 @@ export default function PropertyDetails() {
             </div>
         );
     }
+    console.log(property.viewTime);
 
     return (
         <div className="min-h-screen bg-gray-50" dir="rtl">

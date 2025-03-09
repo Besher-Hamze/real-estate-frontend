@@ -38,8 +38,6 @@ export default function PremiumLanding(): JSX.Element {
   } = useRealEstate();
 
   const resetFilters = () => {
-    setSelectedMainTypeId(null);
-    setSelectedSubTypeId(null);
     setFilters(initialFilterState);
     setPriceRange([0, 1000000]);
     setSortOption(initialSortOption);
