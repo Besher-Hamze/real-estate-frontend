@@ -1,5 +1,5 @@
 // hooks/useEstateForm.ts
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { finalTypeTypeApi } from '@/api/finalTypeApi';
 import { RealEstateApi } from '@/api/realEstateApi';
@@ -8,6 +8,8 @@ import { CreateEstateForm } from '../types/create';
 import { CityType, FinalType, NeighborhoodType, MainType } from '../types';
 import { useMainType } from './useMainType';
 import { useRealEstate } from './useRealEstate';
+import { useFormValidation } from '@/lib/hooks/useFormValidation';
+import { createValidationContext, estateSchema } from '@/schemas/estateSchema';
 
 const initialFormState: CreateEstateForm = {
     title: "",
@@ -39,21 +41,37 @@ const initialFormState: CreateEstateForm = {
 };
 
 export function useEstateForm(buildingItemId?: string) {
-    console.log(buildingItemId);
+    // Initialize the form state, accounting for buildingItemId if provided
+    const initialState = { 
+        ...initialFormState,
+        ...(buildingItemId ? { buildingItemId } : {})
+    };
 
-    if (buildingItemId) {
-        initialFormState.buildingItemId = buildingItemId;
-    }
-    const [formData, setFormData] = useState<CreateEstateForm>(initialFormState);
+    // State for data fetching
     const [cities, setCities] = useState<CityType[]>([]);
     const [finalTypes, setFinalTypes] = useState<FinalType[]>([]);
     const [neighborhoods, setNeighborhoods] = useState<NeighborhoodType[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const { mainTypes } = useMainType();
     const { refetch: refetchEstates } = useRealEstate();
 
+    // Use our form validation hook for a single source of truth
+    const {
+        formData,
+        errors,
+        isSubmitting,
+        setFormData,
+        handleChange: baseHandleChange,
+        handleSubmit,
+        validateForm
+    } = useFormValidation(
+        estateSchema,
+        initialState,
+        createValidationContext
+    );
+
+    // Fetch cities on mount
     useEffect(() => {
         const fetchCities = async () => {
             try {
@@ -67,8 +85,14 @@ export function useEstateForm(buildingItemId?: string) {
         fetchCities();
     }, []);
 
+    // Fetch final types when subCategoryId changes
     useEffect(() => {
-        const fetchFinalType = async () => {
+        const fetchFinalTypes = async () => {
+            if (!formData.subCategoryId || formData.subCategoryId === 0) {
+                setFinalTypes([]);
+                return;
+            }
+            
             try {
                 setIsLoading(true);
                 const response = await finalTypeTypeApi.fetchFinalTypeBySubId(formData.subCategoryId);
@@ -80,103 +104,116 @@ export function useEstateForm(buildingItemId?: string) {
                 setIsLoading(false);
             }
         };
-        if (formData.subCategoryId && formData.subCategoryId !== 0) {
-            fetchFinalType();
-        }
+        
+        fetchFinalTypes();
     }, [formData.subCategoryId]);
 
+    // Fetch neighborhoods when cityId changes
     useEffect(() => {
         const fetchNeighborhoods = async () => {
+            if (!formData.cityId) {
+                setNeighborhoods([]);
+                return;
+            }
+            
             try {
+                setIsLoading(true);
                 const response = await apiClient.get(`/api/neighborhoods/${formData.cityId}`);
                 setNeighborhoods(response.data);
             } catch (error) {
                 console.error("Failed to fetch neighborhoods:", error);
                 toast.error("فشل في تحميل المدن");
+            } finally {
+                setIsLoading(false);
             }
         };
-        if (formData.cityId) {
-            fetchNeighborhoods();
-        }
+        
+        fetchNeighborhoods();
     }, [formData.cityId]);
 
-    const validateForm = () => {
-        if (!formData.title.trim()) {
-            toast.error("يرجى إدخال عنوان العقار");
-            return false;
-        }
-        if (!formData.description.trim()) {
-            toast.error("يرجى إدخال وصف العقار");
-            return false;
-        }
-        if (formData.title.length > 30) {
-            toast.error("يجب ان يكون عدد الاحرف اقل من 30 حرف");
-            return false;
-        }
-        if (formData.price < 0) {
-            toast.error("يرجى إدخال سعر صحيح");
-            return false;
-        }
+    // Enhanced handleChange
+    const handleChange = useCallback((field: string, value: any) => {
+        // Update form data through validation system
+        baseHandleChange(field, value as any);
         
-        if (!formData.mainCategoryId || !formData.subCategoryId) {
-            toast.error("يرجى اختيار التصنيف الرئيسي والفرعي");
-            return false;
+        // Special logic for form field dependencies
+        if (field === 'mainCategoryId') {
+            // Reset dependent fields when main category changes
+            baseHandleChange('subCategoryId', 0);
+            baseHandleChange('finalTypeId', 0);
+            setFinalTypes([]);
+        } else if (field === 'cityId') {
+            // Reset neighborhood when city changes
+            baseHandleChange('neighborhoodId', 0);
         }
-        
-        if (!formData.finalTypeId) {
-            toast.error("يرجى اختيار النهائي");
-            return false;
-        }
-        
-        if (!formData.cityId || !formData.neighborhoodId) {
-            toast.error("يرجى اختيار المحافظة والمدينة");
-            return false;
-        }
-        if (!formData.coverImage) {
-            toast.error("يرجى اختيار صورة الغلاف");
-            return false;
-        }
-        return true;
-    };
+    }, [baseHandleChange]);
 
-    const handleSubmit = async () => {
-        if (!validateForm()) return;
-        setIsSubmitting(true);
-        if (buildingItemId) {
-            formData.buildingItemId = buildingItemId;
-        }
-        try {
-            const formDataToSend = new FormData();
-            Object.entries(formData).forEach(([key, value]) => {
-                if (value !== null && value !== undefined) {
-                    if (key === "files" && Array.isArray(value)) {
-                        value.forEach((file) => formDataToSend.append("files", file));
-                    } else if (key === "coverImage") {
-                        formDataToSend.append("coverImage", value);
-                    } else {
-                        formDataToSend.append(key, value.toString());
+    const submitFormData = async (): Promise<boolean> => {
+        let success = false;
+        
+        await handleSubmit(async (validData) => {
+            if (buildingItemId) {
+                validData.buildingItemId = buildingItemId;
+            }
+            
+            try {
+                setIsLoading(true);
+                const formDataToSend = new FormData();
+                
+                Object.entries(validData).forEach(([key, value]) => {
+                    if (value !== null && value !== undefined) {
+                        if (key === "files" && Array.isArray(value)) {
+                            // Handle file array
+                            value.forEach((file) => {
+                                if (file instanceof File) {
+                                    formDataToSend.append("files", file);
+                                }
+                            });
+                        } else if (key === "coverImage" && value instanceof File) {
+                            // Handle cover image file
+                            formDataToSend.append("coverImage", value);
+                        } else if (typeof value === 'number' || typeof value === 'boolean') {
+                            // Convert numbers and booleans to strings
+                            formDataToSend.append(key, value.toString());
+                        } else if (typeof value === 'string') {
+                            // Handle strings directly
+                            formDataToSend.append(key, value);
+                        } else if (value instanceof Blob) {
+                            // Handle Blob objects
+                            formDataToSend.append(key, value);
+                        }
                     }
-                }
-            });
-
-            await RealEstateApi.addRealEstate(formDataToSend);
-            toast.success("تمت إضافة العقار بنجاح!");
-            setFormData({
-                ...initialFormState,
-                ...(buildingItemId ? { buildingItemId } : {})
-            });
-            const fileInputs = document.querySelectorAll('input[type="file"]');
-            fileInputs.forEach((input) => {
-                (input as HTMLInputElement).value = '';
-            });
-
-            refetchEstates();
-        } catch (error) {
-            console.error("Failed to create estate:", error);
-            toast.error("حدث خطأ أثناء إضافة العقار");
-        } finally {
-            setIsSubmitting(false);
-        }
+                });
+    
+                await RealEstateApi.addRealEstate(formDataToSend);
+                toast.success("تمت إضافة العقار بنجاح!");
+                
+                // Reset form
+                const newInitialState = { 
+                    ...initialFormState,
+                    ...(buildingItemId ? { buildingItemId } : {})
+                };
+                
+                setFormData(newInitialState);
+                
+                // Clear file inputs
+                const fileInputs = document.querySelectorAll('input[type="file"]');
+                fileInputs.forEach((input) => {
+                    (input as HTMLInputElement).value = '';
+                });
+    
+                refetchEstates();
+                success = true;
+            } catch (error) {
+                console.error("Failed to create estate:", error);
+                toast.error("حدث خطأ أثناء إضافة العقار");
+                success = false;
+            } finally {
+                setIsLoading(false);
+            }
+        });
+        
+        return success;
     };
 
     const getPropertyType = (): 'residential' | 'commercial' | 'industrial' | 'others' => {
@@ -185,27 +222,48 @@ export function useEstateForm(buildingItemId?: string) {
             ?.subtypes.find(m => m.id === formData.subCategoryId);
         const finalType = finalTypes?.find(f => f.id === formData.finalTypeId);
 
-        if (subType?.name.includes('سكني') || finalType?.name.includes('سكني')) {
+        if (subType?.name?.includes('سكني') || finalType?.name?.includes('سكني')) {
             return 'residential';
-        } else if (subType?.name.includes('تجاري') || finalType?.name.includes('تجاري')) {
+        } else if (subType?.name?.includes('تجاري') || finalType?.name?.includes('تجاري')) {
             return 'commercial';
-        } else if (subType?.name.includes('صناعي') || finalType?.name.includes('صناعي')) {
+        } else if (subType?.name?.includes('صناعي') || finalType?.name?.includes('صناعي')) {
             return 'industrial';
         }
         return 'others';
     };
 
+    // Determine if property is land type for conditional validation
+    const isLandType = () => {
+        const selectedSubType = mainTypes
+            ?.find(m => m.id === formData.mainCategoryId)
+            ?.subtypes.find(sub => sub.id === formData.subCategoryId);
+
+        const selectedFinalType = finalTypes.find(type => type.id === formData.finalTypeId);
+
+        return (selectedSubType?.name?.includes('أرض') || selectedFinalType?.name?.includes('أرض')) || false;
+    };
+
+    // Determine if property is rental type for conditional validation
+    const isRentalType = () => {
+        const mainType = mainTypes?.find((m: any) => m.id === formData.mainCategoryId);
+        return mainType?.name?.includes("إيجار") || false;
+    };
+
     return {
         formData,
+        errors,
         setFormData,
+        handleChange,
         cities,
         finalTypes,
         neighborhoods,
         mainTypes,
         isLoading,
         isSubmitting,
-        handleSubmit,
+        submitFormData,
         getPropertyType,
+        isLandType,
+        isRentalType,
         initialFormState
     };
 }

@@ -23,33 +23,41 @@ import ImageUploadModal from "./EnhancedImageUpload";
 interface EstateFormProps {
   buildingItemId?: string;
 }
+
 export default function EstateForm({
   buildingItemId,
 }: EstateFormProps) {
   const {
     formData,
-    setFormData,
+    errors,
+    handleChange,
     cities,
     finalTypes,
     neighborhoods,
     isLoading,
-    handleSubmit,
-    mainTypes,
     isSubmitting,
-    getPropertyType
+    submitFormData,
+    mainTypes,
+    getPropertyType,
+    isLandType,
+    isRentalType
   } = useEstateForm(buildingItemId);
 
-  const handleChange = (field: string, value: any) => {
+  const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
+  const [additionalImagePreviews, setAdditionalImagePreviews] = useState<string[]>([]);
+  const [additionalFileTypes, setAdditionalFileTypes] = useState<string[]>([]);
+
+  const handleFormChange = (field: string, value: any) => {
     console.log(value);
     if (field === 'location') {
       const locationString = `${value.latitude},${value.longitude}`;
-      setFormData(prev => ({ ...prev, [field]: locationString }));
+      handleChange(field, locationString);
       return;
     }
 
     if (field === "title") {
       const cleanedValue = value.replace(/\d/g, '');
-      setFormData(prev => ({ ...prev, [field]: cleanedValue }));
+      handleChange(field, cleanedValue);
       return;
     }
 
@@ -59,13 +67,9 @@ export default function EstateForm({
         return;
       }
     }
-    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    handleChange(field, value);
   };
-
-  const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
-  const [additionalImagePreviews, setAdditionalImagePreviews] = useState<string[]>([]);
-  const [additionalFileTypes, setAdditionalFileTypes] = useState<string[]>([]);
-
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const file = e.target.files?.[0];
@@ -86,7 +90,6 @@ export default function EstateForm({
       const newFileTypes = [...additionalFileTypes];
       newFileTypes[index] = file.type;
       setAdditionalFileTypes(newFileTypes);
-
 
       handleChange('files', files);
     }
@@ -110,81 +113,72 @@ export default function EstateForm({
     }
   };
 
-
-
-  const isLandType = () => {
-    const selectedSubType = mainTypes
-      ?.find(m => m.id === formData.mainCategoryId)
-      ?.subtypes.find(sub => sub.id === formData.subCategoryId);
-
-    const selectedFinalType = finalTypes.find(type => type.id === formData.finalTypeId);
-
-    return selectedSubType?.name.includes('أرض') || selectedFinalType?.name.includes('أرض');
-  };
-
-  const isRentalType = () => {
-    const mainType = mainTypes?.find((m: any) => m.id === formData.mainCategoryId);
-    return mainType?.name.includes("إيجار");
-  }
-
-
   const shouldHideResidentialFields = isLandType();
   const shouldShowRentalField = isRentalType();
 
+  const onSubmitForm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const success = await submitFormData();
+    if (success) {
+      setAdditionalFileTypes([]);
+      setAdditionalImagePreviews([]);
+      setCoverImagePreview(null);
+    }
+  };
+
   return (
-    <form onSubmit={async (e) => {
-      e.preventDefault();
-      await handleSubmit().then(() => {
-        setAdditionalFileTypes([]);
-        setAdditionalImagePreviews([]);
-        setCoverImagePreview(null);
-      });
-    }}>
+    <form onSubmit={onSubmitForm}>
       <h2 className="text-xl font-semibold mb-6">إضافة عقار جديد</h2>
       <div className="space-y-4">
         {/* Basic Info */}
-        <FormField label="عنوان العقار">
+        <FormField 
+          label="عنوان العقار" 
+          error={errors.title}
+        >
           <InputField
             type="text"
             value={formData.title}
-            onChange={(value) => handleChange('title', value)}
+            onChange={(value) => handleFormChange('title', value)}
             placeholder="أدخل عنوان العقار"
             required
+            error={!!errors.title}
           />
         </FormField>
 
-
-        <FormField label="وصف العقار">
+        <FormField 
+          label="وصف العقار"
+          error={errors.description}
+        >
           <InputField
             type="textArea"
             value={formData.description}
-            onChange={(value) => handleChange('description', value)}
+            onChange={(value) => handleFormChange('description', value)}
             placeholder="أدخل وصف العقار"
             required
+            error={!!errors.description}
           />
         </FormField>
 
-        <FormField label="السعر">
-
-
+        <FormField 
+          label="السعر"
+          error={errors.price}
+        >
           <InputField
             type="text"
             value={formData.price === 0 ? "" : formData.price}
             onChange={(value) => {
               const numValue = Number(value);
               if (isNaN(numValue)) {
-                handleChange("price", ""); // or handle it appropriately
+                handleFormChange("price", ""); // or handle it appropriately
               } else {
-                handleChange("price", numValue);
+                handleFormChange("price", numValue);
               }
             }}
             placeholder="أدخل السعر"
             required
+            error={!!errors.price}
           />
-
         </FormField>
-
-
 
         <FormField label="وقت المشاهدة">
           <div className="space-y-3">
@@ -198,7 +192,7 @@ export default function EstateForm({
                       const newTimeRanges = formData.viewTime.split(',');
                       const currentRange = newTimeRanges[index].split(' to ');
                       newTimeRanges[index] = `${value} to ${currentRange[1] || ''}`;
-                      handleChange("viewTime", newTimeRanges.join(','));
+                      handleFormChange("viewTime", newTimeRanges.join(','));
                     }}
                     placeholder="من"
                     className="flex-1"
@@ -211,7 +205,7 @@ export default function EstateForm({
                       const newTimeRanges = formData.viewTime.split(',');
                       const currentRange = newTimeRanges[index].split(' to ');
                       newTimeRanges[index] = `${currentRange[0] || ''} to ${value}`;
-                      handleChange("viewTime", newTimeRanges.join(','));
+                      handleFormChange("viewTime", newTimeRanges.join(','));
                     }}
                     placeholder="إلى"
                     className="flex-1"
@@ -221,7 +215,7 @@ export default function EstateForm({
                   type="button"
                   onClick={() => {
                     const newTimeRanges = formData.viewTime.split(',').filter((_, i) => i !== index);
-                    handleChange("viewTime", newTimeRanges.join(','));
+                    handleFormChange("viewTime", newTimeRanges.join(','));
                   }}
                   className="p-1.5 bg-red-50 text-red-500 rounded-md hover:bg-red-100 transition-colors"
                 >
@@ -237,7 +231,7 @@ export default function EstateForm({
               onClick={() => {
                 const currentValue = formData.viewTime || '';
                 const newValue = currentValue ? `${currentValue},00:00 to 00:00` : '00:00 to 00:00';
-                handleChange("viewTime", newValue);
+                handleFormChange("viewTime", newValue);
               }}
               className="text-sm flex items-center gap-1 text-blue-600 hover:text-blue-700 transition-colors"
             >
@@ -249,11 +243,12 @@ export default function EstateForm({
             </button>
           </div>
         </FormField>
+
         <FormField label="طريقة الدفع">
           <FeaturesSelect
             features={PAYMENT_OPTIONS}
             selectedFeatures={formData.paymentMethod.split("، ").filter(Boolean)}
-            onChange={(selected) => handleChange('paymentMethod', selected.join("، "))}
+            onChange={(selected) => handleFormChange('paymentMethod', selected.join("، "))}
             placeholder="اختر طريقة الدفع"
             selectionText={{
               single: "طريقة دفع",
@@ -263,27 +258,35 @@ export default function EstateForm({
         </FormField>
 
         {/* Categories */}
-        <FormField label="التصنيف الرئيسي">
+        <FormField 
+          label="التصنيف الرئيسي"
+          error={errors.mainCategoryId}
+        >
           <SelectField
             value={formData.mainCategoryId}
             onChange={(value) => {
-              handleChange('mainCategoryId', Number(value));
-              handleChange('subCategoryId', 0);
-              handleChange('mainFeatures', '');
+              handleFormChange('mainCategoryId', Number(value));
+              handleFormChange('subCategoryId', 0);
+              handleFormChange('finalTypeId', 0);
+              handleFormChange('mainFeatures', '');
             }}
             options={mainTypes?.map(type => ({
               value: type.id,
               label: type.name
             })) || []}
             placeholder="اختر الصنف الرئيسي"
+            error={!!errors.mainCategoryId}
           />
         </FormField>
 
         {formData.mainCategoryId > 0 && (
-          <FormField label="التصنيف الفرعي">
+          <FormField 
+            label="التصنيف الفرعي"
+            error={errors.subCategoryId}
+          >
             <SelectField
               value={formData.subCategoryId}
-              onChange={(value) => handleChange('subCategoryId', Number(value))}
+              onChange={(value) => handleFormChange('subCategoryId', Number(value))}
               options={mainTypes
                 ?.find(m => m.id === formData.mainCategoryId)
                 ?.subtypes.map(sub => ({
@@ -291,57 +294,70 @@ export default function EstateForm({
                   label: sub.name
                 })) || []}
               placeholder="اختر الصنف الفرعي"
+              error={!!errors.subCategoryId}
             />
           </FormField>
         )}
 
         {formData.subCategoryId > 0 && (
-          <FormField label="التصنيف النهائي">
+          <FormField 
+            label="التصنيف النهائي"
+            error={errors.finalTypeId}
+          >
             <SelectField
               value={formData.finalTypeId}
-              onChange={(value) => handleChange('finalTypeId', Number(value))}
+              onChange={(value) => handleFormChange('finalTypeId', Number(value))}
               options={finalTypes.map(type => ({
                 value: type.id,
                 label: type.name
               }))}
               placeholder="اختر الصنف النهائي"
+              error={!!errors.finalTypeId}
             />
           </FormField>
         )}
 
         {/* Location */}
-        <FormField label="المحافظة">
+        <FormField 
+          label="المحافظة"
+          error={errors.cityId}
+        >
           <SelectField
             value={formData.cityId}
-            onChange={(value) => handleChange('cityId', Number(value))}
+            onChange={(value) => {
+              handleFormChange('cityId', Number(value));
+              handleFormChange('neighborhoodId', 0); // Reset neighborhood when city changes
+            }}
             options={cities.map(city => ({
               value: city.id,
               label: city.name
             }))}
             placeholder="اختر المحافظة"
+            error={!!errors.cityId}
           />
         </FormField>
 
-
-
-        <FormField label="المدينة">
+        <FormField 
+          label="المدينة"
+          error={errors.neighborhoodId}
+        >
           <SelectField
             value={formData.neighborhoodId}
-            onChange={(value) => handleChange('neighborhoodId', Number(value))}
+            onChange={(value) => handleFormChange('neighborhoodId', Number(value))}
             options={neighborhoods.map(nb => ({
               value: nb.id,
               label: nb.name
             }))}
             placeholder="اختر المدينة"
+            error={!!errors.neighborhoodId}
           />
         </FormField>
-
 
         <FormField label="الأماكن القريبة">
           <FeaturesSelect
             features={NEARBY_LOCATION}
             selectedFeatures={formData.nearbyLocations.split('، ').filter(Boolean)}
-            onChange={(features) => handleChange('nearbyLocations', features.join('، '))}
+            onChange={(features) => handleFormChange('nearbyLocations', features.join('، '))}
             placeholder="اختر الأماكن القريبة"
             selectionText={{
               single: "مكان قريبة",
@@ -349,116 +365,151 @@ export default function EstateForm({
             }}
           />
         </FormField>
-        <FormField label="تحديد الموقع على الخريطة">
+
+        <FormField 
+          label="تحديد الموقع على الخريطة"
+          error={errors.location}
+        >
           <LocationPicker
-            // If you have existing location, pass it
             initialLatitude={formData.location ? parseFloat(formData.location.split(',')[0]) : undefined}
             initialLongitude={formData.location ? parseFloat(formData.location.split(',')[1]) : undefined}
             onLocationSelect={(latitude, longitude) => {
-              handleChange('location', { latitude, longitude });
+              handleFormChange('location', { latitude, longitude });
             }}
           />
         </FormField>
-
 
         {/* Property Details - Only show if not land type */}
         {!shouldHideResidentialFields && (
           <>
             <div className="grid grid-cols-2 gap-4">
-              <FormField label="عدد الغرف">
+              <FormField 
+                label="عدد الغرف"
+                error={errors.bedrooms}
+              >
                 <InputField
                   type="number"
                   value={formData.bedrooms}
-                  onChange={(value) => handleChange('bedrooms', Number(value))}
+                  onChange={(value) => handleFormChange('bedrooms', Number(value))}
                   min={1}
+                  error={!!errors.bedrooms}
                 />
               </FormField>
-              <FormField label="عدد الحمامات">
+              <FormField 
+                label="عدد الحمامات"
+                error={errors.bathrooms}
+              >
                 <InputField
                   type="number"
                   value={formData.bathrooms}
-                  onChange={(value) => handleChange('bathrooms', Number(value))}
+                  onChange={(value) => handleFormChange('bathrooms', Number(value))}
                   min={1}
+                  error={!!errors.bathrooms}
                 />
               </FormField>
             </div>
 
             {/* Additional Details - Only show if not land type */}
-
-            <FormField label="عدد الطوابق">
+            <FormField 
+              label="عدد الطوابق"
+              error={errors.totalFloors}
+            >
               <InputField
                 type="number"
                 value={formData.totalFloors}
-                onChange={(value) => handleChange('totalFloors', Number(value))}
+                onChange={(value) => handleFormChange('totalFloors', Number(value))}
                 min={1}
+                error={!!errors.totalFloors}
               />
             </FormField>
 
-            <FormField label="الطابق">
+            <FormField 
+              label="الطابق"
+              error={errors.floorNumber}
+            >
               <SelectField
                 value={formData.floorNumber}
-                onChange={(value) => handleChange('floorNumber', Number(value))}
+                onChange={(value) => handleFormChange('floorNumber', Number(value))}
                 options={FLOOR_OPTIONS}
                 placeholder="اختر الطابق"
+                error={!!errors.floorNumber}
               />
             </FormField>
 
-            <FormField label="إرتفاع السقف">
+            <FormField 
+              label="إرتفاع السقف"
+              error={errors.ceilingHeight}
+            >
               <InputField
                 type="number"
                 value={formData.ceilingHeight}
-                onChange={(value) => handleChange('ceilingHeight', Number(value))}
+                onChange={(value) => handleFormChange('ceilingHeight', Number(value))}
                 min={1}
+                error={!!errors.ceilingHeight}
               />
             </FormField>
 
-            <FormField label="مفروشة">
+            <FormField 
+              label="مفروشة"
+              error={errors.furnished}
+            >
               <SelectField
                 value={formData.furnished}
-                onChange={(value) => handleChange('furnished', Number(value))}
+                onChange={(value) => handleFormChange('furnished', Number(value))}
                 options={FURNISHED_OPTIONS}
                 placeholder="اختر حالة الفرش"
+                error={!!errors.furnished}
               />
             </FormField>
 
-
-            <FormField label="الإطلالة">
+            <FormField 
+              label="الإطلالة"
+              error={errors.facade}
+            >
               <SelectField
                 value={formData.facade}
-                onChange={(value) => handleChange('facade', value)}
+                onChange={(value) => handleFormChange('facade', value)}
                 options={VIEW_OPTIONS}
                 placeholder="اختر الإطلالة"
+                error={!!errors.facade}
               />
             </FormField>
-
           </>
         )}
 
-
-
         {/* Rental Duration */}
-        {shouldShowRentalField && <FormField label="مدة العقد">
-          <SelectField
-            value={formData.rentalDuration}
-            onChange={(value) => handleChange('rentalDuration', Number(value))}
-            options={RENTAL_DURATION_OPTIONS}
-            placeholder="اختر مدة العقد"
-          />
-        </FormField>
-        }
+        {shouldShowRentalField && (
+          <FormField 
+            label="مدة العقد"
+            error={errors.rentalDuration}
+          >
+            <SelectField
+              value={formData.rentalDuration}
+              onChange={(value) => handleFormChange('rentalDuration', Number(value))}
+              options={RENTAL_DURATION_OPTIONS}
+              placeholder="اختر مدة العقد"
+              error={!!errors.rentalDuration}
+            />
+          </FormField>
+        )}
+
         {/* Always show area */}
-        <FormField label="المساحة">
+        <FormField 
+          label="المساحة"
+          error={errors.buildingArea}
+        >
           <InputField
             type="text"
             value={formData.buildingArea}
             onChange={(value) => {
               if (Number(value) > 0) {
-                handleChange('buildingArea', value);
+                handleFormChange('buildingArea', value);
               } else {
-                handleChange('buildingArea', "");
+                handleFormChange('buildingArea', "");
               }
             }}
             placeholder="المساحة بالمتر المربع"
+            error={!!errors.buildingArea}
           />
         </FormField>
 
@@ -467,7 +518,7 @@ export default function EstateForm({
           <FeaturesSelect
             features={FEATURES_BY_TYPE[getPropertyType()]}
             selectedFeatures={formData.mainFeatures.split('، ').filter(Boolean)}
-            onChange={(features) => handleChange('mainFeatures', features.join('، '))}
+            onChange={(features) => handleFormChange('mainFeatures', features.join('، '))}
             placeholder="اختر الميزات الأساسية"
             selectionText={{
               single: "ميزة أساسية",
@@ -480,7 +531,7 @@ export default function EstateForm({
           <FeaturesSelect
             features={ADDITIONAL_FEATURES}
             selectedFeatures={formData.additionalFeatures.split('، ').filter(Boolean)}
-            onChange={(features) => handleChange('additionalFeatures', features.join('، '))}
+            onChange={(features) => handleFormChange('additionalFeatures', features.join('، '))}
             placeholder="اختر الميزات الإضافية"
             selectionText={{
               single: "ميزة إضافية",
@@ -489,7 +540,10 @@ export default function EstateForm({
           />
         </FormField>
 
-        <FormField label="صور العقار">
+        <FormField 
+          label="صور العقار"
+          error={errors.coverImage || errors.files}
+        >
           <ImageUploadModal
             additionalImagePreviews={additionalImagePreviews}
             additionalFileTypes={additionalFileTypes}
@@ -497,8 +551,12 @@ export default function EstateForm({
             coverImagePreview={coverImagePreview}
             handleImageUpload={handleImageUpload}
           />
+          {(errors.coverImage || errors.files) && (
+            <p className="text-sm text-red-500 mt-1">
+              {errors.coverImage || errors.files}
+            </p>
+          )}
         </FormField>
-
 
         <button
           type="submit"

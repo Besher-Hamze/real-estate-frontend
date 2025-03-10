@@ -1,5 +1,7 @@
 import { Plus } from "lucide-react";
 import { ChangeEvent, useState } from "react";
+import { useFormValidation } from "@/lib/hooks/useFormValidation";
+import * as yup from 'yup';
 
 interface FileField {
     type: 'file';
@@ -8,6 +10,7 @@ interface FileField {
     accept?: string;
     preview?: boolean;
     required?: boolean;
+    validation?: yup.AnySchema;
 }
 
 interface TextField {
@@ -16,6 +19,7 @@ interface TextField {
     label: string;
     placeholder?: string;
     required?: boolean;
+    validation?: yup.AnySchema;
 }
 
 interface SelectField {
@@ -25,6 +29,7 @@ interface SelectField {
     placeholder?: string;
     required?: boolean;
     options: Array<{ value: string | number; label: string }>;
+    validation?: yup.AnySchema;
 }
 
 type Field = FileField | TextField | SelectField;
@@ -38,6 +43,7 @@ interface AddItemFormProps {
     buttonText: string;
     fields: Field[];
     onSubmit: (formData: any) => Promise<void>;
+    validationSchema?: yup.ObjectSchema<any>;
 }
 
 export function AddItemForm({
@@ -45,22 +51,48 @@ export function AddItemForm({
     buttonText,
     fields,
     onSubmit,
+    validationSchema
 }: AddItemFormProps) {
+    // Create initial state and schema
     const initialState: FormState = Object.fromEntries(
         fields.map(field => [field.name, null])
     );
-    const [formData, setFormData] = useState<FormState>(initialState);
+
+    // Build dynamic schema if not provided
+    const dynamicSchema = validationSchema || yup.object(
+        fields.reduce((schemaFields, field) => {
+            if (field.validation) {
+                schemaFields[field.name] = field.validation;
+            } else if (field.required) {
+                if (field.type === 'file') {
+                    schemaFields[field.name] = yup.mixed().required(`${field.label} مطلوب`);
+                } else {
+                    schemaFields[field.name] = yup.string().required(`${field.label} مطلوب`);
+                }
+            }
+            return schemaFields;
+        }, {} as Record<string, yup.AnySchema>)
+    );
+
+    const {
+        formData,
+        errors,
+        isSubmitting,
+        handleChange,
+        handleSubmit,
+        setFormData
+    } = useFormValidation(dynamicSchema, initialState);
+
     const [previews, setPreviews] = useState<{ [key: string]: string }>({});
-    const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleFormSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        // Create FormData object for submission
         const formDataToSubmit = new FormData();
-
         Object.entries(formData).forEach(([key, value]) => {
             if (value !== null) {
                 if (value instanceof File) {
-                    // Explicitly handle File objects
                     formDataToSubmit.append(key, value, value.name);
                 } else {
                     formDataToSubmit.append(key, value.toString());
@@ -68,24 +100,20 @@ export function AddItemForm({
             }
         });
 
-        console.log("Submitted FormData:");
-        for (const [key, value] of formDataToSubmit.entries()) {
-            console.log(`${key}:`, value);
-        }
-
-        try {
-            setIsLoading(true);
-            await onSubmit(formDataToSubmit);
-
-            setFormData(initialState);
-            setPreviews({});
-        } catch (error) {
-            console.error('Submission error:', error);
-        } finally {
-            setIsLoading(false);
-        }
+        await handleSubmit(async () => {
+            try {
+                await onSubmit(formDataToSubmit);
+                // Reset form on success
+                setFormData(initialState);
+                setPreviews({});
+            } catch (error) {
+                console.error('Submission error:', error);
+                throw error; // Re-throw to be caught by handleSubmit
+            }
+        });
     };
-    const handleChange = (
+
+    const handleFieldChange = (
         name: string,
         value: string | File | number | null,
         type: 'text' | 'file' | 'select'
@@ -94,17 +122,17 @@ export function AddItemForm({
             const url = URL.createObjectURL(value as File);
             setPreviews(prev => ({ ...prev, [name]: url }));
         }
-        setFormData(prev => ({ ...prev, [name]: value }));
+        handleChange(name, value);
     };
 
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>, name: string) => {
         const file = e.target.files?.[0] || null;
-        handleChange(name, file, 'file');
+        handleFieldChange(name, file, 'file');
     };
 
-
-
     const renderField = (field: Field) => {
+        const hasError = !!errors[field.name];
+        
         switch (field.type) {
             case 'file':
                 return (
@@ -113,7 +141,9 @@ export function AddItemForm({
                             type="file"
                             accept={field.accept}
                             onChange={(e) => handleFileChange(e, field.name)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                                hasError ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                            }`}
                             required={field.required}
                         />
                         {field.preview && previews[field.name] && (
@@ -131,12 +161,14 @@ export function AddItemForm({
                 return (
                     <select
                         value={formData[field.name]?.toString() || ''}
-                        onChange={(e) => handleChange(
+                        onChange={(e) => handleFieldChange(
                             field.name,
                             e.target.value ? Number(e.target.value) : null,
                             'select'
                         )}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                            hasError ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                        }`}
                         required={field.required}
                     >
                         <option value="">{field.placeholder || 'اختر...'}</option>
@@ -152,8 +184,10 @@ export function AddItemForm({
                     <input
                         type="text"
                         value={formData[field.name]?.toString() || ''}
-                        onChange={(e) => handleChange(field.name, e.target.value, 'text')}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        onChange={(e) => handleFieldChange(field.name, e.target.value, 'text')}
+                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                            hasError ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                        }`}
                         placeholder={field.placeholder}
                         required={field.required}
                     />
@@ -162,7 +196,7 @@ export function AddItemForm({
     };
 
     return (
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleFormSubmit}>
             <h2 className="text-xl font-semibold mb-6">{title}</h2>
             <div className="space-y-4">
                 {fields.map((field) => (
@@ -171,18 +205,21 @@ export function AddItemForm({
                             {field.label}
                         </label>
                         {renderField(field)}
+                        {errors[field.name] && (
+                            <p className="text-sm text-red-500 mt-1">{errors[field.name]}</p>
+                        )}
                     </div>
                 ))}
                 <button
                     type="submit"
-                    disabled={isLoading}
+                    disabled={isSubmitting}
                     className={`w-full px-6 py-3 rounded-lg transition-colors flex items-center justify-center gap-2 
-                        ${isLoading
+                        ${isSubmitting
                             ? 'bg-blue-400 cursor-not-allowed'
                             : 'bg-blue-600 hover:bg-blue-700'
                         } text-white`}
                 >
-                    {isLoading ? (
+                    {isSubmitting ? (
                         <div className="flex items-center">
                             <svg
                                 className="animate-spin h-5 w-5 mr-2"
@@ -216,5 +253,4 @@ export function AddItemForm({
             </div>
         </form>
     );
-
 }

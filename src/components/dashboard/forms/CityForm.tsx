@@ -3,6 +3,7 @@ import { cityApi } from "@/api/cityApi";
 import { toast } from "react-toastify";
 import { useQueryClient } from "@tanstack/react-query";
 import { cityQuery } from "@/lib/constants/queryNames";
+import { citySchema, validationSchemas } from '@/schemas/estateSchema';
 
 export default function CityForm() {
   const client = useQueryClient();
@@ -25,7 +26,9 @@ export default function CityForm() {
       name: 'name',
       label: 'اسم المحافظة',
       type: 'text' as const,
-      placeholder: 'أدخل اسم المحافظة'
+      placeholder: 'أدخل اسم المحافظة',
+      required: true,
+      validation: validationSchemas.requiredText
     }
   ];
 
@@ -35,6 +38,7 @@ export default function CityForm() {
       buttonText="إضافة محافظة"
       fields={fields}
       onSubmit={handleAddCity}
+      validationSchema={citySchema}
     />
   );
 }
