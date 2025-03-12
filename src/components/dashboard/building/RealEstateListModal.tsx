@@ -11,6 +11,8 @@ import RealEstateCard from '@/components/widgets/PropertyGrid/PropertyCard';
 import { mainTypeApi } from '@/api/mainTypeApi';
 import EditEstateForm from '../estate-components/Edit-Estate';
 import { toast } from 'react-toastify';
+import { finalCityQuery } from '@/lib/constants/queryNames';
+import { finalCityApi } from '@/api/finalCityApi';
 
 interface RealEstateListModalProps {
     isOpen: boolean;
@@ -47,6 +49,13 @@ export function RealEstateListModal({
         queryFn: () => neighborhoodApi.fetchNeighborhoodByCityId(editingEstate?.cityId || 0),
         enabled: !!editingEstate && !!editingEstate.cityId
     });
+
+    const { data: finalCities = [] } = useQuery({
+        queryKey: [finalCityQuery, editingEstate?.neighborhoodId],
+        queryFn: () => finalCityApi.fetchFinalCityByNeighborhoodId(editingEstate?.neighborhoodId || 0),
+        enabled: !!editingEstate && !!editingEstate.neighborhoodId
+    });
+
 
     const { data: mainTypes = [] } = useQuery({
         queryKey: ['mainTypes'],
@@ -119,7 +128,7 @@ export function RealEstateListModal({
                                     neighborhoods={neighborhoods}
                                     mainTypes={mainTypes}
                                     finalTypes={finalTypes}
-                                />
+                                    finalCities={finalCities} />
                             </div>
                         </>
                     ) : (

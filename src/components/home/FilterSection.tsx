@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Filter, ChevronDown, ChevronsLeftRight, ChevronUp, Building, MapPin, Bath, BedDouble, Clock, Mountain, HomeIcon, LayersIcon, Building2Icon, X } from 'lucide-react';
 import { finalTypeTypeApi } from '@/api/finalTypeApi';
-import { CityType, Filters, FinalType, NeighborhoodType, PropertySize, FilterSectionProps } from '@/lib/types';
+import { CityType, Filters, FinalType, NeighborhoodType, PropertySize, FilterSectionProps, FinalCityType } from '@/lib/types';
 import { cityApi } from '@/api/cityApi';
 import { neighborhoodApi } from '@/api/NeighborhoodApi';
 import { getPropertySizeLabel } from '@/utils/filterUtils';
 import SortComponent from './SortComponent';
 import { FilterChip } from './home';
 import { SelectField } from './SelectField';
+import { finalCityApi } from '@/api/finalCityApi';
 
 const defaultFilters: Filters = {
   bedrooms: '',
@@ -15,6 +16,7 @@ const defaultFilters: Filters = {
   finalType: '',
   city: '',
   neighborhood: '',
+  finalCity: '',
   propertySize: '',
   isFurnished: false,
   rentalPeriod: '',
@@ -44,6 +46,7 @@ const FilterSection = ({
   const [maxInput, setMaxInput] = useState(priceRange[1].toString());
   const [finalTypes, setFinalTypes] = useState<FinalType[]>([]);
   const [neighborhoods, setNeighborhoods] = useState<NeighborhoodType[]>([]);
+  const [finalCities, setFinalCities] = useState<FinalCityType[]>([]);
   const [cities, setCities] = useState<CityType[]>([]);
 
   useEffect(() => {
@@ -63,6 +66,14 @@ const FilterSection = ({
       setNeighborhoods([]);
     }
   }, [filters.city]);
+
+  useEffect(() => {
+    if (filters.neighborhood) {
+      finalCityApi.fetchFinalCityByNeighborhoodId(parseInt(filters.neighborhood)).then(setFinalCities);
+    } else {
+      setFinalCities([]);
+    }
+  }, [filters.neighborhood]);
 
 
 
@@ -331,6 +342,16 @@ const FilterSection = ({
               options={[{ value: '', label: 'الكل' }, ...neighborhoods.map(n => ({ value: n.id, label: n.name }))]}
               className={!filters.city ? 'opacity-50 cursor-not-allowed' : ''}
               enable={filters.city != ""}
+            />
+
+            <SelectField
+              label="الحي"
+              icon={Building2Icon}
+              value={filters.finalCity}
+              onChange={(e) => setFilters({ ...filters, finalCity: e.target.value })}
+              options={[{ value: '', label: 'الكل' }, ...finalCities.map(n => ({ value: n.id, label: n.name }))]}
+              className={!filters.finalCity ? 'opacity-50 cursor-not-allowed' : ''}
+              enable={filters.finalCity != ""}
             />
 
             <SelectField

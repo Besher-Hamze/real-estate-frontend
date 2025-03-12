@@ -5,6 +5,7 @@ import { InputField } from "@/components/ui/form/InputField";
 import { SelectField } from "@/components/ui/form/SelectField";
 import {
   ADDITIONAL_FEATURES,
+  BUILDING_AGE_OPTION,
   FEATURES_BY_TYPE,
   FLOOR_OPTIONS,
   FURNISHED_OPTIONS,
@@ -34,6 +35,7 @@ export default function EstateForm({
     cities,
     finalTypes,
     neighborhoods,
+    finalCities,
     isLoading,
     isSubmitting,
     submitFormData,
@@ -67,7 +69,7 @@ export default function EstateForm({
         return;
       }
     }
-    
+
     handleChange(field, value);
   };
 
@@ -131,8 +133,8 @@ export default function EstateForm({
       <h2 className="text-xl font-semibold mb-6">إضافة عقار جديد</h2>
       <div className="space-y-4">
         {/* Basic Info */}
-        <FormField 
-          label="عنوان العقار" 
+        <FormField
+          label="عنوان العقار"
           error={errors.title}
         >
           <InputField
@@ -145,7 +147,7 @@ export default function EstateForm({
           />
         </FormField>
 
-        <FormField 
+        <FormField
           label="وصف العقار"
           error={errors.description}
         >
@@ -159,7 +161,7 @@ export default function EstateForm({
           />
         </FormField>
 
-        <FormField 
+        <FormField
           label="السعر"
           error={errors.price}
         >
@@ -258,7 +260,7 @@ export default function EstateForm({
         </FormField>
 
         {/* Categories */}
-        <FormField 
+        <FormField
           label="التصنيف الرئيسي"
           error={errors.mainCategoryId}
         >
@@ -280,7 +282,7 @@ export default function EstateForm({
         </FormField>
 
         {formData.mainCategoryId > 0 && (
-          <FormField 
+          <FormField
             label="التصنيف الفرعي"
             error={errors.subCategoryId}
           >
@@ -300,7 +302,7 @@ export default function EstateForm({
         )}
 
         {formData.subCategoryId > 0 && (
-          <FormField 
+          <FormField
             label="التصنيف النهائي"
             error={errors.finalTypeId}
           >
@@ -318,7 +320,7 @@ export default function EstateForm({
         )}
 
         {/* Location */}
-        <FormField 
+        <FormField
           label="المحافظة"
           error={errors.cityId}
         >
@@ -337,7 +339,7 @@ export default function EstateForm({
           />
         </FormField>
 
-        <FormField 
+        <FormField
           label="المدينة"
           error={errors.neighborhoodId}
         >
@@ -349,6 +351,22 @@ export default function EstateForm({
               label: nb.name
             }))}
             placeholder="اختر المدينة"
+            error={!!errors.neighborhoodId}
+          />
+        </FormField>
+
+        <FormField
+          label="الحي"
+          error={errors.neighborhoodId}
+        >
+          <SelectField
+            value={formData.finalCityId}
+            onChange={(value) => handleFormChange('finalCityId', Number(value))}
+            options={finalCities.map(nb => ({
+              value: nb.id,
+              label: nb.name
+            }))}
+            placeholder="اختر الحي"
             error={!!errors.neighborhoodId}
           />
         </FormField>
@@ -366,7 +384,7 @@ export default function EstateForm({
           />
         </FormField>
 
-        <FormField 
+        <FormField
           label="تحديد الموقع على الخريطة"
           error={errors.location}
         >
@@ -383,7 +401,7 @@ export default function EstateForm({
         {!shouldHideResidentialFields && (
           <>
             <div className="grid grid-cols-2 gap-4">
-              <FormField 
+              <FormField
                 label="عدد الغرف"
                 error={errors.bedrooms}
               >
@@ -395,7 +413,7 @@ export default function EstateForm({
                   error={!!errors.bedrooms}
                 />
               </FormField>
-              <FormField 
+              <FormField
                 label="عدد الحمامات"
                 error={errors.bathrooms}
               >
@@ -410,7 +428,7 @@ export default function EstateForm({
             </div>
 
             {/* Additional Details - Only show if not land type */}
-            <FormField 
+            <FormField
               label="عدد الطوابق"
               error={errors.totalFloors}
             >
@@ -423,7 +441,7 @@ export default function EstateForm({
               />
             </FormField>
 
-            <FormField 
+            <FormField
               label="الطابق"
               error={errors.floorNumber}
             >
@@ -436,7 +454,16 @@ export default function EstateForm({
               />
             </FormField>
 
-            <FormField 
+            <FormField label="عمر البناء">
+              <SelectField
+                value={formData.buildingAge}
+                onChange={(value) => handleChange("buildingAge", value)}
+                options={BUILDING_AGE_OPTION}
+                placeholder="اختر عمر المبنى"
+              />
+            </FormField>
+
+            <FormField
               label="إرتفاع السقف"
               error={errors.ceilingHeight}
             >
@@ -449,7 +476,7 @@ export default function EstateForm({
               />
             </FormField>
 
-            <FormField 
+            <FormField
               label="مفروشة"
               error={errors.furnished}
             >
@@ -462,7 +489,7 @@ export default function EstateForm({
               />
             </FormField>
 
-            <FormField 
+            <FormField
               label="الإطلالة"
               error={errors.facade}
             >
@@ -479,7 +506,7 @@ export default function EstateForm({
 
         {/* Rental Duration */}
         {shouldShowRentalField && (
-          <FormField 
+          <FormField
             label="مدة العقد"
             error={errors.rentalDuration}
           >
@@ -494,7 +521,7 @@ export default function EstateForm({
         )}
 
         {/* Always show area */}
-        <FormField 
+        <FormField
           label="المساحة"
           error={errors.buildingArea}
         >
@@ -540,7 +567,7 @@ export default function EstateForm({
           />
         </FormField>
 
-        <FormField 
+        <FormField
           label="صور العقار"
           error={errors.coverImage || errors.files}
         >

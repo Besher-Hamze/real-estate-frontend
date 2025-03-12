@@ -64,6 +64,8 @@ export default function BuildingsTable() {
 
 
   const handleEdit = (building: Building) => {
+    console.log(building);
+    
     setSelectedBuilding(building);
     setEditModalOpen(true);
   };

@@ -5,11 +5,12 @@ import { finalTypeTypeApi } from '@/api/finalTypeApi';
 import { RealEstateApi } from '@/api/realEstateApi';
 import apiClient from '@/api';
 import { CreateEstateForm } from '../types/create';
-import { CityType, FinalType, NeighborhoodType, MainType } from '../types';
+import { CityType, FinalType, NeighborhoodType, MainType, FinalCityType } from '../types';
 import { useMainType } from './useMainType';
 import { useRealEstate } from './useRealEstate';
 import { useFormValidation } from '@/lib/hooks/useFormValidation';
 import { createValidationContext, estateSchema } from '@/schemas/estateSchema';
+import { finalCityApi } from '@/api/finalCityApi';
 
 const initialFormState: CreateEstateForm = {
     title: "",
@@ -17,6 +18,7 @@ const initialFormState: CreateEstateForm = {
     price: 0,
     cityId: 0,
     neighborhoodId: 0,
+    finalCityId: 0,
     bedrooms: 1,
     bathrooms: 1,
     furnished: 1,
@@ -38,11 +40,12 @@ const initialFormState: CreateEstateForm = {
     viewTime: '',
     buildingItemId: '',
     location: "23.5880,58.3829 ",
+    buildingAge: ""
 };
 
 export function useEstateForm(buildingItemId?: string) {
     // Initialize the form state, accounting for buildingItemId if provided
-    const initialState = { 
+    const initialState = {
         ...initialFormState,
         ...(buildingItemId ? { buildingItemId } : {})
     };
@@ -51,6 +54,7 @@ export function useEstateForm(buildingItemId?: string) {
     const [cities, setCities] = useState<CityType[]>([]);
     const [finalTypes, setFinalTypes] = useState<FinalType[]>([]);
     const [neighborhoods, setNeighborhoods] = useState<NeighborhoodType[]>([]);
+    const [finalCities, setFinalCities] = useState<FinalCityType[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
     const { mainTypes } = useMainType();
@@ -92,7 +96,7 @@ export function useEstateForm(buildingItemId?: string) {
                 setFinalTypes([]);
                 return;
             }
-            
+
             try {
                 setIsLoading(true);
                 const response = await finalTypeTypeApi.fetchFinalTypeBySubId(formData.subCategoryId);
@@ -104,7 +108,7 @@ export function useEstateForm(buildingItemId?: string) {
                 setIsLoading(false);
             }
         };
-        
+
         fetchFinalTypes();
     }, [formData.subCategoryId]);
 
@@ -115,7 +119,6 @@ export function useEstateForm(buildingItemId?: string) {
                 setNeighborhoods([]);
                 return;
             }
-            
             try {
                 setIsLoading(true);
                 const response = await apiClient.get(`/api/neighborhoods/${formData.cityId}`);
@@ -127,39 +130,55 @@ export function useEstateForm(buildingItemId?: string) {
                 setIsLoading(false);
             }
         };
-        
+
         fetchNeighborhoods();
     }, [formData.cityId]);
 
-    // Enhanced handleChange
+    useEffect(() => {
+        const fetchFinalCities = async () => {
+            if (!formData.cityId) {
+                setNeighborhoods([]);
+                return;
+            }
+            try {
+                setIsLoading(true);
+                const response = await finalCityApi.fetchFinalCityByNeighborhoodId(formData.neighborhoodId);;
+                setFinalCities(response);
+            } catch (error) {
+                console.error("Failed to fetch neighborhoods:", error);
+                toast.error("فشل في تحميل الاحياء");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchFinalCities();
+    }, [formData.neighborhoodId]);
+
     const handleChange = useCallback((field: string, value: any) => {
-        // Update form data through validation system
         baseHandleChange(field, value as any);
-        
-        // Special logic for form field dependencies
+
         if (field === 'mainCategoryId') {
-            // Reset dependent fields when main category changes
             baseHandleChange('subCategoryId', 0);
             baseHandleChange('finalTypeId', 0);
             setFinalTypes([]);
         } else if (field === 'cityId') {
-            // Reset neighborhood when city changes
             baseHandleChange('neighborhoodId', 0);
+            baseHandleChange('finalCityId', 0);
         }
     }, [baseHandleChange]);
 
     const submitFormData = async (): Promise<boolean> => {
         let success = false;
-        
+
         await handleSubmit(async (validData) => {
             if (buildingItemId) {
                 validData.buildingItemId = buildingItemId;
             }
-            
+
             try {
                 setIsLoading(true);
                 const formDataToSend = new FormData();
-                
+
                 Object.entries(validData).forEach(([key, value]) => {
                     if (value !== null && value !== undefined) {
                         if (key === "files" && Array.isArray(value)) {
@@ -184,24 +203,24 @@ export function useEstateForm(buildingItemId?: string) {
                         }
                     }
                 });
-    
+
                 await RealEstateApi.addRealEstate(formDataToSend);
                 toast.success("تمت إضافة العقار بنجاح!");
-                
+
                 // Reset form
-                const newInitialState = { 
+                const newInitialState = {
                     ...initialFormState,
                     ...(buildingItemId ? { buildingItemId } : {})
                 };
-                
+
                 setFormData(newInitialState);
-                
+
                 // Clear file inputs
                 const fileInputs = document.querySelectorAll('input[type="file"]');
                 fileInputs.forEach((input) => {
                     (input as HTMLInputElement).value = '';
                 });
-    
+
                 refetchEstates();
                 success = true;
             } catch (error) {
@@ -212,7 +231,7 @@ export function useEstateForm(buildingItemId?: string) {
                 setIsLoading(false);
             }
         });
-        
+
         return success;
     };
 
@@ -257,6 +276,7 @@ export function useEstateForm(buildingItemId?: string) {
         cities,
         finalTypes,
         neighborhoods,
+        finalCities,
         mainTypes,
         isLoading,
         isSubmitting,

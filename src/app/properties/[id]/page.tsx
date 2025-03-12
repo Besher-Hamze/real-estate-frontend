@@ -10,6 +10,7 @@ import { RealEstateData } from '@/lib/types';
 import PropertyGallery from '@/components/properties/PropertyGallery';
 import RealEstateCard from '@/components/widgets/PropertyGrid/PropertyCard';
 import MapboxViewer from '@/components/map/MapboxViewer';
+import { BUILDING_AGE_OPTION } from '@/components/ui/constants/formOptions';
 
 export default function PropertyDetails() {
     const [property, setProperty] = useState<RealEstateData | null>(null);
@@ -19,7 +20,7 @@ export default function PropertyDetails() {
     const [error, setError] = useState<string | null>(null);
     const params = useParams();
     const router = useRouter();
-    
+
     useEffect(() => {
         const fetchPropertyDetails = async () => {
             try {
@@ -89,7 +90,6 @@ export default function PropertyDetails() {
             </div>
         );
     }
-    console.log(property.viewTime);
 
     return (
         <div className="min-h-screen bg-gray-50" dir="rtl">
@@ -111,7 +111,7 @@ export default function PropertyDetails() {
                             </h1>
                             <div className="flex items-center gap-2 text-gray-600">
                                 <MapPin className="w-5 h-5 text-blue-600" />
-                                <span>{property.cityName} - {property.neighborhoodName} - {property.mainCategoryName} -  {property.subCategoryName} -{property.finalTypeName}</span>
+                                <span>{property.cityName} - {property.neighborhoodName} - {property.finalCityName} - {property.mainCategoryName} -  {property.subCategoryName} -{property.finalTypeName}</span>
                             </div>
                         </div>
                         <div className="text-left">
@@ -308,6 +308,11 @@ export default function PropertyDetails() {
                             <span className="text-gray-600">رقم الطابق</span>
                             <span className="font-semibold">{property.floorNumber}</span>
                         </div>
+                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                            <span className="text-gray-600">عمر البناء</span>
+                            <span className="font-semibold">{BUILDING_AGE_OPTION.find((b)=>b.value===property.buildingAge)?.label}</span>
+                        </div>
+
                         <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                             <span className="text-gray-600">مفروش</span>
                             <span className="font-semibold">{property.furnished ? 'نعم' : 'لا'}</span>

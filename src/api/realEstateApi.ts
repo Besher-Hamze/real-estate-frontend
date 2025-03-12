@@ -30,7 +30,6 @@ export const RealEstateApi = {
     },
     updateRealEstate: async (id: number, estate: any) => {
         try {
-            const formData = new FormData();
 
             const {
                 cityName,
@@ -38,65 +37,16 @@ export const RealEstateApi = {
                 mainCategoryName,
                 subCategoryName,
                 finalTypeName,
+                finalCityName,
                 ...cleanedEstate
             } = estate;
 
             const filteredEstate = { ...cleanedEstate };
 
-            // Handle coverImage - remove if not a File
-            if (!(filteredEstate.coverImage instanceof File)) {
-                delete filteredEstate.coverImage;
-            }
-
-            // Check if there are any File objects in the files array
-            const hasFileObjects = filteredEstate.files &&
-                Array.isArray(filteredEstate.files) &&
-                filteredEstate.files.some((file: any) => file instanceof File);
 
 
-        
 
-            // Remove files array from filtered estate if no File objects
-            if (!hasFileObjects) {
-                delete filteredEstate.files;
-            }
-
-            // Add all primitive values to the FormData
-            Object.entries(filteredEstate).forEach(([key, value]) => {
-                // Skip file-related properties that will be handled separately
-                if (
-                    key !== 'files' &&
-                    value !== undefined &&
-                    value !== null
-                ) {
-                    // Convert arrays or objects to strings
-                    if (typeof value === 'object' && !(value instanceof File) && !(value instanceof Blob)) {
-                        formData.append(key, JSON.stringify(value));
-                    } else {
-                        formData.append(key, value as string | Blob);
-                    }
-                }
-            });
-
-            // Handle additional files - only append if they're File objects (new uploads)
-            if (filteredEstate.files && Array.isArray(filteredEstate.files)) {
-                filteredEstate.files.forEach((file: any) => {
-                    if (file instanceof File) {
-                        formData.append('files', file);
-                    }
-                });
-            }
-
-            console.log("FormData keys:");
-            for (const key of formData.keys()) {
-                console.log(`- ${key}: ${formData.get(key) instanceof File ? 'File object' : formData.get(key)}`);
-            }
-
-            const response = await axios.put(`${API_BASE_URL}/api/realestate/${id}`, formData, {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                },
-            });
+            const response = await apiClient.put(`${API_BASE_URL}/api/realestate/${id}`, filteredEstate);
 
             return response.data;
         } catch (error) {

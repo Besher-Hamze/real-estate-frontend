@@ -36,11 +36,14 @@ export interface RealEstateData {
   id: number;
   cityId: number;
   neighborhoodId: number;
+  finalCityId: number;
   title: string;
   description: string;
   price: number;
   cityName: string;
   neighborhoodName: string;
+  finalCityName: string;
+  buildingAge: string;
   bedrooms: number;
   bathrooms: number;
   furnished: boolean;
@@ -74,6 +77,11 @@ export interface NeighborhoodType {
   id: number;
   name: string;
   cityId: number
+}
+export interface FinalCityType {
+  id: number;
+  name: string;
+  neighborhoodId: number
 }
 export interface MainType {
   id: number;
@@ -167,6 +175,7 @@ export interface Filters {
   finalType: string;
   city: string;
   neighborhood: string;
+  finalCity: string;
   propertySize: string;
   isFurnished: boolean;
   rentalPeriod: string;

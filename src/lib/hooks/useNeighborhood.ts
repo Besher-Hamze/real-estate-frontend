@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { neighborhoodApi } from "@/api/NeighborhoodApi";
-import { NeighborhoodType } from "@/lib/types/create";
+import { NeighborhoodType } from "@/lib/types/index";
 import { neighborhoodsQuery } from "../constants/queryNames";
 
 export const useNeighborhood = () => {

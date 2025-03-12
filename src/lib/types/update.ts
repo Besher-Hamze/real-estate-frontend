@@ -11,6 +11,11 @@ export interface UpdateNeighborhood {
     name?: string;
     cityId?:number;
 }
+export interface UpdateFinalCity {
+    name?: string;
+    neighborhoodId?:number;
+}
+
 
 export interface UpdateSubTypeForm {
     name?: string;

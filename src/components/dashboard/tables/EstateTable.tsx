@@ -11,13 +11,14 @@ import { toast } from "react-toastify";
 import { RealEstateApi } from "@/api/realEstateApi";
 import apiClient from "@/api";
 import { finalTypeTypeApi } from "@/api/finalTypeApi";
-import { CityType, FinalType, MainType, NeighborhoodType, RealEstateData } from "@/lib/types";
+import { CityType, FinalCityType, FinalType, MainType, NeighborhoodType, RealEstateData } from "@/lib/types";
 import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 import EditEstateForm from "../estate-components/Edit-Estate";
 
 import { useSelectionManager } from "@/lib/hooks/useSelectionManager";
 import { BulkActionsBar } from "../BulkActionsBar";
 import { BulkDeleteDialog } from "../BulkDeleteDialog";
+import { finalCityApi } from "@/api/finalCityApi";
 
 interface EstateTableProps {
   realEstateData: RealEstateData[] | undefined;
@@ -43,6 +44,7 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
   const [cities, setCities] = useState<CityType[]>([]);
   const [finalTypes, setFinalTypes] = useState<FinalType[]>([]);
   const [neighborhoods, setNeighborhoods] = useState<NeighborhoodType[]>([]);
+  const [finalCities, setFinalCities] = useState<FinalCityType[]>([]);
 
   const client = useQueryClient();
   const modalRef = useRef<HTMLDivElement>(null);
@@ -116,6 +118,20 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
     };
     fetchNeighborhoods();
   }, [editingEstate?.cityId]);
+
+  useEffect(() => {
+    const fetchFinalCities = async () => {
+      if (editingEstate?.neighborhoodId) {
+        try {
+          const response = await finalCityApi.fetchFinalCityByNeighborhoodId(editingEstate.neighborhoodId);
+          setFinalCities(response);
+        } catch (error) {
+          console.error("Failed to fetch neighborhoods:", error);
+        }
+      }
+    };
+    fetchFinalCities();
+  }, [editingEstate?.neighborhoodId]);
 
   const handleEdit = async () => {
     if (!editingEstate) return;
@@ -250,6 +266,7 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
         <>
           <div className="text-sm text-gray-900">{row.cityName}</div>
           <div className="text-sm text-gray-500">{row.neighborhoodName}</div>
+          <div className="text-sm text-gray-500">{row.finalCityName}</div>
         </>
       )
     },
@@ -344,6 +361,7 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
                     neighborhoods={neighborhoods}
                     mainTypes={mainTypes || []}
                     finalTypes={finalTypes}
+                    finalCities={finalCities}
                   />
                 )}
               </div>

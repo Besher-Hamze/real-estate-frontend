@@ -13,10 +13,11 @@ import NeighborhoodTable from "./tables/NeighborhoodTable";
 import EstateTable from "./tables/EstateTable";
 import BuildingTable from "./tables/BuildingTable";
 import FloatingAddButton from "./FloatingAddButton";
+import FinalCityTable from "./tables/FinalCitiesTable";
 
 export default function DashboardComponent() {
   const [activeTab, setActiveTab] = useState<
-    "mainType" | "subType" | "finalType" | "city" | "neighborhood" | "estate" | "map"
+    "mainType" | "subType" | "finalType" | "city" | "neighborhood" | "estate" | "map" | "finalCity"
   >("mainType");
 
   const { mainTypes, isLoading: isLoadingMainTypes, refetch: refetchMain } = useMainType();
@@ -61,9 +62,14 @@ export default function DashboardComponent() {
                 {activeTab === "finalType" && <FinalTypeTable />}
                 {activeTab === "city" && <CityTable />}
                 {activeTab === "neighborhood" && <NeighborhoodTable />}
+                {activeTab === "finalCity" && <FinalCityTable />}
                 {activeTab === "estate" && (
                   <EstateTable mainTypes={mainTypes} realEstateData={realEstateData} isLoading={isLoadingEstate} />
                 )}
+
+
+
+
 
                 {/* Loading State */}
                 {isLoading && (

@@ -10,6 +10,7 @@ import CityForm from "./forms/CityForm";
 import NeighborhoodForm from "./forms/NeighborhoodForm";
 import EstateForm from "./forms/EstateForm";
 import BuildingForm from "./forms/BuildingForm";
+import FinalCityForm from "./forms/FinalCityForm";
 
 // Define the available dashboard tabs
 type DashboardTab =
@@ -19,7 +20,9 @@ type DashboardTab =
     | "city"
     | "neighborhood"
     | "estate"
-    | "map";
+    | "map"
+    | "finalCity"
+    ;
 
 type Props = {
     activeTab: DashboardTab;
@@ -38,7 +41,7 @@ export default function FloatingAddButton({ activeTab }: Props) {
         };
 
         document.addEventListener('keydown', handleKeyDown);
-        
+
         return () => {
             document.removeEventListener('keydown', handleKeyDown);
         };
@@ -54,6 +57,7 @@ export default function FloatingAddButton({ activeTab }: Props) {
             case "neighborhood": return <NeighborhoodForm />;
             case "estate": return <EstateForm />;
             case "map": return <BuildingForm />;
+            case "finalCity": return <FinalCityForm />;
             default: return null;
         }
     };
@@ -90,14 +94,14 @@ export default function FloatingAddButton({ activeTab }: Props) {
                             role="dialog"
                         >
                             {/* Close Button */}
-                            <button 
-                                onClick={() => setModalOpen(false)} 
+                            <button
+                                onClick={() => setModalOpen(false)}
                                 className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
                                 aria-label="Close modal"
                             >
                                 <X className="w-6 h-6" />
                             </button>
-                            
+
                             <div className="m-8">
                                 {renderForm()}
                             </div>

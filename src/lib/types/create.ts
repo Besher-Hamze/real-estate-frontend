@@ -11,6 +11,10 @@ export interface CreateNeighborhood {
     cityId: number;
     name: string;
 }
+export interface CreateFinalCity {
+    neighborhoodId: number;
+    name: string;
+}
 
 export interface CreateSubTypeForm {
     name: string;
@@ -29,6 +33,7 @@ export interface CreateEstateForm {
     description: string;
     cityId: number;
     neighborhoodId: number;
+    finalCityId: number;
     bedrooms: number;
     bathrooms: number;
     furnished: number;
@@ -46,6 +51,7 @@ export interface CreateEstateForm {
     files: File[] | null;
     rentalDuration: number;
     ceilingHeight: number;
+    buildingAge: string;
     totalFloors: number;
     viewTime: string;
     buildingItemId: string;

@@ -86,6 +86,12 @@ export const filterRealEstateData = (
       }
     }
 
+    if (filters.finalCity && filters.finalCity !== "") {
+      if (item.finalCityId != parseInt(filters.finalCity)) {
+        return false;
+      }
+    }
+
     // 10) Furnished Status
     if (filters.isFurnished && !item.furnished) {
       return false;
@@ -177,6 +183,7 @@ export const initialFilterState: Filters = {
   rentalPeriod: "",
   view: "",
   buildingArea: "",
+  finalCity: ""
 };
 
 // خيار الترتيب الافتراضي

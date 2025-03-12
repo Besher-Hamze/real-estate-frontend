@@ -1,12 +1,16 @@
-import React, { useState } from "react";
-import { Plus, X } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Plus, X, Loader, Upload } from "lucide-react";
 import { FormField } from "@/components/ui/form/FormField";
 import { InputField } from "@/components/ui/form/InputField";
 import { SelectField } from "@/components/ui/form/SelectField";
-import { ADDITIONAL_FEATURES, FEATURES_BY_TYPE, FLOOR_OPTIONS, FURNISHED_OPTIONS, NEARBY_LOCATION, PAYMENT_OPTIONS, RENTAL_DURATION_OPTIONS, VIEW_OPTIONS } from "@/components/ui/constants/formOptions";
+import { ADDITIONAL_FEATURES, BUILDING_AGE_OPTION, FEATURES_BY_TYPE, FLOOR_OPTIONS, FURNISHED_OPTIONS, NEARBY_LOCATION, PAYMENT_OPTIONS, RENTAL_DURATION_OPTIONS, VIEW_OPTIONS } from "@/components/ui/constants/formOptions";
 import FeaturesSelect from "@/components/ui/FeaturesSelect";
 import LocationPicker from "@/components/map/LocationPicker";
 import ImageUploadModal from "../forms/EnhancedImageUpload";
+import { FinalCityType } from "@/lib/types";
+import { toast } from "react-toastify";
+import apiClient from "@/api";
+import axios from "axios";
 
 interface EditEstateFormProps {
     editingEstate: any;
@@ -14,6 +18,7 @@ interface EditEstateFormProps {
     onSubmit: (estate: any) => Promise<void>;
     cities: any[];
     neighborhoods: any[];
+    finalCities: FinalCityType[];
     mainTypes: any[];
     finalTypes: any[];
 }
@@ -26,10 +31,54 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
     neighborhoods,
     mainTypes,
     finalTypes,
+    finalCities
 }) => {
-    const [newCoverImage, setNewCoverImage] = useState<File | null>(null);
-    const [newFiles, setNewFiles] = useState<File[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+
+    const [isCoverImageUploading, setIsCoverImageUploading] = useState(false);
+    const [uploadingImageIndexes, setUploadingImageIndexes] = useState<number[]>([]);
+
+    const [coverImageUrl, setCoverImageUrl] = useState<string | null>(
+        editingEstate.coverImage && typeof editingEstate.coverImage === 'string'
+            ? editingEstate.coverImage
+            : null
+    );
+
+    const [additionalImagesUrls, setAdditionalImagesUrls] = useState<string[]>(
+        editingEstate.files && editingEstate.files.length > 0 && typeof editingEstate.files[0] === 'string'
+            ? editingEstate.files
+            : []
+    );
+
+    const [additionalFileTypes, setAdditionalFileTypes] = useState<string[]>(
+        editingEstate.files && editingEstate.files.length > 0
+            ? editingEstate.files.map((file: string) => {
+                const ext = file.split('.').pop()?.toLowerCase();
+                if (ext === 'mp4' || ext === 'mov' || ext === 'webm') return 'video/mp4';
+                return 'image/jpeg'; // Default assumption
+            })
+            : []
+    );
+
+    const [coverImagePreview, setCoverImagePreview] = useState<string | null>(
+        editingEstate.coverImage && typeof editingEstate.coverImage === 'string'
+            ? `${process.env.NEXT_PUBLIC_API_URL}/${editingEstate.coverImage}`
+            : null
+    );
+
+    const [additionalImagePreviews, setAdditionalImagePreviews] = useState<string[]>(
+        editingEstate.files && editingEstate.files.length > 0 && typeof editingEstate.files[0] === 'string'
+            ? editingEstate.files.map((file: string) => `${process.env.NEXT_PUBLIC_API_URL}/${file}`)
+            : []
+    );
+
+    const [coverImageProgress, setCoverImageProgress] = useState<number>(0);
+    const [additionalImageProgress, setAdditionalImageProgress] = useState<Record<number, number>>({});
+
+    useEffect(() => {
+        setIsUploading(isCoverImageUploading || uploadingImageIndexes.length > 0);
+    }, [isCoverImageUploading, uploadingImageIndexes]);
 
     const isLandType = () => {
         const mainType = mainTypes?.find((m: any) => m.id === editingEstate.mainCategoryId);
@@ -82,50 +131,190 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
         setEditingEstate((prev: any) => ({ ...prev, [field]: value }));
     };
 
+    // Function to upload file to API with progress tracking
+    const uploadFileToAPI = async (file: File, index: number = -1): Promise<string> => {
+        try {
+            // Create FormData object
+            const formData = new FormData();
 
+            // Append the file with its original name and type preserved
+            formData.append('file', file, file.name);
 
-    const [additionalFileTypes, setAdditionalFileTypes] = useState<string[]>([]);
-    const [coverImagePreview, setCoverImagePreview] = useState<string | null>(
-        editingEstate.coverImage && typeof editingEstate.coverImage === 'string'
-            ? `${process.env.NEXT_PUBLIC_API_URL}/${editingEstate.coverImage}`
-            : null
-    );
-    const [additionalImagePreviews, setAdditionalImagePreviews] = useState<string[]>(
-        editingEstate.files && editingEstate.files.length > 0 && typeof editingEstate.files[0] === 'string'
-            ? editingEstate.files.map((file: string) => `${process.env.NEXT_PUBLIC_API_URL}/${file}`)
-            : []
-    );
+            // Add estate ID if we're editing an existing estate
+            if (editingEstate.id) {
+                formData.append('estateId', editingEstate.id.toString());
+            }
 
+            // Add additional metadata
+            formData.append('fileType', file.type);
+            formData.append('fileName', file.name);
+            formData.append('fileSize', file.size.toString());
 
+            // Reset progress at the start of upload
+            if (index === -1) {
+                setCoverImageProgress(0);
+            } else {
+                setAdditionalImageProgress(prev => ({
+                    ...prev,
+                    [index]: 0
+                }));
+            }
 
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            // Create preview
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                if (e.target?.result) {
-                    setCoverImagePreview(e.target.result as string);
+            // Use axios to post the FormData
+            const response = await axios.post(
+                `${process.env.NEXT_PUBLIC_API_URL}/api/upload/uploadFile`,
+                formData,
+                {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                    },
+                    onUploadProgress: (progressEvent) => {
+                        if (progressEvent.total) {
+                            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                            if (index === -1) {
+                                setCoverImageProgress(percentCompleted);
+                            } else {
+                                setAdditionalImageProgress(prev => ({
+                                    ...prev,
+                                    [index]: percentCompleted
+                                }));
+                            }
+                        }
+                    }
                 }
-            };
-            reader.readAsDataURL(file);
+            );
 
-            // Store file
-            setNewCoverImage(file);
-            handleChange('coverImage', file);
+            const data = response.data;
+            toast.success('تم رفع الملف بنجاح');
+            return data.fileName;
+
+        } catch (error) {
+            console.error("Error uploading file:", error);
+            toast.error('فشل رفع الملف، يرجى المحاولة مرة أخرى');
+
+            // Reset progress on error
+            if (index === -1) {
+                setCoverImageProgress(0);
+            } else {
+                setAdditionalImageProgress(prev => ({
+                    ...prev,
+                    [index]: 0
+                }));
+            }
+
+            throw error;
         }
     };
 
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+
+
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) {
+        if (!file) return;
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('حجم الملف كبير جدًا. الحد الأقصى هو 5 ميجابايت');
+            return;
+        }
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            toast.error('يرجى اختيار ملف صورة صالح');
+            return;
+        }
+
+        // Create preview immediately
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            if (e.target?.result) {
+                setCoverImagePreview(e.target.result as string);
+            }
+        };
+        reader.readAsDataURL(file);
+
+        try {
+            // Set specific loading state for cover image
+            setIsCoverImageUploading(true);
+            setCoverImageProgress(0); // Reset progress
+
+            // Upload to API with -1 index to indicate it's the cover image
+            const uploadedUrl = await uploadFileToAPI(file, -1);
+
+            // Store the URL
+            setCoverImageUrl(uploadedUrl);
+            handleChange('coverImage', uploadedUrl);
+
+        } catch (error) {
+            console.error("Cover image upload failed:", error);
+            // Revert the preview on error
+            setCoverImagePreview(null);
+        } finally {
+            // Wait a moment before hiding loading indicator to make sure user sees 100%
+            setTimeout(() => {
+                setIsCoverImageUploading(false);
+                setCoverImageProgress(0);
+            }, 500);
+        }
+    };
+
+    // Handle additional files upload
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Validate file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            toast.error('حجم الملف كبير جدًا. الحد الأقصى هو 10 ميجابايت');
+            return;
+        }
+
+        // Validate file type
+        const isImage = file.type.startsWith('image/');
+        const isVideo = file.type.startsWith('video/');
+
+        if (!isImage && !isVideo) {
+            toast.error('يُرجى اختيار ملف صورة أو فيديو صالح');
+            return;
+        }
+
+        // For videos, limit to 30 seconds
+        if (isVideo) {
+            const video = document.createElement('video');
+            video.preload = 'metadata';
+
+            video.onloadedmetadata = function () {
+                window.URL.revokeObjectURL(video.src);
+                if (video.duration > 30) {
+                    toast.error('مدة الفيديو لا يمكن أن تتجاوز 30 ثانية');
+                    return;
+                }
+                // Continue with upload after validation
+                continueWithUpload();
+            };
+
+            video.src = URL.createObjectURL(file);
+            video.onerror = function () {
+                // Handle video load error
+                window.URL.revokeObjectURL(video.src);
+                toast.error('فشل تحميل الفيديو، يرجى التحقق من صحة الملف');
+            };
+
+            return; // Wait for metadata to load
+        }
+
+        // For images, continue immediately
+        continueWithUpload();
+
+        async function continueWithUpload() {
             // Detect file type
-            const fileType = file.type;
+            const fileType = file!.type;
             const newTypes = [...additionalFileTypes];
             newTypes[index] = fileType;
             setAdditionalFileTypes(newTypes);
 
-            // Create preview
+            // Create preview immediately
             const reader = new FileReader();
             reader.onload = (e) => {
                 if (e.target?.result) {
@@ -134,17 +323,114 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                     setAdditionalImagePreviews(newPreviews);
                 }
             };
-            reader.readAsDataURL(file);
+            reader.readAsDataURL(file!);
 
-            // Update files array
+            try {
+                // Add this index to loading indexes
+                setUploadingImageIndexes(prev => [...prev, index]);
+
+                // Reset progress for this index
+                setAdditionalImageProgress(prev => ({
+                    ...prev,
+                    [index]: 0
+                }));
+
+                const uploadedUrl = await uploadFileToAPI(file!, index);
+
+                // Store the URL
+                const newUrls = [...additionalImagesUrls];
+                newUrls[index] = uploadedUrl;
+                setAdditionalImagesUrls(newUrls);
+
+                // Update the main form state
+                const updatedFiles = Array.isArray(editingEstate.files) ? [...editingEstate.files] : [];
+                updatedFiles[index] = uploadedUrl;
+                handleChange('files', updatedFiles);
+
+            } catch (error) {
+                console.error("File upload failed:", error);
+                // Remove the preview on error
+                const newPreviews = [...additionalImagePreviews];
+                newPreviews[index] = "";
+                setAdditionalImagePreviews(newPreviews);
+            } finally {
+                // Wait a moment before hiding loading indicator to make sure user sees 100%
+                setTimeout(() => {
+                    setUploadingImageIndexes(prev => prev.filter(i => i !== index));
+                    setAdditionalImageProgress(prev => {
+                        const newProgress = { ...prev };
+                        delete newProgress[index];
+                        return newProgress;
+                    });
+                }, 500);
+            }
+        }
+    };
+
+    // Function to delete a file from the API
+    const handleDeleteFile = async (fileUrl: string): Promise<boolean> => {
+        try {
+            if (!fileUrl) return false;
+
+            const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/realestate/deleteFile/${fileUrl}`);
+
+            if (response.status === 200) {
+                toast.success('تم حذف الملف بنجاح');
+                return true;
+            } else {
+                throw new Error(`Delete failed with status: ${response.status}`);
+            }
+        } catch (error) {
+            console.error("Failed to delete file:", error);
+            toast.error('فشل حذف الملف، يرجى المحاولة مرة أخرى');
+            return false;
+        }
+    };
+
+    // Delete additional image
+    const handleDeleteAdditionalImage = async (index: number) => {
+        try {
+            const fileUrl = additionalImagesUrls[index];
+
+            // If there's a valid URL and it's not just a preview, delete from server
+            if (fileUrl && typeof fileUrl === 'string' && !fileUrl.startsWith('data:')) {
+                // Add index to loading state
+                setUploadingImageIndexes(prev => [...prev, index]);
+
+                // Send delete request to API
+                const deleteSuccess = await handleDeleteFile(fileUrl);
+
+                if (!deleteSuccess) {
+                    throw new Error("File deletion failed");
+                }
+            }
+
+            // Create new copies of arrays
+            const newPreviews = [...additionalImagePreviews];
+            const newUrls = [...additionalImagesUrls];
+            const newTypes = [...additionalFileTypes];
+
+            // Remove the item at the specified index
+            newPreviews.splice(index, 1);
+            newUrls.splice(index, 1);
+            newTypes.splice(index, 1);
+
+            // Update state
+            setAdditionalImagePreviews(newPreviews);
+            setAdditionalImagesUrls(newUrls);
+            setAdditionalFileTypes(newTypes);
+
+            // Update main form state
             const updatedFiles = Array.isArray(editingEstate.files) ? [...editingEstate.files] : [];
-            updatedFiles[index] = file;
+            updatedFiles.splice(index, 1);
             handleChange('files', updatedFiles);
 
-            // Also update newFiles state for submission
-            const updatedNewFiles = [...newFiles];
-            updatedNewFiles[index] = file;
-            setNewFiles(updatedNewFiles);
+        } catch (error) {
+            console.error("Failed to delete file:", error);
+            toast.error('فشل حذف الملف، يرجى المحاولة مرة أخرى');
+        } finally {
+            // Remove this index from loading indexes
+            setUploadingImageIndexes(prev => prev.filter(i => i !== index));
         }
     };
 
@@ -152,21 +438,29 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsSubmitting(true);
+        if (!coverImageUrl && !coverImagePreview) {
+            toast.error('يرجى إضافة صورة الغلاف');
+            return;
+        }
 
+        setIsSubmitting(true);
         try {
             const estateToSubmit = { ...editingEstate };
-
-            if (newCoverImage) {
-                estateToSubmit.coverImage = newCoverImage;
-            }
-            if (newFiles.length > 0) {
-                estateToSubmit.files = newFiles;
+            if (coverImageUrl) {
+                estateToSubmit.coverImage = coverImageUrl;
             }
 
+            if (additionalImagesUrls.length > 0) {
+                estateToSubmit.files = additionalImagesUrls.filter(url => url && typeof url === 'string' && url.trim() !== '');
+            }
+
+            if (estateToSubmit.files) {
+                estateToSubmit.files = estateToSubmit.files.filter(
+                    (url: string) => !url.startsWith('data:')
+                );
+            }
             await onSubmit(estateToSubmit);
         } catch (error) {
-            console.error("Error submitting form:", error);
         } finally {
             setIsSubmitting(false);
         }
@@ -361,6 +655,19 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                 />
             </FormField>
 
+
+            <FormField label="الحي">
+                <SelectField
+                    value={editingEstate.finalCityId}
+                    onChange={(value) => handleChange("finalCityId", Number(value))}
+                    options={finalCities.map((nb: any) => ({
+                        value: nb.id,
+                        label: nb.name,
+                    }))}
+                    placeholder="اختر الحي"
+                />
+            </FormField>
+
             <FormField label="الأماكن القريبة">
                 <FeaturesSelect
                     features={NEARBY_LOCATION}
@@ -420,6 +727,15 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                             onChange={(value) => handleChange("floorNumber", Number(value))}
                             options={FLOOR_OPTIONS}
                             placeholder="اختر الطابق"
+                        />
+                    </FormField>
+
+                    <FormField label="عمر البناء">
+                        <SelectField
+                            value={editingEstate.buildingAge}
+                            onChange={(value) => handleChange("buildingAge", value)}
+                            options={BUILDING_AGE_OPTION}
+                            placeholder="اختر عمر المبنى"
                         />
                     </FormField>
 
@@ -506,7 +822,6 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                 />
             </FormField>
 
-
             <FormField label="صور العقار">
                 <ImageUploadModal
                     additionalImagePreviews={additionalImagePreviews}
@@ -514,118 +829,14 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                     handleFileUpload={handleFileUpload}
                     coverImagePreview={coverImagePreview}
                     handleImageUpload={handleImageUpload}
+                    isUploading={isUploading}
+                    handleDeleteImage={handleDeleteAdditionalImage}
+                    isCoverImageUploading={isCoverImageUploading}
+                    isAdditionalImageUploading={uploadingImageIndexes}
+                    coverImageProgress={coverImageProgress}
+                    additionalImageProgress={additionalImageProgress}
                 />
             </FormField>
-
-            {/* Image Preview Section */}
-            {/* <FormField label="صورة الغلاف">
-                <div className="relative col-span-1 border border-gray-300 rounded-lg h-32 w-32 flex flex-col items-center justify-center bg-gray-50 overflow-hidden">
-                    <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
-                    />
-
-                    {coverImagePreview ? (
-                        <img
-                            src={coverImagePreview}
-                            alt="Cover preview"
-                            className="w-full h-full object-cover"
-                        />
-                    ) : (
-                        <div className="flex flex-col items-center justify-center">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="24"
-                                height="24"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                className="text-blue-500 mb-1"
-                            >
-                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                                <circle cx="12" cy="13" r="4"></circle>
-                            </svg>
-                            <span className="text-xs text-gray-500">صورة الغلاف</span>
-                        </div>
-                    )}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">انقر لتغيير صورة الغلاف</p>
-            </FormField> */}
-
-            {/* Replace the existing additional images section with this */}
-            {/* <FormField label="صور وفيديوهات العقار">
-                <div className="grid grid-cols-4 gap-2">
-                    {Array.from({ length: 30 }).map((_, index) => (
-                        <div
-                            key={index}
-                            className="relative col-span-1 border border-gray-300 rounded-lg h-32 flex items-center justify-center bg-gray-50 overflow-hidden"
-                        >
-                            <input
-                                type="file"
-                                accept="image/*, video/*"
-                                onChange={(e) => handleFileUpload(e, index)}
-                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                            />
-
-                            {additionalImagePreviews[index] ? (
-                                additionalFileTypes[index]?.startsWith('video/') ||
-                                    (typeof editingEstate.files[index] === 'string' &&
-                                        editingEstate.files[index].toLowerCase().endsWith('.mp4')) ? (
-                                    <div className="relative w-full h-full">
-                                        <video
-                                            src={additionalImagePreviews[index]}
-                                            className="w-full h-full object-cover"
-                                            controls={false}
-                                            muted
-                                            onMouseOver={(e) => (e.target as HTMLVideoElement).play()}
-                                            onMouseOut={(e) => (e.target as HTMLVideoElement).pause()}
-                                        />
-                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="bg-black bg-opacity-50 rounded-full p-1">
-                                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                                            </svg>
-                                        </div>
-                                        <div className="absolute top-2 left-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded-lg">
-                                            فيديو
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <img
-                                        src={additionalImagePreviews[index]}
-                                        alt={`File ${index + 1}`}
-                                        className="w-full h-full object-cover"
-                                    />
-                                )
-                            ) : (
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="24"
-                                    height="24"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    className="text-blue-500"
-                                >
-                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                    <polyline points="21 15 16 10 5 21"></polyline>
-                                </svg>
-                            )}
-                        </div>
-                    ))}
-                </div>
-                <p className="text-xs text-gray-500 mt-2">يمكنك تحميل صورة واحدة للغلاف و حتى 30 صورة وفيديو إضافية للعقار</p>
-            </FormField> */}
-
-
             <button
                 type="submit"
                 disabled={isSubmitting}

@@ -1,6 +1,6 @@
 // hooks/useDashboardData.ts
 import { useState, useEffect } from 'react';
-import { CityType, NeighborhoodType } from '@/lib/types/create';
+import { CityType, NeighborhoodType } from '@/lib/types/index';
 import apiClient from '@/api';
 
 export const useDashboardData = (cityId?: number) => {
