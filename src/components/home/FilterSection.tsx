@@ -1,7 +1,30 @@
 import React, { useEffect, useState } from 'react';
-import { Filter, ChevronDown, ChevronsLeftRight, ChevronUp, Building, MapPin, Bath, BedDouble, Clock, Mountain, HomeIcon, LayersIcon, Building2Icon, X } from 'lucide-react';
+import {
+  Filter,
+  ChevronDown,
+  ChevronsLeftRight,
+  ChevronUp,
+  Building,
+  MapPin,
+  Bath,
+  BedDouble,
+  Clock,
+  Mountain,
+  HomeIcon,
+  LayersIcon,
+  Building2Icon,
+  X
+} from 'lucide-react';
 import { finalTypeTypeApi } from '@/api/finalTypeApi';
-import { CityType, Filters, FinalType, NeighborhoodType, PropertySize, FilterSectionProps, FinalCityType } from '@/lib/types';
+import {
+  CityType,
+  Filters,
+  FinalType,
+  NeighborhoodType,
+  PropertySize,
+  FilterSectionProps,
+  FinalCityType
+} from '@/lib/types';
 import { cityApi } from '@/api/cityApi';
 import { neighborhoodApi } from '@/api/NeighborhoodApi';
 import { getPropertySizeLabel } from '@/utils/filterUtils';
@@ -9,7 +32,10 @@ import SortComponent from './SortComponent';
 import { FilterChip } from './home';
 import { SelectField } from './SelectField';
 import { finalCityApi } from '@/api/finalCityApi';
+import { FLOOR_OPTIONS, FURNISHED_OPTIONS, RENTAL_DURATION_OPTIONS, VIEW_OPTIONS } from '../ui/constants/formOptions';
+import { RealEstateApi } from '@/api/realEstateApi';
 
+// Default filter values
 const defaultFilters: Filters = {
   bedrooms: '',
   bathrooms: '',
@@ -18,12 +44,28 @@ const defaultFilters: Filters = {
   neighborhood: '',
   finalCity: '',
   propertySize: '',
-  isFurnished: false,
+  isFurnished: "0",
   rentalPeriod: '',
   floor: '',
   view: '',
   buildingArea: "",
 };
+interface BackendFilterConfig {
+  finalTypeId?: boolean;
+  cityId?: boolean;
+  neighborhoodId?: boolean;
+  finalCityId?: boolean;
+  bedrooms?: boolean;
+  bathrooms?: boolean;
+  rentalDuration?: boolean;
+  viewTime?: boolean;
+  floorNumber?: boolean;
+  furnished?: boolean;
+  buildingArea?: boolean;
+  price?: boolean;
+}
+
+
 
 const FilterSection = ({
   filters = defaultFilters,
@@ -48,6 +90,55 @@ const FilterSection = ({
   const [neighborhoods, setNeighborhoods] = useState<NeighborhoodType[]>([]);
   const [finalCities, setFinalCities] = useState<FinalCityType[]>([]);
   const [cities, setCities] = useState<CityType[]>([]);
+  const [backendFilterConfig, setBackendFilterConfig] = useState<BackendFilterConfig>({
+    finalTypeId: true,
+    cityId: true,
+    neighborhoodId: true,
+    finalCityId: true,
+    bedrooms: true,
+    bathrooms: true,
+    rentalDuration: true,
+    viewTime: true,
+    floorNumber: true,
+    furnished: true,
+    buildingArea: true,
+    price: true
+  });
+
+  useEffect(() => {
+    const fetchFilterConfiguration = async () => {
+      try {
+        if (currentMainType && currentSubType) {
+          const filterConfig = await RealEstateApi.fetchFilter(
+            currentMainType.name,
+            currentSubType.name,
+            finalTypes.find(f => f.id == parseInt(filters.finalType))?.name
+          );
+          console.log(filterConfig);
+          
+          setBackendFilterConfig(filterConfig);
+        }
+      } catch (error) {
+        console.error('Failed to fetch filter configuration', error);
+        setBackendFilterConfig({
+          finalTypeId: true,
+          cityId: true,
+          neighborhoodId: true,
+          finalCityId: true,
+          bedrooms: true,
+          bathrooms: true,
+          rentalDuration: true,
+          viewTime: true,
+          floorNumber: true,
+          furnished: true,
+          buildingArea: true,
+          price: true
+        });
+      }
+    };
+
+    fetchFilterConfiguration();
+  }, [currentMainType, currentSubType,filters.finalType]);
 
   useEffect(() => {
     if (subId) {
@@ -75,8 +166,6 @@ const FilterSection = ({
     }
   }, [filters.neighborhood]);
 
-
-
   const handlePriceChange = (type: 'min' | 'max', value: string): void => {
     const cleanValue = value.replace(/,/g, '');
     if (type === 'min') {
@@ -94,14 +183,13 @@ const FilterSection = ({
     }
   };
 
-  // دالة إعادة تعيين الفلاتر إلى الوضع الافتراضي
+  // Reset filters to default
   const resetFilters = () => {
     setFilters(defaultFilters);
     setPriceRange([0, 1000000]);
     setMinInput("0");
     setMaxInput("1000000");
 
-    // إعادة تعيين الأنواع الرئيسية والفرعية إذا تم توفيرها
     if (setSelectedMainTypeId) {
       setSelectedMainTypeId(null);
     }
@@ -110,10 +198,7 @@ const FilterSection = ({
     }
   };
 
-
-
-  // === Active Filters Logic ===
-
+  // Check for any active filters
   const hasActiveFilters =
     selectedMainTypeId ||
     selectedSubTypeId ||
@@ -169,6 +254,7 @@ const FilterSection = ({
     return periodLabels[period] || period;
   };
 
+  // Render active filters (chips)
   const renderActiveFilters = () => {
     if (!hasActiveFilters) return null;
     return (
@@ -204,14 +290,14 @@ const FilterSection = ({
 
             {filters.bedrooms && (
               <FilterChip
-                label={`${filters.bedrooms == "-1" ? "اكثر من 8" : filters.bedrooms} ${parseInt(filters.bedrooms) === 1 ? "غرفة" : "غرف"}`}
+                label={`${filters.bedrooms === "-1" ? "اكثر من 8" : filters.bedrooms} ${parseInt(filters.bedrooms) === 1 ? "غرفة" : "غرف"}`}
                 onRemove={() => setFilters({ ...filters, bedrooms: "" })}
               />
             )}
 
             {filters.bathrooms && (
               <FilterChip
-                label={`${filters.bathrooms == "-1" ? "اكثر من 4" : filters.bathrooms} ${parseInt(filters.bathrooms) === 1 ? "حمام" : "حمامات"}`}
+                label={`${filters.bathrooms === "-1" ? "اكثر من 4" : filters.bathrooms} ${parseInt(filters.bathrooms) === 1 ? "حمام" : "حمامات"}`}
                 onRemove={() => setFilters({ ...filters, bathrooms: "" })}
               />
             )}
@@ -268,7 +354,7 @@ const FilterSection = ({
             {filters.isFurnished && (
               <FilterChip
                 label="مفروش"
-                onRemove={() => setFilters({ ...filters, isFurnished: false })}
+                onRemove={() => setFilters({ ...filters, isFurnished: "" })}
               />
             )}
 
@@ -296,7 +382,6 @@ const FilterSection = ({
             <Filter className="w-5 h-5 text-blue-600" />
             <span className="font-semibold text-gray-800 text-lg">تصفية العقارات</span>
           </div>
-
           <div className="flex items-center gap-3">
             {isExpanded ? (
               <ChevronUp className="w-5 h-5 text-blue-600 transition-transform duration-300" />
@@ -306,185 +391,213 @@ const FilterSection = ({
           </div>
         </div>
       </div>
-      <SortComponent
-        currentSort={sortOption}
-        onSortChange={setSortOption}
-        className="p-4"
-      />
-      {/* عرض الفلاتر النشطة */}
+      <SortComponent currentSort={sortOption} onSortChange={setSortOption} className="p-4" />
       {renderActiveFilters()}
-
       <div className={`transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
         <div className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
 
-            <SelectField
-              label="التصنيف"
-              icon={Building}
-              value={filters.finalType}
-              onChange={(e) => setFilters({ ...filters, finalType: e.target.value })}
-              options={[{ value: '', label: 'الكل' }, ...finalTypes.map(f => ({ value: f.id, label: f.name }))]}
-            />
+            {/* Render Final Type filter */}
+            {backendFilterConfig.finalTypeId && (
+              <SelectField
+                label="التصنيف"
+                icon={Building}
+                value={filters.finalType}
+                onChange={(e) => setFilters({ ...filters, finalType: e.target.value })}
+                options={[{ value: '', label: 'الكل' }, ...finalTypes.map(f => ({ value: f.id, label: f.name }))]}
+              />
+            )}
 
-            <SelectField
-              label="المحافظة"
-              icon={MapPin}
-              value={filters.city}
-              onChange={(e) => setFilters({ ...filters, city: e.target.value, neighborhood: '' })}
-              options={[{ value: '', label: 'الكل' }, ...cities.map(c => ({ value: c.id, label: c.name }))]}
-            />
+            {/* Render City filter */}
+            {backendFilterConfig.cityId && (
+              <SelectField
+                label="المحافظة"
+                icon={MapPin}
+                value={filters.city}
+                onChange={(e) => setFilters({ ...filters, city: e.target.value, neighborhood: '' })}
+                options={[{ value: '', label: 'الكل' }, ...cities.map(c => ({ value: c.id, label: c.name }))]}
+              />
+            )}
 
-            <SelectField
-              label="المدينة"
-              icon={Building2Icon}
-              value={filters.neighborhood}
-              onChange={(e) => setFilters({ ...filters, neighborhood: e.target.value })}
-              options={[{ value: '', label: 'الكل' }, ...neighborhoods.map(n => ({ value: n.id, label: n.name }))]}
-              className={!filters.city ? 'opacity-50 cursor-not-allowed' : ''}
-              enable={filters.city != ""}
-            />
+            {/* Render Neighborhood filter */}
+            {backendFilterConfig.neighborhoodId && (
+              <SelectField
+                label="المدينة"
+                icon={Building2Icon}
+                value={filters.neighborhood}
+                onChange={(e) => setFilters({ ...filters, neighborhood: e.target.value })}
+                options={[{ value: '', label: 'الكل' }, ...neighborhoods.map(n => ({ value: n.id, label: n.name }))]}
+                className={!filters.city ? 'opacity-50 cursor-not-allowed' : ''}
+                enable={filters.city !== ""}
+              />
+            )}
 
-            <SelectField
-              label="الحي"
-              icon={Building2Icon}
-              value={filters.finalCity}
-              onChange={(e) => setFilters({ ...filters, finalCity: e.target.value })}
-              options={[{ value: '', label: 'الكل' }, ...finalCities.map(n => ({ value: n.id, label: n.name }))]}
-              className={!filters.finalCity ? 'opacity-50 cursor-not-allowed' : ''}
-              enable={filters.finalCity != ""}
-            />
+            {/* Render Final City filter */}
+            {backendFilterConfig.finalCityId && (
+              <SelectField
+                label="الحي"
+                icon={Building2Icon}
+                value={filters.finalCity}
+                onChange={(e) => setFilters({ ...filters, finalCity: e.target.value })}
+                options={[{ value: '', label: 'الكل' }, ...finalCities.map(n => ({ value: n.id, label: n.name }))]}
+                className={!filters.finalCity ? 'opacity-50 cursor-not-allowed' : ''}
+                enable={filters.finalCity !== ""}
+              />
+            )}
 
-            <SelectField
-              label="عدد الغرف"
-              icon={BedDouble}
-              value={filters.bedrooms}
-              onChange={(e) => setFilters({ ...filters, bedrooms: e.target.value })}
-              options={[
-                { value: '', label: 'جميع الغرف' },
-                ...Array.from({ length: 8 }, (_, i) => ({ value: String(i + 1), label: `${i + 1} ${i === 0 ? 'غرفة' : 'غرف'}` })),
-                { value: -1, label: `اكثر من ${8} غرف` },
-              ]}
-            />
+            {/* Render Bedrooms filter */}
+            {backendFilterConfig.bedrooms && (
+              <SelectField
+                label="عدد الغرف"
+                icon={BedDouble}
+                value={filters.bedrooms}
+                onChange={(e) => setFilters({ ...filters, bedrooms: e.target.value })}
+                options={[
+                  { value: '', label: 'جميع الغرف' },
+                  ...Array.from({ length: 8 }, (_, i) => ({
+                    value: String(i + 1),
+                    label: `${i + 1} ${i === 0 ? 'غرفة' : 'غرف'}`
+                  })),
+                  { value: -1, label: `اكثر من ${8} غرف` },
+                ]}
+              />
+            )}
 
-            <SelectField
-              label="عدد الحمامات"
-              icon={Bath}
-              value={filters.bathrooms}
-              onChange={(e) => setFilters({ ...filters, bathrooms: e.target.value })}
-              options={[
-                { value: '', label: 'جميع الحمامات' },
-                ...Array.from({ length: 4 }, (_, i) => ({ value: String(i + 1), label: `${i + 1} ${i === 0 ? 'حمام' : 'حمامات'}` })),
-                { value: -1, label: `اكثر من ${4} حمام` },
-              ]}
-            />
+            {/* Render Bathrooms filter */}
+            {backendFilterConfig.bathrooms && (
+              <SelectField
+                label="عدد الحمامات"
+                icon={Bath}
+                value={filters.bathrooms}
+                onChange={(e) => setFilters({ ...filters, bathrooms: e.target.value })}
+                options={[
+                  { value: '', label: 'جميع الحمامات' },
+                  ...Array.from({ length: 4 }, (_, i) => ({
+                    value: String(i + 1),
+                    label: `${i + 1} ${i === 0 ? 'حمام' : 'حمامات'}`
+                  })),
+                  { value: -1, label: `اكثر من ${4} حمام` },
+                ]}
+              />
+            )}
 
-            {isRental && <SelectField
-              label="مدة الإيجار"
-              icon={Clock}
-              value={filters.rentalPeriod}
-              onChange={(e) => setFilters({ ...filters, rentalPeriod: e.target.value })}
-              options={[
-                { value: '', label: 'جميع المدد' },
-                { value: '1', label: 'شهر' },
-                { value: '3', label: 'ثلاث شهور' },
-                { value: '6', label: 'ستة شهور' },
-                { value: '12', label: 'سنة' }
-              ]}
-            />
-            }
-            <SelectField
-              label="الإطلالة"
-              icon={Mountain}
-              value={filters.view}
-              onChange={(e) => setFilters({ ...filters, view: e.target.value })}
-              options={[
-                { value: '', label: 'جميع الإطلالات' },
-                { value: 'بحرية', label: 'بحرية' },
-                { value: 'جبلية', label: 'جبلية' },
-                { value: 'على الشارع', label: 'على الشارع' },
-                { value: 'حديقة داخلية', label: 'حديقة داخلية' },
-                { value: 'داخلية', label: 'داخلية' }
-              ]}
-            />
+            {/* Render Property Size filter if buildingArea is enabled */}
+            {backendFilterConfig.buildingArea && (
+              <SelectField
+                label="المساحة"
+                icon={Building}
+                value={filters.propertySize}
+                onChange={(e) => setFilters({ ...filters, propertySize: e.target.value })}
+                options={[
+                  { value: '', label: 'الكل' },
+                  // Add your property size options here
+                ]}
+              />
+            )}
 
-            <SelectField
-              label="الطابق"
-              icon={LayersIcon}
-              value={filters.floor}
-              onChange={(e) => setFilters({ ...filters, floor: e.target.value })}
-              options={[
-                { value: '', label: 'الكل' },
-                { value: '0', label: 'أرضي' },
-                { value: '1', label: 'أول' },
-                { value: '2', label: 'ثاني' },
-                { value: '3', label: 'ثالث' },
-                { value: '4', label: 'رابع' },
-                { value: '5', label: 'خامس' },
-              ]}
-            />
+            {/* Render Rental Duration only if allowed (it is false in our config) */}
+            {isRental && backendFilterConfig.rentalDuration && (
+              <SelectField
+                label="مدة الإيجار"
+                icon={Clock}
+                value={filters.rentalPeriod}
+                onChange={(e) => setFilters({ ...filters, rentalPeriod: e.target.value })}
+                options={[
+                  { value: '', label: 'جميع المدد' },
+                  ...RENTAL_DURATION_OPTIONS,
+                ]}
+              />
+            )}
 
-            <SelectField
-              label="حالة الفرش"
-              icon={HomeIcon}
-              value={filters.isFurnished === null ? '' : filters.isFurnished.toString()}
-              onChange={(e) => {
-                const value = e.target.value === '' ? null : e.target.value === 'true';
-                setFilters({ ...filters, isFurnished: value! });
-              }}
-              options={[
-                { value: '', label: 'الكل' },
-                { value: 'true', label: 'مفروشة' },
-                { value: 'false', label: 'غير مفروشة' },
-              ]}
-            />
+            {/* Render View filter */}
+            {backendFilterConfig.viewTime && (
+              <SelectField
+                label="الإطلالة"
+                icon={Mountain}
+                value={filters.view}
+                onChange={(e) => setFilters({ ...filters, view: e.target.value })}
+                options={[
+                  { value: '', label: 'جميع الإطلالات' },
+                  ...VIEW_OPTIONS,
+                ]}
+              />
+            )}
+
+            {/* Render Floor filter */}
+            {backendFilterConfig.floorNumber && (
+              <SelectField
+                label="الطابق"
+                icon={LayersIcon}
+                value={filters.floor}
+                onChange={(e) => setFilters({ ...filters, floor: e.target.value })}
+                options={[
+                  { value: '', label: 'الكل' },
+                  ...FLOOR_OPTIONS,
+                ]}
+              />
+            )}
+
+            {/* Render Furnished filter */}
+            {backendFilterConfig.furnished && (
+              <SelectField
+                label="حالة الفرش"
+                icon={HomeIcon}
+                value={filters.isFurnished === null ? '' : filters.isFurnished.toString()}
+                onChange={(e) => setFilters({ ...filters, isFurnished: e.target.value })}
+                options={[
+                  { value: '', label: 'الكل' },
+                  ...FURNISHED_OPTIONS,
+                ]}
+              />
+            )}
           </div>
 
-          <div className="mt-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <div className="flex items-center gap-2">
-                <ChevronsLeftRight className="w-4 h-4 text-blue-600" />
-                نطاق السعر
-                <span className="text-blue-600 font-semibold">
-                  ({parseInt(minInput.replace(/,/g, '')).toLocaleString()} - {parseInt(maxInput.replace(/,/g, '')).toLocaleString()})
-                </span>
-              </div>
-            </label>
-            <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-              <div className="space-y-4">
-                <input
-                  type="range"
-                  min="0"
-                  max="1000000"
-                  step="10000"
-                  value={parseInt(maxInput.replace(/,/g, ''))}
-                  onChange={(e) => handlePriceChange('max', e.target.value)}
-                  className="w-full accent-blue-600"
-                />
-
-                <div className="flex gap-4">
+          {/* Price Range filter */}
+          {backendFilterConfig.price && (
+            <div className="mt-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <div className="flex items-center gap-2">
+                  <ChevronsLeftRight className="w-4 h-4 text-blue-600" />
+                  نطاق السعر
+                  <span className="text-blue-600 font-semibold">
+                    ({parseInt(minInput.replace(/,/g, '')).toLocaleString()} - {parseInt(maxInput.replace(/,/g, '')).toLocaleString()})
+                  </span>
+                </div>
+              </label>
+              <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                <div className="space-y-4">
                   <input
-                    type="number"
-                    value={minInput ?? 0}
-                    onChange={(e) => handlePriceChange('min', e.target.value)}
-                    className="flex-1 bg-white rounded-lg px-4 py-2 text-sm border focus:ring-2 focus:ring-blue-200 focus:border-blue-500"
-                    placeholder="الحد الأدنى"
-                    dir="ltr"
-                  />
-                  <input
-                    type="number"
-                    value={maxInput}
+                    type="range"
+                    min="0"
+                    max="1000000"
+                    step="10000"
+                    value={parseInt(maxInput.replace(/,/g, ''))}
                     onChange={(e) => handlePriceChange('max', e.target.value)}
-                    className="flex-1 bg-white rounded-lg px-4 py-2 text-sm border focus:ring-2 focus:ring-blue-200 focus:border-blue-500"
-                    placeholder="الحد الأقصى"
-                    dir="ltr"
+                    className="w-full accent-blue-600"
                   />
+                  <div className="flex gap-4">
+                    <input
+                      type="number"
+                      value={minInput ?? 0}
+                      onChange={(e) => handlePriceChange('min', e.target.value)}
+                      className="flex-1 bg-white rounded-lg px-4 py-2 text-sm border focus:ring-2 focus:ring-blue-200 focus:border-blue-500"
+                      placeholder="الحد الأدنى"
+                      dir="ltr"
+                    />
+                    <input
+                      type="number"
+                      value={maxInput}
+                      onChange={(e) => handlePriceChange('max', e.target.value)}
+                      className="flex-1 bg-white rounded-lg px-4 py-2 text-sm border focus:ring-2 focus:ring-blue-200 focus:border-blue-500"
+                      placeholder="الحد الأقصى"
+                      dir="ltr"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
-
-
       </div>
     </div>
   );

@@ -32,9 +32,7 @@ export type CityFormData = InferType<typeof citySchema>;
 
 // Estate Form
 export const estateSchema = yup.object({
-  title: yup.string()
-    .matches(/^[^\d]+$/, 'العنوان لا يجب أن يحتوي على أرقام')
-    .required('عنوان العقار مطلوب'),
+  title: yup.string().required('عنوان العقار مطلوب'),
   description: validationSchemas.requiredText,
   price: validationSchemas.price,
   mainCategoryId: validationSchemas.requiredSelect,

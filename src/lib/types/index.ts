@@ -46,7 +46,7 @@ export interface RealEstateData {
   buildingAge: string;
   bedrooms: number;
   bathrooms: number;
-  furnished: boolean;
+  furnished: string;
   buildingArea: string;
   floorNumber: number;
   facade: string;
@@ -67,7 +67,7 @@ export interface RealEstateData {
   totalFloors: number;
   buildingItemId?: string;
   viewTime: string;
-  location?: string; // ex: "1.43,1.44"
+  location: string; // ex: "1.43,1.44"
 }
 export interface CityType {
   id: number;
@@ -177,7 +177,7 @@ export interface Filters {
   neighborhood: string;
   finalCity: string;
   propertySize: string;
-  isFurnished: boolean;
+  isFurnished: string;
   rentalPeriod: string;
   floor: string;
   view: string;

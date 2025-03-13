@@ -210,7 +210,7 @@ const ActiveFilters: React.FC<ActiveFiltersProps> = ({
       {filters.isFurnished && (
         <FilterChip
           label="مفروش"
-          onRemove={() => setFilters({ ...filters, isFurnished: false })}
+          onRemove={() => setFilters({ ...filters, isFurnished: "" })}
         />
       )}
       

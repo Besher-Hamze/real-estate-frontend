@@ -117,11 +117,6 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
             setEditingEstate((prev: any) => ({ ...prev, [field]: locationString }));
             return;
         }
-        if (field === "title") {
-            const cleanedValue = value.replace(/\d/g, '');
-            setEditingEstate((prev: any) => ({ ...prev, [field]: cleanedValue }));
-            return;
-        }
         if ((field === "bedrooms" || field === "bathrooms")) {
             const numValue = Number(value);
             if (numValue <= 0) {

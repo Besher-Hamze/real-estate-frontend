@@ -104,4 +104,20 @@ export const RealEstateApi = {
             throw error;
         }
     },
+
+    fetchFilter: async (mainTypName: string, subTypeName?: string, finalTypeName?: string) => {
+        try {
+            const response = await apiClient.post(`api/realestate/filter`, {
+                main: mainTypName,
+                sub: subTypeName,
+                finall: finalTypeName,
+            });
+            return response.data;
+        } catch (error) {
+            console.error("Failed to fetch filter ");
+            console.log(error);
+            
+            throw error;
+        }
+    },
 };

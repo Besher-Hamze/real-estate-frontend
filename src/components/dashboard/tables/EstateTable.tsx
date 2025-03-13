@@ -41,6 +41,9 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
+  // New state for edit exit confirmation dialog
+  const [isEditExitConfirmOpen, setIsEditExitConfirmOpen] = useState(false);
+
   const [cities, setCities] = useState<CityType[]>([]);
   const [finalTypes, setFinalTypes] = useState<FinalType[]>([]);
   const [neighborhoods, setNeighborhoods] = useState<NeighborhoodType[]>([]);
@@ -49,10 +52,11 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
   const client = useQueryClient();
   const modalRef = useRef<HTMLDivElement>(null);
 
+  // When edit modal is open, attach event listeners to detect outside clicks and Escape key
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && isEditModalOpen) {
-        setIsEditModalOpen(false);
+        setIsEditExitConfirmOpen(true);
       }
     };
 
@@ -62,7 +66,7 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
         !modalRef.current.contains(event.target as Node) &&
         isEditModalOpen
       ) {
-        setIsEditModalOpen(false);
+        setIsEditExitConfirmOpen(true);
       }
     };
 
@@ -126,7 +130,7 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
           const response = await finalCityApi.fetchFinalCityByNeighborhoodId(editingEstate.neighborhoodId);
           setFinalCities(response);
         } catch (error) {
-          console.error("Failed to fetch neighborhoods:", error);
+          console.error("Failed to fetch final cities:", error);
         }
       }
     };
@@ -335,6 +339,7 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
           >
             <motion.div
               ref={modalRef}
+              onClick={(e) => e.stopPropagation()} // Prevent clicks inside modal from triggering overlay click
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
@@ -344,7 +349,7 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
               role="dialog"
             >
               <button
-                onClick={() => setIsEditModalOpen(false)}
+                onClick={() => setIsEditExitConfirmOpen(true)}
                 aria-label="Close modal"
                 className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 z-10 transition-colors"
               >
@@ -387,6 +392,19 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
         isDeleting={selection.isBulkDeleting}
         count={selection.selectedIds.length}
         itemName={{ singular: "عقار", plural: "عقارات" }}
+      />
+
+      {/* Edit Exit Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={isEditExitConfirmOpen}
+        onClose={() => setIsEditExitConfirmOpen(false)}
+        onConfirm={() => {
+          setIsEditModalOpen(false);
+          setIsEditExitConfirmOpen(false);
+        }}
+        title="تأكيد الخروج"
+        confirmText={isEditExitConfirmOpen ? "تأكيد الخروج" : undefined}
+        message="هل أنت متأكد أنك تريد الخروج من التعديل؟ البيانات غير المحفوظة قد تفقد."
       />
     </div>
   );

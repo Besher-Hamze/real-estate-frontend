@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -18,8 +18,20 @@ import {
 } from 'react-share';
 import { toast } from "react-toastify";
 
+// Updated interface with hover and leave callbacks
+interface EnhancedRealEstateCardProps extends RealEstateCardProps {
+  onHover?: () => void;
+  onLeave?: () => void;
+  selectedSubType?: any;
+}
 
-const RealEstateCard: React.FC<RealEstateCardProps> = ({ item, mainType }) => {
+const RealEstateCard: React.FC<EnhancedRealEstateCardProps> = ({ 
+  item, 
+  mainType, 
+  selectedSubType,
+  onHover,
+  onLeave
+}) => {
   // State to manage favorite status
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   // State for share options visibility
@@ -35,7 +47,7 @@ const RealEstateCard: React.FC<RealEstateCardProps> = ({ item, mainType }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // Create array of all images, starting with coverImage and then adding files
-  const images = useMemo(() => {
+  const images = React.useMemo(() => {
     // Start with the cover image
     const allImages = [item.coverImage];
 
@@ -72,7 +84,7 @@ const RealEstateCard: React.FC<RealEstateCardProps> = ({ item, mainType }) => {
     };
   }, [showShareOptions]);
 
-  const isCurrentMediaVideo = useMemo(() => {
+  const isCurrentMediaVideo = React.useMemo(() => {
     const currentMedia = images[currentImageIndex];
     return currentMedia &&
       (currentMedia.toLowerCase().endsWith('.mp4') ||
@@ -155,7 +167,7 @@ const RealEstateCard: React.FC<RealEstateCardProps> = ({ item, mainType }) => {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(shareUrl)
         .then(() => {
-          toast.success("تم نسخ الرابط~")
+          toast.success("تم نسخ الرابط")
         })
         .catch(() => {
           fallbackCopyText(shareUrl, document.body);
@@ -191,10 +203,8 @@ const RealEstateCard: React.FC<RealEstateCardProps> = ({ item, mainType }) => {
       setTimeout(() => {
         tooltip.remove();
       }, 2000);
-
-      alert("تم نسخ الرابط!");
     } catch (error) {
-      console.log('خطأ في نسخ الرابط:', error);
+      console.error('خطأ في نسخ الرابط:', error);
     }
   };
 
@@ -222,14 +232,21 @@ const RealEstateCard: React.FC<RealEstateCardProps> = ({ item, mainType }) => {
     setCurrentImageIndex(index);
   };
 
-  // إضافة إحداث مرور وخروج المؤشر
-  const handleMouseEnter = () => {
+  // Handle mouse enter with callback for map interaction
+  const handleMouseEnter = useCallback(() => {
     setIsHovering(true);
-  };
+    if (onHover) {
+      onHover();
+    }
+  }, [onHover]);
 
-  const handleMouseLeave = () => {
+  // Handle mouse leave with callback
+  const handleMouseLeave = useCallback(() => {
     setIsHovering(false);
-  };
+    if (onLeave) {
+      onLeave();
+    }
+  }, [onLeave]);
 
   // Get share URL and info
   const shareUrl = `${process.env.NEXT_PUBLIC_FRONTEND}/properties/${item.id}`;
@@ -394,7 +411,8 @@ const RealEstateCard: React.FC<RealEstateCardProps> = ({ item, mainType }) => {
                   aria-current={currentImageIndex === index ? 'true' : 'false'}
                 />
               ))}
-            </div>          </>
+            </div>
+          </>
         )}
       </div>
 

@@ -15,6 +15,8 @@ import PropertyGrid from "@/components/widgets/PropertyGrid";
 import ScrollToTop from "@/components/widgets/ScrollToTop";
 import { filterRealEstateData, initialFilterState, initialSortOption } from "@/utils/filterUtils";
 import SortComponent from "@/components/home/SortComponent";
+import PropertyMapGrid from "@/components/widgets/PropertyGrid/PropertyMapGrid";
+import CityGrid from "@/components/widgets/PropertyGrid/CityGrid";
 
 export default function PremiumLanding(): JSX.Element {
   const [selectedMainTypeId, setSelectedMainTypeId] = useState<number | null>(null);
@@ -22,6 +24,7 @@ export default function PremiumLanding(): JSX.Element {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000000]);
   const [filters, setFilters] = useState<Filters>(initialFilterState);
   const [sortOption, setSortOption] = useState<SortOption>(initialSortOption);
+  const [selectedCityId, setSelectedCityId] = useState<number | null>(null);
 
   const {
     mainTypes = [],
@@ -153,7 +156,7 @@ export default function PremiumLanding(): JSX.Element {
             sortOption={sortOption} // إرسال خيار الترتيب
             setSortOption={setSortOption} // إرسال دالة تحديث خيار الترتيب
           />
-          <PropertyGrid
+          <PropertyMapGrid
             filteredData={filteredRealEstateData}
             isLoading={isLoadingRealEstate}
             resetFilters={resetFilters}
