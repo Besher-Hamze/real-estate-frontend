@@ -9,7 +9,7 @@ import { CityType, FinalType, NeighborhoodType, MainType, FinalCityType } from '
 import { useMainType } from './useMainType';
 import { useRealEstate } from './useRealEstate';
 import { useFormValidation } from '@/lib/hooks/useFormValidation';
-import { createValidationContext, estateSchema } from '@/schemas/estateSchema';
+import {  createDynamicEstateSchema } from '@/schemas/estateSchema';
 import { finalCityApi } from '@/api/finalCityApi';
 
 const initialFormState: CreateEstateForm = {
@@ -39,7 +39,7 @@ const initialFormState: CreateEstateForm = {
     totalFloors: 0,
     viewTime: '',
     buildingItemId: '',
-    location: "23.5880,58.3829 ",
+    location: "23.5880,58.3829",
     buildingAge: ""
 };
 
@@ -56,11 +56,13 @@ export function useEstateForm(buildingItemId?: string) {
     const [neighborhoods, setNeighborhoods] = useState<NeighborhoodType[]>([]);
     const [finalCities, setFinalCities] = useState<FinalCityType[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [filterConfig, setFilterConfig] = useState<any>(null);
+    const [dynamicSchema, setDynamicSchema] = useState(createDynamicEstateSchema());
 
     const { mainTypes } = useMainType();
     const { refetch: refetchEstates } = useRealEstate();
 
-    // Use our form validation hook for a single source of truth
+    // Use our form validation hook with dynamic schema
     const {
         formData,
         errors,
@@ -70,11 +72,12 @@ export function useEstateForm(buildingItemId?: string) {
         handleSubmit,
         validateForm
     } = useFormValidation(
-        estateSchema,
+        dynamicSchema,
         initialState,
-        createValidationContext
+        
     );
 
+    // Fetch cities on component mount
     useEffect(() => {
         const fetchCities = async () => {
             try {
@@ -86,7 +89,7 @@ export function useEstateForm(buildingItemId?: string) {
             }
         };
         fetchCities();
-    }, []);
+    }, [buildingItemId, setFormData]);
 
     // Fetch final types when subCategoryId changes
     useEffect(() => {
@@ -133,18 +136,19 @@ export function useEstateForm(buildingItemId?: string) {
         fetchNeighborhoods();
     }, [formData.cityId]);
 
+    // Fetch final cities when neighborhood changes
     useEffect(() => {
         const fetchFinalCities = async () => {
-            if (!formData.cityId) {
-                setNeighborhoods([]);
+            if (!formData.neighborhoodId) {
+                setFinalCities([]);
                 return;
             }
             try {
                 setIsLoading(true);
-                const response = await finalCityApi.fetchFinalCityByNeighborhoodId(formData.neighborhoodId);;
+                const response = await finalCityApi.fetchFinalCityByNeighborhoodId(formData.neighborhoodId);
                 setFinalCities(response);
             } catch (error) {
-                console.error("Failed to fetch neighborhoods:", error);
+                console.error("Failed to fetch final cities:", error);
                 toast.error("فشل في تحميل المناطق");
             } finally {
                 setIsLoading(false);
@@ -153,8 +157,72 @@ export function useEstateForm(buildingItemId?: string) {
         fetchFinalCities();
     }, [formData.neighborhoodId]);
 
+    // Fetch filter config when property type changes
+    useEffect(() => {
+        const fetchFilterConfig = async () => {
+            if (formData.mainCategoryId > 0 && formData.subCategoryId > 0 && formData.finalTypeId > 0) {
+                try {
+                    const mainCategoryName = mainTypes?.find(m => m.id === formData.mainCategoryId)?.name || "";
+                    const finalTypeName = finalTypes?.find(f => f.id === formData.finalTypeId)?.name || "";
+                    const subCategoryName = mainTypes
+                        ?.find(m => m.id === formData.mainCategoryId)
+                        ?.subtypes?.find(sub => sub.id === formData.subCategoryId)?.name || "";
+
+                    const response = await RealEstateApi.fetchFilter(mainCategoryName, subCategoryName, finalTypeName);
+                    setFilterConfig(response);
+
+                    // Update the validation schema with new filter config
+                    const newSchema = createDynamicEstateSchema(response);
+                    setDynamicSchema(newSchema);
+                } catch (error) {
+                    console.error('Failed to fetch filter config:', error);
+                    // Set a default filter config that shows all fields
+                    setFilterConfig({
+                        title: true,
+                        description: true,
+                        price: true,
+                        viewTime: true,
+                        paymentMethod: true,
+                        mainCategoryId: true,
+                        subCategoryId: true,
+                        finalTypeId: true,
+                        cityId: true,
+                        neighborhoodId: true,
+                        finalCityId: true,
+                        nearbyLocations: true,
+                        location: true,
+                        bedrooms: true,
+                        bathrooms: true,
+                        totalFloors: true,
+                        floorNumber: true,
+                        buildingAge: true,
+                        ceilingHeight: true,
+                        furnished: true,
+                        facade: true,
+                        rentalDuration: true,
+                        buildingArea: true,
+                        mainFeatures: true,
+                        additionalFeatures: true,
+                        coverImage: true,
+                        files: true,
+                    });
+                    setDynamicSchema(createDynamicEstateSchema());
+                }
+            }
+        };
+
+        fetchFilterConfig();
+    }, [
+        formData.mainCategoryId,
+        formData.subCategoryId,
+        formData.finalTypeId,
+        mainTypes,
+        finalTypes
+    ]);
+
+    // Handle form changes with support for resetting dependent fields
     const handleChange = useCallback((field: string, value: any) => {
-        baseHandleChange(field, value as any);
+        baseHandleChange(field, value);
 
         if (field === 'mainCategoryId') {
             baseHandleChange('subCategoryId', 0);
@@ -166,6 +234,7 @@ export function useEstateForm(buildingItemId?: string) {
         }
     }, [baseHandleChange]);
 
+    // Submit form data with FormData handling for files
     const submitFormData = async (): Promise<boolean> => {
         let success = false;
 
@@ -173,7 +242,7 @@ export function useEstateForm(buildingItemId?: string) {
             if (buildingItemId) {
                 validData.buildingItemId = buildingItemId;
             }
-            
+
             try {
                 setIsLoading(true);
                 const formDataToSend = new FormData();
@@ -234,10 +303,11 @@ export function useEstateForm(buildingItemId?: string) {
         return success;
     };
 
+    // Helper function to get property type for features
     const getPropertyType = (): 'residential' | 'commercial' | 'industrial' | 'others' => {
         const subType = mainTypes
             ?.find((m) => m.id === formData.mainCategoryId)
-            ?.subtypes.find(m => m.id === formData.subCategoryId);
+            ?.subtypes?.find(m => m.id === formData.subCategoryId);
         const finalType = finalTypes?.find(f => f.id === formData.finalTypeId);
 
         if (subType?.name?.includes('سكني') || finalType?.name?.includes('سكني')) {
@@ -254,7 +324,7 @@ export function useEstateForm(buildingItemId?: string) {
     const isLandType = () => {
         const selectedSubType = mainTypes
             ?.find(m => m.id === formData.mainCategoryId)
-            ?.subtypes.find(sub => sub.id === formData.subCategoryId);
+            ?.subtypes?.find(sub => sub.id === formData.subCategoryId);
 
         const selectedFinalType = finalTypes.find(type => type.id === formData.finalTypeId);
 
@@ -283,6 +353,7 @@ export function useEstateForm(buildingItemId?: string) {
         getPropertyType,
         isLandType,
         isRentalType,
-        initialFormState
+        initialFormState,
+        filterConfig
     };
 }

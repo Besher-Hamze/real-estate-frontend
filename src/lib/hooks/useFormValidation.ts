@@ -6,7 +6,6 @@ type ValidationErrors = Record<string, string>;
 export function useFormValidation<T extends Record<string, any>>(
     schema: ObjectSchema<any>,
     initialValues: T,
-    contextProvider?: (formData: T) => Record<string, any>
 ) {
     const [formData, setFormData] = useState<T>(initialValues);
     const [errors, setErrors] = useState<ValidationErrors>({});
@@ -17,9 +16,8 @@ export function useFormValidation<T extends Record<string, any>>(
             try {
                 // Create a partial schema for just this field
                 const fieldSchema = schema.pick([name]);
-                const context = contextProvider ? contextProvider(formData) : undefined;
 
-                await fieldSchema.validate({ [name]: value }, { abortEarly: false, context });
+                await fieldSchema.validate({ [name]: value }, { abortEarly: false });
                 // Clear error if validation passes
                 setErrors((prev) => ({ ...prev, [name]: '' }));
                 return true;
@@ -31,7 +29,7 @@ export function useFormValidation<T extends Record<string, any>>(
                 return false;
             }
         },
-        [schema, formData, contextProvider]
+        [schema, formData]
     );
 
     const handleChange = useCallback(
@@ -48,8 +46,7 @@ export function useFormValidation<T extends Record<string, any>>(
 
     const validateForm = useCallback(async () => {
         try {
-            const context = contextProvider ? contextProvider(formData) : undefined;
-            await schema.validate(formData, { abortEarly: false, context });
+            await schema.validate(formData, { abortEarly: false });
             setErrors({});
             return true;
         } catch (error) {
@@ -64,7 +61,7 @@ export function useFormValidation<T extends Record<string, any>>(
             }
             return false;
         }
-    }, [schema, formData, contextProvider]);
+    }, [schema, formData]);
 
     const handleSubmit = useCallback(
         async (onSubmit: (data: T) => Promise<void>) => {

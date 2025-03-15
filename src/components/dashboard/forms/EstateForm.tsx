@@ -97,6 +97,8 @@ export default function EstateForm({ buildingItemId }: EstateFormProps) {
 
         const response = await RealEstateApi.fetchFilter(mainCategoryName, subCategoryName, finalTypeName);
         setFilterConfig(response);
+        console.log(response);
+        
       } catch (error) {
         console.error("Failed to fetch filter config:", error);
         setFilterConfig({

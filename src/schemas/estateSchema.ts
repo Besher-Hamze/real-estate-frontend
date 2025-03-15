@@ -27,9 +27,7 @@ export const validationSchemas = {
       return value ? value.split('، ').filter(Boolean).length > 0 : false;
     }
   }),
-
 };
-
 
 // City Form
 export const citySchema = yup.object({
@@ -38,85 +36,246 @@ export const citySchema = yup.object({
 
 export type CityFormData = InferType<typeof citySchema>;
 
-// Estate Form
-export const estateSchema = yup.object({
-  title: yup.string().required('عنوان العقار مطلوب'),
-  description: validationSchemas.requiredText,
-  price: validationSchemas.price,
-  viewTime: validationSchemas.requiredText,
-  paymentMethod: validationSchemas.features,
-  mainCategoryId: validationSchemas.requiredSelect,
-  subCategoryId: validationSchemas.requiredSelect,
-  finalTypeId: validationSchemas.requiredSelect,
-  cityId: validationSchemas.requiredSelect,
-  neighborhoodId: validationSchemas.requiredSelect,
-  finalCity:validationSchemas.requiredSelect,
-  nearbyLocations: validationSchemas.features,
-  bedrooms: yup.number().when('$isResidential', {
-    is: true,
-    then: () => validationSchemas.bedroomsBathrooms,
-    otherwise: () => yup.number().nullable()
-  }),
-  bathrooms: yup.number().when('$isResidential', {
-    is: true,
-    then: () => validationSchemas.bedroomsBathrooms,
-    otherwise: () => yup.number().nullable()
-  }),
-  totalFloors: yup.number().when('$isResidential', {
-    is: true,
-    then: () => validationSchemas.positiveNumber,
-    otherwise: () => yup.number().nullable()
-  }),
-  floorNumber: yup.number().when('$isResidential', {
-    is: true,
-    then: () => yup.number().min(0, 'يجب اختيار الطابق'),
-    otherwise: () => yup.number().nullable()
-  }),
-  buildingArea: yup.string().required('المساحة مطلوبة'),
-  ceilingHeight: yup.number().when('$isResidential', {
-    is: true,
-    then: () => validationSchemas.positiveNumber,
-    otherwise: () => yup.number().nullable()
-  }),
-  furnished: yup.number().when('$isResidential', {
-    is: true,
-    then: () => yup.number().min(0, 'يرجى تحديد حالة الفرش'),
-    otherwise: () => yup.number().nullable()
-  }),
-  facade: yup.string().when('$isResidential', {
-    is: true,
-    then: () => yup.string().required('الإطلالة مطلوبة'),
-    otherwise: () => yup.string().nullable()
-  }),
-  mainFeatures: validationSchemas.features,
-  additionalFeatures: validationSchemas.features,
-  location: yup.string().required('موقع العقار مطلوب'),
-  rentalDuration: yup.string().when('$isRental', {
-    is: true,
-    then: () => yup.string().required('يرجى تحديد مدة العقد'),
-    otherwise: () => yup.string().nullable()
-  }),
-  coverImage: yup.mixed().required('صورة الغلاف مطلوبة'),
-  files: yup.array().min(1, 'يجب إضافة صورة واحدة على الأقل')
-});
-
-export type EstateFormData = InferType<typeof estateSchema>;
-
-// Helper function to create context for conditional validation
-export const createValidationContext = (formData: any) => {
-  return {
-    isResidential: !isLandType(formData),
-    isRental: isRentalType(formData)
+/**
+ * Creates a dynamic validation schema based on filter configuration
+ * @param filterConfig - Configuration from the API that dictates which fields are required
+ * @returns A Yup validation schema
+ */
+export const createDynamicEstateSchema = (filterConfig: any = null) => {
+  // Default configuration that shows all fields if no filterConfig provided
+  const config = filterConfig || {
+    title: true,
+    description: true,
+    price: true,
+    viewTime: true,
+    paymentMethod: true,
+    mainCategoryId: true,
+    subCategoryId: true,
+    finalTypeId: true,
+    cityId: true,
+    neighborhoodId: true,
+    finalCityId: true,
+    nearbyLocations: true,
+    location: true,
+    bedrooms: true,
+    bathrooms: true,
+    totalFloors: true,
+    floorNumber: true,
+    buildingAge: true,
+    ceilingHeight: true,
+    furnished: true,
+    facade: true,
+    rentalDuration: true,
+    buildingArea: true,
+    mainFeatures: true,
+    additionalFeatures: true,
+    coverImage: true,
+    files: true,
   };
+  
+  // Start with an empty schema
+  const schemaFields: Record<string, any> = {
+    // Always include buildingItemId
+    buildingItemId: yup.string()
+  };
+
+  // Add fields based on filter configuration
+  if (config.title) {
+    schemaFields.title = yup.string().required('عنوان العقار مطلوب');
+  } else {
+    schemaFields.title = yup.string().nullable();
+  }
+
+  if (config.description) {
+    schemaFields.description = validationSchemas.requiredText;
+  } else {
+    schemaFields.description = validationSchemas.text.nullable();
+  }
+
+  if (config.price) {
+    schemaFields.price = validationSchemas.price;
+  } else {
+    schemaFields.price = yup.number().nullable();
+  }
+
+  if (config.viewTime) {
+    schemaFields.viewTime = validationSchemas.requiredText;
+  } else {
+    schemaFields.viewTime = validationSchemas.text.nullable();
+  }
+
+  if (config.paymentMethod) {
+    schemaFields.paymentMethod = validationSchemas.features;
+  } else {
+    schemaFields.paymentMethod = yup.string().nullable();
+  }
+
+  if (config.mainCategoryId) {
+    schemaFields.mainCategoryId = validationSchemas.requiredSelect;
+  } else {
+    schemaFields.mainCategoryId = yup.number().nullable();
+  }
+
+  if (config.subCategoryId) {
+    schemaFields.subCategoryId = validationSchemas.requiredSelect;
+  } else {
+    schemaFields.subCategoryId = yup.number().nullable();
+  }
+
+  if (config.finalTypeId) {
+    schemaFields.finalTypeId = validationSchemas.requiredSelect;
+  } else {
+    schemaFields.finalTypeId = yup.number().nullable();
+  }
+
+  if (config.cityId) {
+    schemaFields.cityId = validationSchemas.requiredSelect;
+  } else {
+    schemaFields.cityId = yup.number().nullable();
+  }
+
+  if (config.neighborhoodId) {
+    schemaFields.neighborhoodId = validationSchemas.requiredSelect;
+  } else {
+    schemaFields.neighborhoodId = yup.number().nullable();
+  }
+
+  if (config.finalCityId) {
+    schemaFields.finalCityId = validationSchemas.requiredSelect;
+  } else {
+    schemaFields.finalCityId = yup.number().nullable();
+  }
+
+  if (config.nearbyLocations) {
+    schemaFields.nearbyLocations = validationSchemas.features;
+  } else {
+    schemaFields.nearbyLocations = yup.string().nullable();
+  }
+
+  // Conditional fields based on whether it's a residential property
+  if (config.bedrooms) {
+    schemaFields.bedrooms = validationSchemas.bedroomsBathrooms
+  } else {
+    schemaFields.bedrooms = yup.number().nullable();
+  }
+
+  if (config.bathrooms) {
+    schemaFields.bathrooms = validationSchemas.bedroomsBathrooms
+  } else {
+    schemaFields.bathrooms = yup.number().nullable();
+  }
+
+  if (config.totalFloors) {
+    schemaFields.totalFloors = validationSchemas.positiveNumber
+  } else {
+    schemaFields.totalFloors = yup.number().nullable();
+  }
+
+  if (config.floorNumber) {
+    schemaFields.floorNumber = yup.number().min(0, 'يجب اختيار الطابق')
+  } else {
+    schemaFields.floorNumber = yup.number().nullable();
+  }
+
+  if (config.buildingAge) {
+    schemaFields.buildingAge = yup.string();
+  } else {
+    schemaFields.buildingAge = yup.string().nullable();
+  }
+
+  if (config.buildingArea) {
+    schemaFields.buildingArea = yup.string().required('المساحة مطلوبة');
+  } else {
+    schemaFields.buildingArea = yup.string().nullable();
+  }
+
+  if (config.ceilingHeight) {
+    schemaFields.ceilingHeight = validationSchemas.positiveNumber
+  } else {
+    schemaFields.ceilingHeight = yup.number().nullable();
+  }
+
+  if (config.furnished) {
+    schemaFields.furnished = yup.number().min(0, 'يرجى تحديد حالة الفرش')
+  } else {
+    schemaFields.furnished = yup.number().nullable();
+  }
+
+  if (config.facade) {
+    schemaFields.facade =  yup.string().required('الإطلالة مطلوبة')
+  } else {
+    schemaFields.facade = yup.string().nullable();
+  }
+
+  if (config.mainFeatures) {
+    schemaFields.mainFeatures = validationSchemas.features;
+  } else {
+    schemaFields.mainFeatures = yup.string().nullable();
+  }
+
+  if (config.additionalFeatures) {
+    schemaFields.additionalFeatures = validationSchemas.features;
+  } else {
+    schemaFields.additionalFeatures = yup.string().nullable();
+  }
+
+  if (config.location) {
+    schemaFields.location = yup.string().required('موقع العقار مطلوب');
+  } else {
+    schemaFields.location = yup.string().nullable();
+  }
+
+  if (config.rentalDuration) {
+    schemaFields.rentalDuration = yup.string().required('يرجى تحديد مدة العقد')
+  } else {
+    schemaFields.rentalDuration = yup.string().nullable();
+  }
+
+  if (config.coverImage) {
+    schemaFields.coverImage = yup.mixed().required('صورة الغلاف مطلوبة');
+  } else {
+    schemaFields.coverImage = yup.mixed().nullable();
+  }
+
+  if (config.files) {
+    schemaFields.files = yup.mixed().test({
+      name: 'required-files',
+      message: 'يجب إضافة صورة واحدة على الأقل',
+      test: function(value) {
+        // Handle both array and null values
+        if (Array.isArray(value)) {
+          return value.some(file => file != null);
+        } else {
+          return value != null;
+        }
+      }
+    });
+  } else {
+    schemaFields.files = yup.mixed().nullable();
+  }
+
+  // Create the schema from the fields
+  return yup.object(schemaFields);
 };
 
-// Helper functions for estate form
-function isLandType(formData: any) {
-  // This is a simplified version - adapt to your actual logic
-  return formData.finalTypeId && String(formData.finalTypeId).includes('أرض');
-}
+// Define the type based on a default configuration
+export type EstateFormData = InferType<ReturnType<typeof createDynamicEstateSchema>>;
 
-function isRentalType(formData: any) {
-  // This is a simplified version - adapt to your actual logic
-  return formData.mainCategoryId && String(formData.mainCategoryId).includes('إيجار');
-}
+// Helper function to create context for conditional validation
+// export const createValidationContext = (formData: any) => {
+//   return {
+//     isResidential: !isLandType(formData),
+//     isRental: isRentalType(formData)
+//   };
+// };
+
+// // Helper functions for estate form
+// function isLandType(formData: any) {
+//   // Check if the finalTypeId indicates a land property
+//   return formData.finalTypeId && String(formData.finalTypeId).includes('أرض');
+// }
+
+// function isRentalType(formData: any) {
+//   // Check if the mainCategoryId indicates a rental property
+//   return formData.mainCategoryId && String(formData.mainCategoryId).includes('إيجار');
+// }
