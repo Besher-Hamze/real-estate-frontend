@@ -22,7 +22,7 @@ export const validationSchemas = {
   bedroomsBathrooms: yup.number().min(1, 'يجب أن لا يقل عن 1').required('هذا الحقل مطلوب'),
   features: yup.string().test({
     name: 'min-features',
-    message: 'يرجى اختيار ميزة واحدة على الأقل',
+    message: 'يرجى اختيار واحدة على الأقل',
     test: function (value) {
       return value ? value.split('، ').filter(Boolean).length > 0 : false;
     }
@@ -43,16 +43,15 @@ export const estateSchema = yup.object({
   title: yup.string().required('عنوان العقار مطلوب'),
   description: validationSchemas.requiredText,
   price: validationSchemas.price,
+  viewTime: validationSchemas.requiredText,
+  paymentMethod: validationSchemas.features,
   mainCategoryId: validationSchemas.requiredSelect,
   subCategoryId: validationSchemas.requiredSelect,
   finalTypeId: validationSchemas.requiredSelect,
   cityId: validationSchemas.requiredSelect,
   neighborhoodId: validationSchemas.requiredSelect,
-  mainFeatures: validationSchemas.features,
-  additionalFeatures: validationSchemas.features,
+  finalCity:validationSchemas.requiredSelect,
   nearbyLocations: validationSchemas.features,
-  paymentMethod: validationSchemas.features,
-  location: yup.string().required('موقع العقار مطلوب'),
   bedrooms: yup.number().when('$isResidential', {
     is: true,
     then: () => validationSchemas.bedroomsBathrooms,
@@ -63,7 +62,6 @@ export const estateSchema = yup.object({
     then: () => validationSchemas.bedroomsBathrooms,
     otherwise: () => yup.number().nullable()
   }),
-  buildingArea: yup.string().required('المساحة مطلوبة'),
   totalFloors: yup.number().when('$isResidential', {
     is: true,
     then: () => validationSchemas.positiveNumber,
@@ -74,6 +72,7 @@ export const estateSchema = yup.object({
     then: () => yup.number().min(0, 'يجب اختيار الطابق'),
     otherwise: () => yup.number().nullable()
   }),
+  buildingArea: yup.string().required('المساحة مطلوبة'),
   ceilingHeight: yup.number().when('$isResidential', {
     is: true,
     then: () => validationSchemas.positiveNumber,
@@ -89,6 +88,9 @@ export const estateSchema = yup.object({
     then: () => yup.string().required('الإطلالة مطلوبة'),
     otherwise: () => yup.string().nullable()
   }),
+  mainFeatures: validationSchemas.features,
+  additionalFeatures: validationSchemas.features,
+  location: yup.string().required('موقع العقار مطلوب'),
   rentalDuration: yup.string().when('$isRental', {
     is: true,
     then: () => yup.string().required('يرجى تحديد مدة العقد'),

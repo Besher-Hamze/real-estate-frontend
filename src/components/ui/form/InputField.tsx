@@ -17,7 +17,7 @@ export function InputField({
   value,
   onChange,
   placeholder,
-  required = true, 
+  required = false, 
   min,
   pattern,
   onKeyDown,
@@ -41,7 +41,6 @@ export function InputField({
           onChange(e.target.value);
         }}
         placeholder={placeholder}
-        required={required}
         onKeyDown={onKeyDown as React.KeyboardEventHandler<HTMLTextAreaElement>}
         className={combinedClassName}
         rows={5}
@@ -56,8 +55,7 @@ export function InputField({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      required={required}
-      min={min}
+      // min={min}
       pattern={pattern}
       onKeyDown={onKeyDown as React.KeyboardEventHandler<HTMLInputElement>}
       className={combinedClassName}

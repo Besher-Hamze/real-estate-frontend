@@ -115,7 +115,7 @@ const FilterSection = ({
             finalTypes.find(f => f.id == parseInt(filters.finalType))?.name
           );
           console.log(filterConfig);
-          
+
           setBackendFilterConfig(filterConfig);
         }
       } catch (error) {
@@ -138,7 +138,7 @@ const FilterSection = ({
     };
 
     fetchFilterConfiguration();
-  }, [currentMainType, currentSubType,filters.finalType]);
+  }, [currentMainType, currentSubType, filters.finalType]);
 
   useEffect(() => {
     if (subId) {
@@ -166,6 +166,7 @@ const FilterSection = ({
     }
   }, [filters.neighborhood]);
 
+  
   const handlePriceChange = (type: 'min' | 'max', value: string): void => {
     const cleanValue = value.replace(/,/g, '');
     if (type === 'min') {
@@ -490,7 +491,10 @@ const FilterSection = ({
                 onChange={(e) => setFilters({ ...filters, propertySize: e.target.value })}
                 options={[
                   { value: '', label: 'الكل' },
-                  // Add your property size options here
+                  { value: 'small', label: 'أقل من 100 متر مربع' },
+                  { value: 'medium', label: '100 - 199 متر مربع' },
+                  { value: 'large', label: '200 - 299 متر مربع' },
+                  { value: 'xlarge', label: '300 متر مربع فأكثر' }
                 ]}
               />
             )}

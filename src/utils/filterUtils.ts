@@ -84,13 +84,13 @@ export const filterRealEstateData = (
 
     if (filters.isFurnished && filters.isFurnished !== "") {
       console.log(item.furnished);
-      
+
       if (item.furnished.toString().toLocaleLowerCase() !== filters.isFurnished.toLowerCase()) {
         return false;
       }
     }
     if (filters.rentalPeriod && filters.rentalPeriod !== "") {
-      if (item.rentalDuration !== parseInt(filters.rentalPeriod)) {
+      if (item.rentalDuration !== filters.rentalPeriod) {
         return false;
       }
     }

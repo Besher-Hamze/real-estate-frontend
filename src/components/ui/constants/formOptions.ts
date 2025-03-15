@@ -22,6 +22,7 @@ export const VIEW_OPTIONS = [
   { value: 'جانبي', label: 'جانبي' },
   { value: 'خلفي', label: 'خلفي' },
   { value: 'داخلي', label: 'داخلي' },
+  { value: 'مفتوح على 4 جهات', label: 'مفتوح على 4 جهات' },
 ];
 
 export const RENTAL_DURATION_OPTIONS = [
@@ -144,4 +145,5 @@ export const BUILDING_AGE_OPTION = [
   { value: "10-19,y", label: "10-19 سنوات" },
   { value: "20,y", label: "20+ سنة" },
 ]
+
 
