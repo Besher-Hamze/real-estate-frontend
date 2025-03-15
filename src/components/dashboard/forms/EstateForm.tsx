@@ -208,29 +208,59 @@ export default function EstateForm({ buildingItemId }: EstateFormProps) {
       <div className="space-y-4">
         {filterConfig.title && (
           <FormField label="عنوان العقار" error={errors.title}>
-            <InputField
-              type="text"
-              value={formData.title}
-              onChange={(value) => handleFormChange("title", value)}
-              placeholder="أدخل عنوان العقار"
-              required
-              error={!!errors.title}
-            />
+            <div className="space-y-1">
+              <InputField
+                type="text"
+                value={formData.title}
+                onChange={(value: any) => {
+                  // Limit to 100 characters
+                  if (value.length <= 100) {
+                    handleFormChange("title", value);
+                  }
+                }}
+                placeholder="أدخل عنوان العقار"
+                required
+                error={!!errors.title}
+                maxLength={100}
+              />
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-500">الحد الأقصى 100 حرف</span>
+                <span className={`${formData.title.length > 90 ? 'text-amber-600' : ''} ${formData.title.length >= 100 ? 'text-red-500' : ''}`}>
+                  {formData.title.length}/100
+                </span>
+              </div>
+            </div>
           </FormField>
         )}
 
+
         {filterConfig.description && (
           <FormField label="وصف العقار" error={errors.description}>
-            <InputField
-              type="textArea"
-              value={formData.description}
-              onChange={(value) => handleFormChange("description", value)}
-              placeholder="أدخل وصف العقار"
-              required
-              error={!!errors.description}
-            />
+            <div className="space-y-1">
+              <InputField
+                type="textArea"
+                value={formData.description}
+                onChange={(value: any) => {
+                  // Limit to 1000 characters
+                  if (value.length <= 1000) {
+                    handleFormChange("description", value);
+                  }
+                }}
+                placeholder="أدخل وصف العقار"
+                required
+                error={!!errors.description}
+                maxLength={1000}
+              />
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-500">الحد الأقصى 1000 حرف</span>
+                <span className={`${formData.description.length > 900 ? 'text-amber-600' : ''} ${formData.description.length >= 1000 ? 'text-red-500' : ''}`}>
+                  {formData.description.length}/1000
+                </span>
+              </div>
+            </div>
           </FormField>
         )}
+
 
         {filterConfig.price && (
           <FormField label="السعر" error={errors.price}>
@@ -254,89 +284,12 @@ export default function EstateForm({ buildingItemId }: EstateFormProps) {
 
         {filterConfig.viewTime && (
           <FormField label="وقت المشاهدة">
-            <div className="space-y-3">
-              {formData.viewTime &&
-                formData.viewTime.split(",").map((timeRange, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <div className="flex-1 flex items-center gap-2">
-                      <InputField
-                        type="time"
-                        value={timeRange.split(" to ")[0] || ""}
-                        onChange={(value) => {
-                          const newTimeRanges = formData.viewTime.split(",");
-                          const currentRange = newTimeRanges[index].split(" to ");
-                          newTimeRanges[index] = `${value} to ${currentRange[1] || ""}`;
-                          handleFormChange("viewTime", newTimeRanges.join(","));
-                        }}
-                        placeholder="من"
-                        className="flex-1"
-                      />
-                      <span className="text-gray-500">إلى</span>
-                      <InputField
-                        type="time"
-                        value={timeRange.split(" to ")[1] || ""}
-                        onChange={(value) => {
-                          const newTimeRanges = formData.viewTime.split(",");
-                          const currentRange = newTimeRanges[index].split(" to ");
-                          newTimeRanges[index] = `${currentRange[0] || ""} to ${value}`;
-                          handleFormChange("viewTime", newTimeRanges.join(","));
-                        }}
-                        placeholder="إلى"
-                        className="flex-1"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const newTimeRanges = formData.viewTime.split(",").filter((_, i) => i !== index);
-                        handleFormChange("viewTime", newTimeRanges.join(","));
-                      }}
-                      className="p-1.5 bg-red-50 text-red-500 rounded-md hover:bg-red-100 transition-colors"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M18 6L6 18M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                ))}
-              <button
-                type="button"
-                onClick={() => {
-                  const currentValue = formData.viewTime || "";
-                  const newValue = currentValue
-                    ? `${currentValue},00:00 to 00:00`
-                    : "00:00 to 00:00";
-                  handleFormChange("viewTime", newValue);
-                }}
-                className="text-sm flex items-center gap-1 text-blue-600 hover:text-blue-700 transition-colors"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 8v8M8 12h8" />
-                </svg>
-                إضافة وقت آخر
-              </button>
-            </div>
+            <InputField
+              type="textArea"
+              value={formData.viewTime || ''}
+              onChange={(value) => handleChange("viewTime", value)}
+              placeholder="أدخل وقت المشاهدة (مثال: من الساعة 9 صباحًا إلى 5 مساءً)"
+            />
           </FormField>
         )}
 
@@ -351,6 +304,9 @@ export default function EstateForm({ buildingItemId }: EstateFormProps) {
                 single: "طريقة دفع",
                 multiple: "طرق دفع",
               }}
+              error={!!errors.paymentMethod}
+              errorMessage={errors.paymentMethod}
+              minCount={1}
             />
           </FormField>
         )}
@@ -445,7 +401,7 @@ export default function EstateForm({ buildingItemId }: EstateFormProps) {
         )}
 
         {filterConfig.finalCityId && (
-          <FormField label="الحي" error={errors.neighborhoodId}>
+          <FormField label="المنطقة" error={errors.neighborhoodId}>
             <SelectField
               value={formData.finalCityId}
               onChange={(value) => handleFormChange("finalCityId", Number(value))}
@@ -453,7 +409,7 @@ export default function EstateForm({ buildingItemId }: EstateFormProps) {
                 value: nb.id,
                 label: nb.name,
               }))}
-              placeholder="اختر الحي"
+              placeholder="اختر المنطقة"
               error={!!errors.neighborhoodId}
             />
           </FormField>
@@ -470,6 +426,9 @@ export default function EstateForm({ buildingItemId }: EstateFormProps) {
                 single: "مكان قريبة",
                 multiple: "أماكن قريب",
               }}
+              error={!!errors.nearbyLocations}
+              errorMessage={errors.nearbyLocations}
+              minCount={1}
             />
           </FormField>
         )}
@@ -598,7 +557,7 @@ export default function EstateForm({ buildingItemId }: EstateFormProps) {
           <FormField label="مدة العقد" error={errors.rentalDuration}>
             <SelectField
               value={formData.rentalDuration}
-              onChange={(value) => handleFormChange("rentalDuration", Number(value))}
+              onChange={(value) => handleFormChange("rentalDuration", value)}
               options={RENTAL_DURATION_OPTIONS}
               placeholder="اختر مدة العقد"
               error={!!errors.rentalDuration}
@@ -635,6 +594,9 @@ export default function EstateForm({ buildingItemId }: EstateFormProps) {
                 single: "ميزة أساسية",
                 multiple: "ميزات أساسية",
               }}
+              error={!!errors.mainFeatures}
+              errorMessage={errors.mainFeatures}
+              minCount={1}
             />
           </FormField>
         )}
@@ -650,6 +612,9 @@ export default function EstateForm({ buildingItemId }: EstateFormProps) {
                 single: "ميزة إضافية",
                 multiple: "ميزات إضافية",
               }}
+              error={!!errors.additionalFeatures}
+              errorMessage={errors.additionalFeatures}
+              minCount={1}
             />
           </FormField>
         )}
@@ -663,11 +628,6 @@ export default function EstateForm({ buildingItemId }: EstateFormProps) {
               coverImagePreview={coverImagePreview}
               handleImageUpload={handleImageUpload}
             />
-            {(errors.coverImage || errors.files) && (
-              <p className="text-sm text-red-500 mt-1">
-                {errors.coverImage || errors.files}
-              </p>
-            )}
           </FormField>
         )}
 

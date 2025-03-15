@@ -35,7 +35,7 @@ const initialFormState: CreateEstateForm = {
     coverImage: null,
     files: null,
     ceilingHeight: 0,
-    rentalDuration: 1,
+    rentalDuration: "",
     totalFloors: 0,
     viewTime: '',
     buildingItemId: '',
@@ -75,7 +75,6 @@ export function useEstateForm(buildingItemId?: string) {
         createValidationContext
     );
 
-    // Fetch cities on mount
     useEffect(() => {
         const fetchCities = async () => {
             try {
@@ -146,7 +145,7 @@ export function useEstateForm(buildingItemId?: string) {
                 setFinalCities(response);
             } catch (error) {
                 console.error("Failed to fetch neighborhoods:", error);
-                toast.error("فشل في تحميل الاحياء");
+                toast.error("فشل في تحميل المناطق");
             } finally {
                 setIsLoading(false);
             }
@@ -174,7 +173,7 @@ export function useEstateForm(buildingItemId?: string) {
             if (buildingItemId) {
                 validData.buildingItemId = buildingItemId;
             }
-
+            
             try {
                 setIsLoading(true);
                 const formDataToSend = new FormData();

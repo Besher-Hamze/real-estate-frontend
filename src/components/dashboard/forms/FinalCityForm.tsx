@@ -18,9 +18,9 @@ export default function FinalCityForm() {
         try {
             await finalCityApi.addFinalCity(formData);
             queryClient.invalidateQueries({ queryKey: [finalCityQuery] });
-            toast.success("تم إضافة الحي بنجاح");
+            toast.success("تم إضافة المنطقةبنجاح");
         } catch (error) {
-            toast.error("فشل في إضافة الحي");
+            toast.error("فشل في إضافة المنطقة");
             console.error(error);
         }
     };
@@ -38,9 +38,9 @@ export default function FinalCityForm() {
         },
         {
             name: "name",
-            label: "اسم الحي",
+            label: "اسم المنطقة",
             type: "text" as const,
-            placeholder: "أدخل اسم الحي",
+            placeholder: "أدخل اسم المنطقة",
         },
     ];
 

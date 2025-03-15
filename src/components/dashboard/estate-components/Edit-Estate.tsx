@@ -471,25 +471,52 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
 
             {/* Basic Info */}
             <FormField label="عنوان العقار">
-                <InputField
-                    type="text"
-                    value={editingEstate.title}
-                    onChange={(value) => handleChange("title", value)}
-                    placeholder="أدخل عنوان العقار"
-                    required
-                />
+                <div className="space-y-1">
+                    <InputField
+                        type="text"
+                        value={editingEstate.title}
+                        onChange={(value: any) => {
+                            // Only update if under the character limit
+                            if (value.length <= 100) {
+                                handleChange("title", value);
+                            }
+                        }}
+                        placeholder="أدخل عنوان العقار"
+                        required
+                        maxLength={100}
+                    />
+                    <div className="flex justify-between text-xs">
+                        <span className="text-gray-500">الحد الأقصى 100 حرف</span>
+                        <span className={`${editingEstate.title.length > 90 ? 'text-amber-600' : ''} ${editingEstate.title.length >= 100 ? 'text-red-500' : ''}`}>
+                            {editingEstate.title.length}/100
+                        </span>
+                    </div>
+                </div>
             </FormField>
 
             <FormField label="وصف العقار">
-                <InputField
-                    type="textArea"
-                    value={editingEstate.description}
-                    onChange={(value) => handleChange("description", value)}
-                    placeholder="أدخل وصف العقار"
-                    required
-                />
+                <div className="space-y-1">
+                    <InputField
+                        type="textArea"
+                        value={editingEstate.description}
+                        onChange={(value: any) => {
+                            // Only update if under the character limit
+                            if (value.length <= 1000) {
+                                handleChange("description", value);
+                            }
+                        }}
+                        placeholder="أدخل وصف العقار"
+                        required
+                        maxLength={1000}
+                    />
+                    <div className="flex justify-between text-xs">
+                        <span className="text-gray-500">الحد الأقصى 1000 حرف</span>
+                        <span className={`${editingEstate.description.length > 900 ? 'text-amber-600' : ''} ${editingEstate.description.length >= 1000 ? 'text-red-500' : ''}`}>
+                            {editingEstate.description.length}/1000
+                        </span>
+                    </div>
+                </div>
             </FormField>
-
             <FormField label="السعر">
                 <InputField
                     type="text"
@@ -508,62 +535,12 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
             </FormField>
 
             <FormField label="وقت المشاهدة">
-                <div className="space-y-3">
-                    {editingEstate.viewTime && editingEstate.viewTime.split(',').map((timeRange: string, index: number) => (
-                        <div key={index} className="flex items-center gap-2">
-                            <div className="flex-1 flex items-center gap-2">
-                                <InputField
-                                    type="time"
-                                    value={timeRange.split(' to ')[0] || ''}
-                                    onChange={(value) => {
-                                        const newTimeRanges = editingEstate.viewTime.split(',');
-                                        const currentRange = newTimeRanges[index].split(' to ');
-                                        newTimeRanges[index] = `${value} to ${currentRange[1] || ''}`;
-                                        handleChange("viewTime", newTimeRanges.join(','));
-                                    }}
-                                    placeholder="من"
-                                    className="flex-1"
-                                />
-                                <span className="text-gray-500">إلى</span>
-                                <InputField
-                                    type="time"
-                                    value={timeRange.split(' to ')[1] || ''}
-                                    onChange={(value) => {
-                                        const newTimeRanges = editingEstate.viewTime.split(',');
-                                        const currentRange = newTimeRanges[index].split(' to ');
-                                        newTimeRanges[index] = `${currentRange[0] || ''} to ${value}`;
-                                        handleChange("viewTime", newTimeRanges.join(','));
-                                    }}
-                                    placeholder="إلى"
-                                    className="flex-1"
-                                />
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    const newTimeRanges = editingEstate.viewTime.split(',').filter((_: any, i: number) => i !== index);
-                                    handleChange("viewTime", newTimeRanges.join(','));
-                                }}
-                                className="p-1.5 bg-red-50 text-red-500 rounded-md hover:bg-red-100 transition-colors"
-                            >
-                                <X className="w-4 h-4" />
-                            </button>
-                        </div>
-                    ))}
-
-                    <button
-                        type="button"
-                        onClick={() => {
-                            const currentValue = editingEstate.viewTime || '';
-                            const newValue = currentValue ? `${currentValue},00:00 to 00:00` : '00:00 to 00:00';
-                            handleChange("viewTime", newValue);
-                        }}
-                        className="text-sm flex items-center gap-1 text-blue-600 hover:text-blue-700 transition-colors"
-                    >
-                        <Plus className="w-4 h-4" />
-                        إضافة وقت آخر
-                    </button>
-                </div>
+                <InputField
+                    type="textArea"
+                    value={editingEstate.viewTime || ''}
+                    onChange={(value) => handleChange("viewTime", value)}
+                    placeholder="أدخل وقت المشاهدة (مثال: من الساعة 9 صباحًا إلى 5 مساءً)"
+                />
             </FormField>
             <FormField label="طريقة الدفع">
                 <FeaturesSelect
@@ -651,7 +628,7 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
             </FormField>
 
 
-            <FormField label="الحي">
+            <FormField label="المنطقة">
                 <SelectField
                     value={editingEstate.finalCityId}
                     onChange={(value) => handleChange("finalCityId", Number(value))}
@@ -659,7 +636,7 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                         value: nb.id,
                         label: nb.name,
                     }))}
-                    placeholder="اختر الحي"
+                    placeholder="اختر المنطقة"
                 />
             </FormField>
 
@@ -767,7 +744,7 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                 <FormField label="مدة العقد">
                     <SelectField
                         value={editingEstate.rentalDuration}
-                        onChange={(value) => handleChange('rentalDuration', Number(value))}
+                        onChange={(value) => handleChange('rentalDuration', value)}
                         options={RENTAL_DURATION_OPTIONS}
                         placeholder="اختر مدة العقد"
                     />

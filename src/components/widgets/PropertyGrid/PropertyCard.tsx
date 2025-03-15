@@ -25,9 +25,9 @@ interface EnhancedRealEstateCardProps extends RealEstateCardProps {
   selectedSubType?: any;
 }
 
-const RealEstateCard: React.FC<EnhancedRealEstateCardProps> = ({ 
-  item, 
-  mainType, 
+const RealEstateCard: React.FC<EnhancedRealEstateCardProps> = ({
+  item,
+  mainType,
   selectedSubType,
   onHover,
   onLeave
@@ -404,8 +404,8 @@ const RealEstateCard: React.FC<EnhancedRealEstateCardProps> = ({
                   key={index}
                   onClick={(e) => goToImage(index, e)}
                   className={`w-3 h-3 rounded-full transition-all duration-200 ${currentImageIndex === index
-                      ? 'bg-white scale-125 shadow-glow'
-                      : 'bg-white/50 hover:bg-white/80'
+                    ? 'bg-white scale-125 shadow-glow'
+                    : 'bg-white/50 hover:bg-white/80'
                     }`}
                   aria-label={`عرض الصورة ${index + 1} من ${images.length}`}
                   aria-current={currentImageIndex === index ? 'true' : 'false'}
@@ -417,7 +417,9 @@ const RealEstateCard: React.FC<EnhancedRealEstateCardProps> = ({
       </div>
 
       <div className="p-6">
-        <h3 className="text-xl font-bold mb-2">{item.title}</h3>
+        <h3 className="text-xl font-bold mb-2 truncate whitespace-nowrap overflow-hidden text-ellipsis">
+          {item.title}
+        </h3>
         <div className="flex items-center gap-2 text-gray-600 mb-4">
           <MapPin className="w-4 h-4" />
           <span>

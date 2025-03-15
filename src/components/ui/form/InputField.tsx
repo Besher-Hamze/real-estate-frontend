@@ -9,6 +9,7 @@ interface InputFieldProps {
   onKeyDown?: React.KeyboardEventHandler<HTMLInputElement | HTMLTextAreaElement>;
   className?: string;
   error?: boolean;
+  maxLength?: number; // Added maxLength prop
 }
 
 export function InputField({
@@ -21,7 +22,8 @@ export function InputField({
   pattern,
   onKeyDown,
   className,
-  error = false
+  error = false,
+  maxLength // Using the new prop
 }: InputFieldProps) {
   const baseClassName = `w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
     error 
@@ -35,13 +37,15 @@ export function InputField({
       <textarea
         value={value}
         onChange={(e) => {
-          e.preventDefault()
+          e.preventDefault();
           onChange(e.target.value);
         }}
         placeholder={placeholder}
         required={required}
         onKeyDown={onKeyDown as React.KeyboardEventHandler<HTMLTextAreaElement>}
         className={combinedClassName}
+        rows={5}
+        maxLength={maxLength} // Apply maxLength to textarea
       />
     );
   }
@@ -57,6 +61,7 @@ export function InputField({
       pattern={pattern}
       onKeyDown={onKeyDown as React.KeyboardEventHandler<HTMLInputElement>}
       className={combinedClassName}
+      maxLength={maxLength} // Apply maxLength to input
     />
   );
 }

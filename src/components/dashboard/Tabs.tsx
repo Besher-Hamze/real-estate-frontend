@@ -11,6 +11,7 @@ import {
   Home,
   Menu,
   X,
+  QrCode,
 } from "lucide-react";
 
 type DashboardTab =
@@ -126,7 +127,7 @@ export default function Tabs({ activeTab, setActiveTab }: TabsProps) {
           }}
         />
         <TabButton
-          label="الأحياء"
+          label="المناطق"
           icon={<Landmark className="w-5 h-5" />}
           isActive={activeTab === "finalCity"}
           onClick={() => {
@@ -144,8 +145,8 @@ export default function Tabs({ activeTab, setActiveTab }: TabsProps) {
           }}
         />
         <TabButton
-          label="المباني"
-          icon={<Building2 className="w-5 h-5" />}
+          label="إنشاء QR"
+          icon={<QrCode className="w-5 h-5" />}
           isActive={activeTab === "map"}
           onClick={() => {
             setActiveTab("map");

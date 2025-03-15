@@ -22,6 +22,30 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
     setIsZoomed(false);
   }, [activeImage]);
 
+
+
+  // Handle keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isModalOpen) {
+        if (e.key === 'ArrowLeft') {
+          handlePrevImage();
+        } else if (e.key === 'ArrowRight') {
+          handleNextImage();
+        } else if (e.key === 'Escape') {
+          setModalOpen(false);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isModalOpen]); 
+
+
   const handlePrevImage = () => {
     setActiveImage((prev) => (prev === 0 ? property.files.length - 1 : prev - 1));
   };
@@ -88,7 +112,7 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
       {/* Image Gallery Thumbnails */}
       {property.files.length > 1 && (
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-4 max-w-full px-4 overflow-x-auto pb-2"
-        onClick={() => setModalOpen(true)}
+          onClick={() => setModalOpen(true)}
         >
           {property.files.map((file: string, index: number) => (
             <motion.button
@@ -162,7 +186,7 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
                       className="max-w-full max-h-full object-contain"
                     />
                   ) : (
-                    <div 
+                    <div
                       className="relative max-w-full max-h-full mb-8"
                       onClick={() => setIsZoomed(!isZoomed)}
                     >
@@ -236,7 +260,7 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
                   )}
 
                   {/* Image Counter */}
-                  <div 
+                  <div
                     className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white bg-black/50 px-3 py-1 rounded-full text-sm z-10"
                   >
                     {activeImage + 1} / {property.files.length}

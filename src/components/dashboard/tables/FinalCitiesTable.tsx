@@ -59,9 +59,9 @@ export default function FinalCityTable() {
       setEditingId(null);
       setEditName("");
       setEditCityId(null);
-      toast.success("تم تحديث الحي بنجاح");
+      toast.success("تم تحديث المنطقةبنجاح");
     } catch (error) {
-      toast.error("حدث خطأ أثناء تحديث الحي");
+      toast.error("حدث خطأ أثناء تحديث المنطقة");
       console.error(error);
     }
   };
@@ -83,9 +83,9 @@ export default function FinalCityTable() {
       setDeletingId(pendingDeleteId);
       await finalCityApi.deleteFinalCity(pendingDeleteId);
       refetch();
-      toast.success("تم حذف الحي بنجاح");
+      toast.success("تم حذف المنطقةبنجاح");
     } catch (error) {
-      toast.error("حدث خطأ أثناء حذف الحي");
+      toast.error("حدث خطأ أثناء حذف المنطقة");
       console.error(error);
     } finally {
       setDeletingId(null);
@@ -149,7 +149,7 @@ export default function FinalCityTable() {
       )
     },
     {
-      header: "الحي",
+      header: "المنطقة",
       accessorKey: "name",
       cell: (row: FinalCityType) => (
         editingId === row.id ? (
@@ -236,7 +236,7 @@ export default function FinalCityTable() {
         onClose={() => setIsDialogOpen(false)}
         onConfirm={handleConfirmDelete}
         title="تأكيد الحذف"
-        message="هل أنت متأكد أنك تريد حذف هذا الحي؟ لا يمكن التراجع عن هذا القرار."
+        message="هل أنت متأكد أنك تريد حذف هذا المنطقة؟ لا يمكن التراجع عن هذا القرار."
       />
 
       <BulkDeleteDialog

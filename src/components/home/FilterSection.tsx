@@ -435,7 +435,7 @@ const FilterSection = ({
             {/* Render Final City filter */}
             {backendFilterConfig.finalCityId && (
               <SelectField
-                label="الحي"
+                label="المنطقة"
                 icon={Building2Icon}
                 value={filters.finalCity}
                 onChange={(e) => setFilters({ ...filters, finalCity: e.target.value })}

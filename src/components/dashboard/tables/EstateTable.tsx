@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Edit2, Eye, Trash2, X, CheckSquare, Square } from "lucide-react";
+import { Edit2, Eye, Trash2, X, CheckSquare, Square, QrCode } from "lucide-react";
 import Image from "next/image";
 import { DataTable } from "@/components/ui/data-table/DataTable";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,6 +14,7 @@ import { finalTypeTypeApi } from "@/api/finalTypeApi";
 import { CityType, FinalCityType, FinalType, MainType, NeighborhoodType, RealEstateData } from "@/lib/types";
 import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 import EditEstateForm from "../estate-components/Edit-Estate";
+import QRCode from 'qrcode';
 
 import { useSelectionManager } from "@/lib/hooks/useSelectionManager";
 import { BulkActionsBar } from "../BulkActionsBar";
@@ -32,6 +33,10 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
     items: realEstateData,
     idExtractor: (estate) => estate.id
   });
+  const [selectedProperty, setSelectedProperty] = useState<RealEstateData | null>(null);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [qrGenerated, setQrGenerated] = useState(false);
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null);
 
   // Bulk delete dialog state
   const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
@@ -51,6 +56,47 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
 
   const client = useQueryClient();
   const modalRef = useRef<HTMLDivElement>(null);
+
+  const handleGenerateQR = (property: RealEstateData) => {
+    setSelectedProperty(property);
+    setShowQRModal(true);
+  };
+
+  // Reset QR when modal closes
+  useEffect(() => {
+    if (!showQRModal) {
+      setQrGenerated(false);
+    }
+  }, [showQRModal]);
+
+  const handleDownloadQR = () => {
+    if (qrCanvasRef.current && selectedProperty) {
+      const link = document.createElement('a');
+      link.download = `property-${selectedProperty.id}-qr.png`;
+      link.href = qrCanvasRef.current.toDataURL('image/png');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+  useEffect(() => {
+    const generateQR = async () => {
+      if (showQRModal && selectedProperty && qrCanvasRef.current && !qrGenerated) {
+        const url = `${process.env.NEXT_PUBLIC_FRONTEND}/properties/${selectedProperty.id}`;
+        await QRCode.toCanvas(qrCanvasRef.current, url, {
+          width: 300,
+          margin: 2,
+          color: {
+            dark: '#000',
+            light: '#fff'
+          }
+        });
+        setQrGenerated(true);
+      }
+    };
+
+    generateQR();
+  }, [showQRModal, selectedProperty]);
 
   // When edit modal is open, attach event listeners to detect outside clicks and Escape key
   useEffect(() => {
@@ -289,6 +335,12 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
 
   const actions = [
     {
+      icon: <QrCode className="w-4 h-4" />,
+      label: "عرض QR",
+      onClick: handleGenerateQR,
+      color: "text-purple-600"
+    },
+    {
       icon: <Edit2 className="w-4 h-4" />,
       label: "تعديل",
       onClick: (row: RealEstateData) => {
@@ -305,7 +357,7 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
         setIsDeleteDialogOpen(true);
       },
       color: "text-red-600"
-    }
+    },
   ];
 
   return (
@@ -406,6 +458,56 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
         confirmText={isEditExitConfirmOpen ? "تأكيد الخروج" : undefined}
         message="هل أنت متأكد أنك تريد الخروج من التعديل؟ البيانات غير المحفوظة قد تفقد."
       />
+      <AnimatePresence>
+        {showQRModal && selectedProperty && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative"
+            >
+              <button
+                onClick={() => {
+                  setShowQRModal(false);
+                  setSelectedProperty(null);
+                }}
+                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+
+              <div className="text-center">
+                <h2 className="text-xl font-semibold mb-4">رمز QR للعقار</h2>
+                <p className="text-sm text-gray-600 mb-4">
+                  {selectedProperty.title}
+                </p>
+                <div className="flex justify-center mb-4">
+                  <canvas ref={qrCanvasRef} className="border border-gray-200 rounded-md" />
+                </div>
+                <p className="text-sm text-gray-600 mt-2 mb-4">
+                  امسح الرمز للوصول إلى صفحة العقار
+                </p>
+                <button
+                  onClick={handleDownloadQR}
+                  className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
+                >
+                  <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  تحميل رمز QR
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }

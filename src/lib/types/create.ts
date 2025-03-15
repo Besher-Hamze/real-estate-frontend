@@ -49,7 +49,7 @@ export interface CreateEstateForm {
     nearbyLocations: string;
     coverImage: File | null;
     files: File[] | null;
-    rentalDuration: number;
+    rentalDuration: string;
     ceilingHeight: number;
     buildingAge: string;
     totalFloors: number;

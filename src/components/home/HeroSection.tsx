@@ -33,7 +33,7 @@ export default function HeroSection() {
         {
             icon: MapPin,
             title: 'مواقع مميزة',
-            description: 'في أفضل الأحياء السكنية بعمان'
+            description: 'في أفضل المناطق السكنية بعمان'
         },
         {
             icon: Shield,

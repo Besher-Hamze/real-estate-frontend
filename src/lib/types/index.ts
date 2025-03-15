@@ -62,7 +62,7 @@ export interface RealEstateData {
   nearbyLocations: string;
   coverImage: string;
   files: string[];
-  rentalDuration: number;
+  rentalDuration: string;
   ceilingHeight: number;
   totalFloors: number;
   buildingItemId?: string;

@@ -20,6 +20,14 @@ export const validationSchemas = {
   price: yup.number().typeError('يجب إدخال سعر صحيح').positive('يجب أن يكون السعر موجب').required('السعر مطلوب'),
   requiredFile: yup.mixed().required('الملف مطلوب'),
   bedroomsBathrooms: yup.number().min(1, 'يجب أن لا يقل عن 1').required('هذا الحقل مطلوب'),
+  features: yup.string().test({
+    name: 'min-features',
+    message: 'يرجى اختيار ميزة واحدة على الأقل',
+    test: function (value) {
+      return value ? value.split('، ').filter(Boolean).length > 0 : false;
+    }
+  }),
+
 };
 
 
@@ -40,6 +48,10 @@ export const estateSchema = yup.object({
   finalTypeId: validationSchemas.requiredSelect,
   cityId: validationSchemas.requiredSelect,
   neighborhoodId: validationSchemas.requiredSelect,
+  mainFeatures: validationSchemas.features,
+  additionalFeatures: validationSchemas.features,
+  nearbyLocations: validationSchemas.features,
+  paymentMethod: validationSchemas.features,
   location: yup.string().required('موقع العقار مطلوب'),
   bedrooms: yup.number().when('$isResidential', {
     is: true,
@@ -77,10 +89,10 @@ export const estateSchema = yup.object({
     then: () => yup.string().required('الإطلالة مطلوبة'),
     otherwise: () => yup.string().nullable()
   }),
-  rentalDuration: yup.number().when('$isRental', {
+  rentalDuration: yup.string().when('$isRental', {
     is: true,
-    then: () => yup.number().min(1, 'يرجى تحديد مدة العقد').required('مدة العقد مطلوبة'),
-    otherwise: () => yup.number().nullable()
+    then: () => yup.string().required('يرجى تحديد مدة العقد'),
+    otherwise: () => yup.string().nullable()
   }),
   coverImage: yup.mixed().required('صورة الغلاف مطلوبة'),
   files: yup.array().min(1, 'يجب إضافة صورة واحدة على الأقل')

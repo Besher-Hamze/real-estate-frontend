@@ -153,8 +153,8 @@ export default function PremiumLanding(): JSX.Element {
             setSelectedMainTypeId={setSelectedMainTypeId}
             selectedSubTypeId={selectedSubTypeId}
             setSelectedSubTypeId={setSelectedSubTypeId}
-            sortOption={sortOption} // إرسال خيار الترتيب
-            setSortOption={setSortOption} // إرسال دالة تحديث خيار الترتيب
+            sortOption={sortOption}
+            setSortOption={setSortOption} 
           />
           <PropertyMapGrid
             filteredData={filteredRealEstateData}

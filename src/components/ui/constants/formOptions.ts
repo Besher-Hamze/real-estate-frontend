@@ -8,8 +8,8 @@ export const FLOOR_OPTIONS = [
 ];
 
 export const FURNISHED_OPTIONS = [
-  { value: 0, label: 'لا' },
-  { value: 1, label: 'نعم' },
+  { value: 0, label: 'غير مفروش' },
+  { value: 1, label: 'مفروش' },
   { value: 2, label: 'مفروش جزيئيا' },
 ];
 
@@ -18,14 +18,20 @@ export const VIEW_OPTIONS = [
   { value: 'جبلية', label: 'جبلية' },
   { value: 'على الشارع', label: 'على الشارع' },
   { value: 'حديقة داخلية', label: 'حديقة داخلية' },
-  { value: 'داخلية', label: 'داخلية' },
+  { value: 'أمامي', label: 'أمامي' },
+  { value: 'جانبي', label: 'جانبي' },
+  { value: 'خلفي', label: 'خلفي' },
+  { value: 'داخلي', label: 'داخلي' },
 ];
 
 export const RENTAL_DURATION_OPTIONS = [
-  { value: '1', label: 'شهر' },
-  { value: '3', label: 'ثلاث شهور' },
-  { value: '6', label: 'ستة شهور' },
-  { value: '12', label: 'سنة' },
+  { value: '1m', label: 'شهر' },
+  { value: '3m', label: 'ثلاث شهور' },
+  { value: '6m', label: 'ستة شهور' },
+  { value: '1y', label: 'سنة' },
+  { value: 'my', label: 'اكثر من سنة' },// more than 1 year
+  { value: '1d', label: 'يومي' },
+  { value: '1w', label: 'اسبوعي' },
 ];
 
 

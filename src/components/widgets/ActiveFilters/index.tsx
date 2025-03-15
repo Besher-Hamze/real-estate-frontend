@@ -34,7 +34,7 @@ const ActiveFilters: React.FC<ActiveFiltersProps> = ({
   setPriceRange,
   resetFilters
 }) => {
-  // حالات البيانات للمدن والتصنيفات والأحياء
+  // حالات البيانات للمدن والتصنيفات والمناطق
   const [cities, setCities] = useState<CityType[]>([]);
   const [finalTypes, setFinalTypes] = useState<FinalType[]>([]);
   const [neighborhoods, setNeighborhoods] = useState<any[]>([]);
@@ -47,7 +47,7 @@ const ActiveFilters: React.FC<ActiveFiltersProps> = ({
     }
   }, [selectedSubTypeId]);
 
-  // جلب بيانات الأحياء عندما يتم اختيار مدينة
+  // جلب بيانات المناطق عندما يتم اختيار مدينة
   useEffect(() => {
     if (filters.city) {
       neighborhoodApi.fetchNeighborhoodByCityId(parseInt(filters.city)).then(setNeighborhoods);
