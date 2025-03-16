@@ -3,11 +3,11 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Building } from '@/lib/types';
 import Link from 'next/link';
-import { 
-  List, 
-  Home, 
-  ShoppingBag, 
-  MapPin 
+import {
+    List,
+    Home,
+    ShoppingBag,
+    MapPin
 } from 'lucide-react';
 import { buildingApi } from '@/api/buidlingApi';
 import { motion } from 'framer-motion';
@@ -41,7 +41,7 @@ export default function BuildingsPage() {
             <div className="mb-12 text-center">
                 <h1 className="text-4xl font-bold text-gray-800 mb-4">مجمعاتنا العقارية</h1>
                 <p className="text-gray-600 max-w-2xl mx-auto">
-                    استكشف مجموعة متنوعة من المباني والوحدات العقارية المتاحة
+                    استكشف مجموعة متنوعة من المباني العقارية المتاحة
                 </p>
             </div>
 
@@ -59,7 +59,7 @@ const BuildingCard: React.FC<{ building: Building }> = ({ building }) => {
     const shopCount = building.items?.filter(item => item.type === 'shop').length || 0;
 
     return (
-        <motion.div 
+        <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
@@ -84,19 +84,12 @@ const BuildingCard: React.FC<{ building: Building }> = ({ building }) => {
                     </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mb-6 bg-gray-50 rounded-xl p-4">
+                <div className="mb-6 bg-gray-50 rounded-xl p-4">
                     <div className="flex items-center gap-3">
                         <Home className="w-6 h-6 text-blue-600" />
                         <div>
                             <p className="text-sm text-gray-600">الشقق</p>
-                            <p className="text-lg font-bold text-gray-800">{apartmentCount}</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <ShoppingBag className="w-6 h-6 text-green-600" />
-                        <div>
-                            <p className="text-sm text-gray-600">المحلات</p>
-                            <p className="text-lg font-bold text-gray-800">{shopCount}</p>
+                            <p className="text-lg font-bold text-gray-800">{building.realEstateCount}</p>
                         </div>
                     </div>
                 </div>
@@ -107,7 +100,7 @@ const BuildingCard: React.FC<{ building: Building }> = ({ building }) => {
                     hover:bg-blue-700 transition-colors group-hover:bg-blue-700"
                 >
                     <List className="inline-block ml-2 w-5 h-5" />
-                    عرض الوحدات
+                    عرض العقارات
                 </Link>
             </div>
         </motion.div>

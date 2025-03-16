@@ -119,6 +119,7 @@ export interface Building {
   status: 'مكتمل' | 'قيد الإنشاء' | 'مخطط';
   location: string;
   buildingAge: string;
+  realEstateCount: number;
   items?: BuildingItem[]
 }
 

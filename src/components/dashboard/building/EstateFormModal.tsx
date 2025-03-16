@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BuildingItem, RealEstateData } from '@/lib/types';
+import { Building, BuildingItem, RealEstateData } from '@/lib/types';
 import { toast } from 'react-toastify';
 import EstateForm from '../forms/EstateForm';
 import { ExitConfirmationDialog } from '@/components/forms/ExitConfirmationDialog';
@@ -11,15 +11,15 @@ import { ExitConfirmationDialog } from '@/components/forms/ExitConfirmationDialo
 interface EstateFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  selectedItem: BuildingItem | null;
-  buildingItemId?: string;
+  selectedItem: Building | null;
+  buildingId?: string;
 }
 
 export const EstateFormModal: React.FC<EstateFormModalProps> = ({
   isOpen,
   onClose,
   selectedItem,
-  buildingItemId
+  buildingId: buildingItemId
 }) => {
   const [isExitConfirmOpen, setExitConfirmOpen] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -67,13 +67,13 @@ export const EstateFormModal: React.FC<EstateFormModalProps> = ({
             >
               <div className=" top-0 bg-white p-4 border-b flex justify-between items-center z-10">
                 <h2 className="text-xl font-semibold">
-                  إضافة عقار لـ {selectedItem.name}
+                  إضافة عقار لـ {selectedItem.title}
                 </h2>
               </div>
 
               <div className="p-6">
                 <EstateForm
-                  buildingItemId={buildingItemId}
+                  buildingId={buildingItemId}
                 />
               </div>
             </motion.div>

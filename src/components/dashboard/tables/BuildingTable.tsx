@@ -1,26 +1,30 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Edit2, Trash2, X, Plus, List, QrCode } from "lucide-react";
+import { Edit2, Trash2, X, Home, QrCode, ArrowLeft, Plus } from "lucide-react";
 import { DataTable } from '@/components/ui/data-table/DataTable';
 import { toast } from 'react-toastify';
 import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
-import { Building, BuildingItem, CreateBuildingItem, UpdateBuildingItem } from "@/lib/types";
+import { Building, RealEstateData, MainType } from "@/lib/types";
 import { motion, AnimatePresence } from "framer-motion";
 import BuildingForm from "../forms/BuildingForm";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { buildingApi } from "@/api/buidlingApi";
-import { buildingItemApi } from "@/api/buildingItemApi";
-import { BuildingItemsModal } from "../building/BuildingItemsModal";
+import { RealEstateApi } from "@/api/realEstateApi";
 import QRCode from 'qrcode';
+import { estateQuery } from "@/lib/constants/queryNames";
+import EstateTable from "./EstateTable";
+import { EstateFormModal } from "../building/EstateFormModal";
+import { useMainType } from "@/lib/hooks/useMainType";
 
 export default function BuildingsTable() {
   const queryClient = useQueryClient();
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [isEstateFormModalOpen, setIsEstateFormModalOpen] = useState(false);
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
-  const [isItemsModalOpen, setIsItemsModalOpen] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
   const [qrGenerated, setQrGenerated] = useState(false);
+  const [showBuildingRealEstates, setShowBuildingRealEstates] = useState(false);
 
   // Fetch buildings
   const { data: buildings, isLoading, error } = useQuery({
@@ -28,9 +32,18 @@ export default function BuildingsTable() {
     queryFn: buildingApi.fetchBuildings
   });
 
+  const {
+    data: buildingRealEstates = [],
+    isLoading: isRealEstateLoading,
+    error: realEstateError,
+    refetch: refetchRealEstates
+  } = useQuery({
+    queryKey: ['realEstate', 'building', selectedBuilding?.id],
+    queryFn: () => selectedBuilding ? RealEstateApi.fetchRealEstateByBuildingId(selectedBuilding.id) : Promise.resolve([]),
+    enabled: !!selectedBuilding && showBuildingRealEstates,
+    refetchOnWindowFocus: false
+  });
 
-
-  // Delete building mutation
   const deleteMutation = useMutation({
     mutationFn: buildingApi.deleteBuilding,
     onSuccess: () => {
@@ -43,36 +56,15 @@ export default function BuildingsTable() {
       toast.error("حدث خطأ أثناء حذف المبنى");
     }
   });
-  const updateBuildingItemsMutation = useMutation({
-    mutationFn: (item: BuildingItem) =>
-      buildingItemApi.updateBuildingItem(item.id, {
-        name: item.name,
-        price: item.price,
-        area: item.area,
-        type: item.type
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['buildings'] });
-      toast.success("تم تحديث الوحدة بنجاح");
-      setIsItemsModalOpen(false);
-    },
-    onError: () => {
-      toast.error("حدث خطأ أثناء تحديث الوحدة");
-    }
-  });
-
-
 
   const handleEdit = (building: Building) => {
-    console.log(building);
-    
     setSelectedBuilding(building);
     setEditModalOpen(true);
   };
 
-  const handleManageItems = (building: Building) => {
+  const handleAddRealEstate = (building: Building) => {
     setSelectedBuilding(building);
-    setIsItemsModalOpen(true);
+    setIsEstateFormModalOpen(true);
   };
 
   const handleUpdateSuccess = () => {
@@ -80,9 +72,6 @@ export default function BuildingsTable() {
     setEditModalOpen(false);
     setSelectedBuilding(null);
     toast.success("تم تحديث المبنى بنجاح");
-  };
-  const handleUpdateItems = (item: BuildingItem) => {
-    updateBuildingItemsMutation.mutate(item);
   };
 
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -105,24 +94,16 @@ export default function BuildingsTable() {
 
     generateQR();
   }, [showQRModal, selectedBuilding]);
+
   useEffect(() => {
     if (!showQRModal) {
       setQrGenerated(false);
     }
   }, [showQRModal]);
 
-
-  
   const handleGenerateQR = (building: Building) => {
     setSelectedBuilding(building);
     setShowQRModal(true);
-  };
-  
-
-
-
-  const getApartmentCount = (items: BuildingItem[] = []) => {
-    return items.filter(item => item.type === 'apartment').length;
   };
 
   const handleDownloadQR = () => {
@@ -135,10 +116,16 @@ export default function BuildingsTable() {
       document.body.removeChild(link);
     }
   };
-  const getShopCount = (items: BuildingItem[] = []) => {
-    return items.filter(item => item.type === 'shop').length;
+
+  const handleViewRealEstates = async (building: Building) => {
+    setSelectedBuilding(building);
+    setShowBuildingRealEstates(true);
+    // The useQuery hook will automatically fetch the real estate data
+    // when selectedBuilding and showBuildingRealEstates are updated
   };
 
+  const { mainTypes } = useMainType();
+  
   const columns = [
     {
       header: "اسم المبنى",
@@ -148,20 +135,11 @@ export default function BuildingsTable() {
       )
     },
     {
-      header: "عدد المحلات",
-      accessorKey: "items",
+      header: "عدد العقارات",
+      accessorKey: "realEstateCount",
       cell: (row: Building) => (
         <div className="text-sm font-medium text-gray-700">
-          {getShopCount(row.items)}
-        </div>
-      )
-    },
-    {
-      header: "عدد الشقق",
-      accessorKey: "items",
-      cell: (row: Building) => (
-        <div className="text-sm font-medium text-gray-700">
-          {getApartmentCount(row.items)}
+          {row.realEstateCount || 0}
         </div>
       )
     },
@@ -198,9 +176,9 @@ export default function BuildingsTable() {
       color: "text-purple-600"
     },
     {
-      icon: <List className="w-4 h-4" />,
-      label: "إدارة الوحدات",
-      onClick: handleManageItems,
+      icon: <Home className="w-4 h-4" />,
+      label: "العقارات",
+      onClick: handleViewRealEstates,
       color: "text-green-600"
     },
     {
@@ -219,6 +197,92 @@ export default function BuildingsTable() {
       color: "text-red-600"
     }
   ];
+
+  // Handle going back to buildings list
+  const handleBackToBuildingsList = () => {
+    setShowBuildingRealEstates(false);
+    setSelectedBuilding(null);
+  };
+
+  // Handle estate form modal close
+  const handleEstateFormModalClose = () => {
+    setIsEstateFormModalOpen(false);
+    
+    queryClient.invalidateQueries({ queryKey: [estateQuery] });
+    queryClient.invalidateQueries({ queryKey: ['buildings'] });
+    
+    // If we're in the real estate view, refresh the real estate data for the selected building
+    if (showBuildingRealEstates && selectedBuilding) {
+      queryClient.invalidateQueries({ queryKey: ['realEstate', 'building', selectedBuilding.id] });
+    }
+
+  };
+
+  if (showBuildingRealEstates && selectedBuilding) {
+    return (
+      <div className="w-full" dir="rtl">
+        <div className="flex items-center mb-6">
+          <button
+            onClick={handleBackToBuildingsList}
+            className="inline-flex items-center px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 ml-2" />
+            العودة إلى قائمة المباني
+          </button>
+          <h2 className="text-xl font-semibold mr-4">
+            عقارات مبنى: {selectedBuilding.title}
+          </h2>
+        </div>
+
+        <div className="bg-white rounded-lg p-4 mb-6 flex items-center justify-between">
+          <div>
+            <span className="text-gray-600">إجمالي العقارات:</span>
+            <span className="font-semibold text-lg mr-2">{buildingRealEstates.length}</span>
+          </div>
+          <div className="flex gap-2">
+            {realEstateError && (
+              <button
+                onClick={() => refetchRealEstates()}
+                className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+              >
+                إعادة المحاولة
+              </button>
+            )}
+            <button
+              onClick={() => handleAddRealEstate(selectedBuilding)}
+              className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+            >
+              <Plus className="w-4 h-4 ml-2" />
+              إضافة عقار جديد
+            </button>
+          </div>
+        </div>
+
+        {realEstateError ? (
+          <div className="bg-red-50 border border-red-200 text-red-800 rounded-lg p-4 mb-6">
+            <p className="font-semibold">حدث خطأ أثناء تحميل العقارات</p>
+            <p className="text-sm mt-2">يرجى المحاولة مرة أخرى لاحقًا.</p>
+          </div>
+        ) : (
+          <EstateTable
+            realEstateData={buildingRealEstates}
+            isLoading={isRealEstateLoading}
+            mainTypes={mainTypes}
+          />
+        )}
+
+        {/* Estate Form Modal */}
+        {selectedBuilding && (
+          <EstateFormModal
+            isOpen={isEstateFormModalOpen}
+            onClose={handleEstateFormModalClose}
+            selectedItem={selectedBuilding}
+            buildingId={selectedBuilding.id}
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full" dir="rtl">
@@ -246,7 +310,7 @@ export default function BuildingsTable() {
         message="هل أنت متأكد أنك تريد حذف هذا المبنى؟ لا يمكن التراجع عن هذا القرار."
       />
 
-      {/* Edit Modal */}
+      {/* Edit Building Modal */}
       <AnimatePresence>
         {editModalOpen && selectedBuilding && (
           <motion.div
@@ -286,14 +350,17 @@ export default function BuildingsTable() {
         )}
       </AnimatePresence>
 
-      {/* Building Items Modal */}
+      {/* Estate Form Modal for main table view */}
       {selectedBuilding && (
-        <BuildingItemsModal
-          isOpen={isItemsModalOpen}
-          onClose={() => setIsItemsModalOpen(false)}
+        <EstateFormModal
+          isOpen={isEstateFormModalOpen}
+          onClose={handleEstateFormModalClose}
           buildingId={selectedBuilding.id}
+          selectedItem={selectedBuilding}
         />
       )}
+
+      {/* QR Code Modal */}
       <AnimatePresence>
         {showQRModal && selectedBuilding && (
           <motion.div
@@ -340,7 +407,6 @@ export default function BuildingsTable() {
           </motion.div>
         )}
       </AnimatePresence>
-
     </div>
   );
 }

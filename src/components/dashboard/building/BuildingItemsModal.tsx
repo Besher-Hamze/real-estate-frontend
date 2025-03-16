@@ -272,7 +272,7 @@ export function BuildingItemsModal({
                 isOpen={isEstateModalOpen}
                 onClose={handleCloseEstateModal}
                 selectedItem={selectedItem}
-                buildingItemId={selectedItem?.id}
+                buildingId={selectedItem?.id}
             />
             <RealEstateListModal
                 isOpen={isRealEstateListModalOpen}

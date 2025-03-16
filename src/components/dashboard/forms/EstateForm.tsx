@@ -20,12 +20,14 @@ import LocationPicker from "@/components/map/LocationPicker";
 import ImageUploadModal from "./EnhancedImageUpload";
 import apiClient from "@/api";
 import { RealEstateApi } from "@/api/realEstateApi";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface EstateFormProps {
-  buildingItemId?: string;
+  buildingId?: string;
+  onSuccess?: () => void;
 }
 
-export default function EstateForm({ buildingItemId }: EstateFormProps) {
+export default function EstateForm({ buildingId, onSuccess }: EstateFormProps) {
   // State to store the filter configuration from API
   const [filterConfig, setFilterConfig] = useState<any>({
     title: true,
@@ -72,7 +74,7 @@ export default function EstateForm({ buildingItemId }: EstateFormProps) {
     getPropertyType,
     isLandType,
     isRentalType,
-  } = useEstateForm(buildingItemId);
+  } = useEstateForm(buildingId);
 
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
   const [additionalImagePreviews, setAdditionalImagePreviews] = useState<string[]>([]);
@@ -98,7 +100,7 @@ export default function EstateForm({ buildingItemId }: EstateFormProps) {
         const response = await RealEstateApi.fetchFilter(mainCategoryName, subCategoryName, finalTypeName);
         setFilterConfig(response);
         console.log(response);
-        
+
       } catch (error) {
         console.error("Failed to fetch filter config:", error);
         setFilterConfig({
@@ -195,7 +197,17 @@ export default function EstateForm({ buildingItemId }: EstateFormProps) {
     if (success) {
       setAdditionalFileTypes([]);
       setAdditionalImagePreviews([]);
-      setCoverImagePreview(null);
+      setCoverImagePreview(null); 4
+      if (buildingId) {
+        const queryClient = useQueryClient();
+
+        queryClient.invalidateQueries({ queryKey: ['realEstate', 'building', buildingId] });
+
+        queryClient.invalidateQueries({ queryKey: ['buildings'] });
+      }
+
+      if (onSuccess)
+        onSuccess();
     }
   };
 

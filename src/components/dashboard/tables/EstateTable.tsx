@@ -189,6 +189,10 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
       await RealEstateApi.updateRealEstate(editingEstate.id, editingEstate);
       toast.success("تم التعديل بنجاح");
       client.invalidateQueries({ queryKey: [estateQuery] });
+      if (editingEstate.buildingItemId) {
+        client.invalidateQueries({ queryKey: ['buildings'] });
+        client.invalidateQueries({ queryKey: ['realEstate', 'building', editingEstate.buildingItemId] });
+      }
       setIsEditModalOpen(false);
     } catch (error) {
       toast.error("خطأ أثناء تحديث العقار");
@@ -200,7 +204,12 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
     if (!deletingId) return;
     try {
       await RealEstateApi.deleteRealEstate(deletingId);
+      const realEstate = realEstateData?.find(r => r.id === deletingId);
       toast.success("تم الحذف بنجاح");
+      if (realEstate && realEstate.buildingItemId) {
+        client.invalidateQueries({ queryKey: ['buildings'] });
+        client.invalidateQueries({ queryKey: ['realEstate', 'building', realEstate.buildingItemId] });
+      }
       client.invalidateQueries({ queryKey: [estateQuery] });
     } catch (error) {
       toast.error("خطأ أثناء حذف العقار");
