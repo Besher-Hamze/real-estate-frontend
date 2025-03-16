@@ -208,6 +208,8 @@ export default function NeighborhoodTable() {
       onClick: (row: NeighborhoodType) =>
         editingId === row.id ? handleSaveEdit(row.id) : handleEdit(row),
       color: editingId ? "text-green-600" : "text-blue-600",
+      show: (row: any) =>
+        editingId === null || editingId === row.id
     },
     {
       icon: editingId ? <X className="w-4 h-4" /> : <Trash2 className="w-4 h-4" />,
@@ -215,7 +217,8 @@ export default function NeighborhoodTable() {
       onClick: (row: NeighborhoodType) =>
         editingId === row.id ? handleCancelEdit() : openDeleteDialog(row.id),
       color: "text-red-600",
-      show: (row: NeighborhoodType) => !deletingId || deletingId !== row.id,
+      show: (row: any) =>
+        editingId === null || editingId === row.id
     }
   ];
 

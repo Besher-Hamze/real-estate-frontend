@@ -11,6 +11,8 @@ import PropertyGallery from '@/components/properties/PropertyGallery';
 import RealEstateCard from '@/components/widgets/PropertyGrid/PropertyCard';
 import MapboxViewer from '@/components/map/MapboxViewer';
 import { BUILDING_AGE_OPTION, RENTAL_DURATION_OPTIONS } from '@/components/ui/constants/formOptions';
+import { PropertyFeedbackForm } from '@/components/properties/PropertyFeedbackForm';
+import { PropertyReservation } from '@/components/properties/PropertyReservation';
 
 export default function PropertyDetails() {
     const [property, setProperty] = useState<RealEstateData | null>(null);
@@ -121,7 +123,7 @@ export default function PropertyDetails() {
                         <div className="text-left">
                             <div className="text-sm text-gray-500">السعر</div>
                             <div className="text-3xl font-bold text-blue-600">
-                                {property.price.toLocaleString()} ر.ع
+                                {property.price} ر.ع
                             </div>
                         </div>
                     </div>
@@ -162,7 +164,7 @@ export default function PropertyDetails() {
                 </div>
 
                 {/* Features */}
-                <div className="bg-white rounded-3xl p-8 shadow-xl mb-8 hover:shadow-2xl transition-all duration-300">
+                {property.mainFeatures && <div className="bg-white rounded-3xl p-8 shadow-xl mb-8 hover:shadow-2xl transition-all duration-300">
                     <h2 className="text-3xl font-bold mb-8 flex items-center gap-4 text-gray-800">
                         <Home className="w-8 h-8 text-blue-500" />
                         <span className="text-xl text-black0">
@@ -194,10 +196,10 @@ export default function PropertyDetails() {
                             </div>
                         )}
                     </div>
-                </div>
+                </div>}
 
                 {/* Additional Features */}
-                <div className="bg-white rounded-3xl p-8 shadow-xl mb-8 hover:shadow-2xl transition-all duration-300">
+                {property.additionalFeatures && <div className="bg-white rounded-3xl p-8 shadow-xl mb-8 hover:shadow-2xl transition-all duration-300">
                     <h2 className="text-3xl font-bold mb-8 flex items-center gap-4 text-gray-800">
                         <Home className="w-8 h-8 text-blue-500" />
                         <span className="text-xl text-black0">
@@ -230,7 +232,7 @@ export default function PropertyDetails() {
                             </div>
                         )}
                     </div>
-                </div>
+                </div>}
 
                 {property.viewTime && property.viewTime.trim() !== '' && (
                     <div className="bg-white rounded-3xl p-8 shadow-xl my-8">
@@ -259,7 +261,7 @@ export default function PropertyDetails() {
                 )}
 
                 {/* Nearby Loaction  */}
-                <div className="bg-white rounded-3xl p-8 shadow-xl mb-8 hover:shadow-2xl transition-all duration-300">
+                {property.nearbyLocations && <div className="bg-white rounded-3xl p-8 shadow-xl mb-8 hover:shadow-2xl transition-all duration-300">
                     <h2 className="text-3xl font-bold mb-8 flex items-center gap-4 text-gray-800">
                         <MapPin className="w-6 h-6 text-blue-600" />
                         <span className="text-xl text-black0">
@@ -292,36 +294,36 @@ export default function PropertyDetails() {
                             </div>
                         )}
                     </div>
-                </div>
+                </div>}
 
 
                 {/* Property Details */}
                 <div className="bg-white rounded-2xl p-8 shadow-lg">
                     <h2 className="text-2xl font-bold mb-6">تفاصيل إضافية</h2>
                     <div className="grid grid-cols-2 gap-6">
-                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                        {property.facade && <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                             <span className="text-gray-600">الواجهة</span>
                             <span className="font-semibold">{property.facade}</span>
-                        </div>
-                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                        </div>}
+                        {property.floorNumber && <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                             <span className="text-gray-600">رقم الطابق</span>
                             <span className="font-semibold">{property.floorNumber}</span>
-                        </div>
-                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                        </div>}
+                        {property.buildingAge && <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                             <span className="text-gray-600">عمر البناء</span>
                             <span className="font-semibold">{BUILDING_AGE_OPTION.find((b) => b.value === property.buildingAge)?.label}</span>
-                        </div>
+                        </div>}
 
-                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                        {property.furnished && <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                             <span className="text-gray-600">مفروش</span>
                             <span className="font-semibold">{property.furnished ? 'نعم' : 'لا'}</span>
-                        </div>
+                        </div>}
                         {property.mainCategoryName == "إيجار" && <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                             <span className="text-gray-600">مدة العقد</span>
                             <span className="font-semibold">{getRentalText(property.rentalDuration)}</span>
                         </div>
                         }
-                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                        {property.paymentMethod && <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                             <span className="text-gray-600">طرق الدفع </span>
                             <div className="flex gap-2">
                                 {property.paymentMethod.split(',').map((p, index) => (
@@ -330,7 +332,7 @@ export default function PropertyDetails() {
                                     </span>
                                 ))}
                             </div>
-                        </div>
+                        </div>}
 
                     </div>
                 </div>
@@ -373,6 +375,14 @@ export default function PropertyDetails() {
                         </div>
                     </div>
                 )}
+                {property && (
+                    <PropertyFeedbackForm propertyId={property.id} />
+                )}
+
+                {property && (
+                    <PropertyReservation propertyId={property.id} />
+                )}
+
             </div>
         </div>
     );

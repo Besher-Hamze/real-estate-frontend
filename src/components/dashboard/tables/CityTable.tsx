@@ -161,13 +161,17 @@ export default function CityTable() {
       label: editingId ? "حفظ" : "تعديل",
       onClick: (row: any) => editingId ? handleSaveEdit(row.id) : handleEdit(row),
       color: editingId ? "text-green-600" : "text-blue-600",
+      show: (row: any) =>
+        editingId === null || editingId === row.id
+
     },
     {
       icon: editingId ? <X className="w-4 h-4" /> : <Trash2 className="w-4 h-4" />,
       label: editingId ? "إلغاء" : "حذف",
       onClick: (row: any) => editingId ? handleCancelEdit() : openDeleteDialog(row.id),
       color: "text-red-600",
-      show: (row: any) => !deletingId || deletingId !== row.id,
+      show: (row: any) =>
+        editingId === null || editingId === row.id
     }
   ];
 

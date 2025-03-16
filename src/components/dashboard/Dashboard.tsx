@@ -71,13 +71,7 @@ export default function DashboardComponent() {
 
 
 
-                {/* Loading State */}
-                {isLoading && (
-                  <div className="flex justify-center items-center py-8">
-                    <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-                    <span className="ml-2 text-black">جاري التحميل...</span>
-                  </div>
-                )}
+            
 
                 {/* Empty States */}
                 {!isLoading && activeTab === "mainType" && (!mainTypes || mainTypes.length === 0) && (
