@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Camera, Plus } from "lucide-react";
+// Remove unused import Camera
+import { Plus } from "lucide-react";
 import { FormField } from "@/components/ui/form/FormField";
 import { InputField } from "@/components/ui/form/InputField";
 import { SelectField } from "@/components/ui/form/SelectField";
@@ -18,7 +19,7 @@ import { useEstateForm } from "@/lib/hooks/useEstateForm";
 import FeaturesSelect from "@/components/ui/FeaturesSelect";
 import LocationPicker from "@/components/map/LocationPicker";
 import ImageUploadModal from "./EnhancedImageUpload";
-import apiClient from "@/api";
+// Remove unused import apiClient
 import { RealEstateApi } from "@/api/realEstateApi";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -67,13 +68,10 @@ export default function EstateForm({ buildingId, onSuccess }: EstateFormProps) {
     finalTypes,
     neighborhoods,
     finalCities,
-    isLoading,
     isSubmitting,
     submitFormData,
     mainTypes,
     getPropertyType,
-    isLandType,
-    isRentalType,
   } = useEstateForm(buildingId);
 
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
@@ -135,8 +133,8 @@ export default function EstateForm({ buildingId, onSuccess }: EstateFormProps) {
       }
     }
     fetchFilterConfig();
-
-  }, [formData.mainCategoryId, formData.subCategoryId, formData.finalTypeId, mainTypes]);
+    // Add finalTypes to dependency array
+  }, [formData.mainCategoryId, formData.subCategoryId, formData.finalTypeId, mainTypes, finalTypes]);
 
   const handleFormChange = (field: string, value: any) => {
     if (field === "location") {
@@ -190,24 +188,23 @@ export default function EstateForm({ buildingId, onSuccess }: EstateFormProps) {
     }
   };
 
-
+  const queryClient = useQueryClient();
   const onSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
     const success = await submitFormData();
     if (success) {
       setAdditionalFileTypes([]);
       setAdditionalImagePreviews([]);
-      setCoverImagePreview(null); 4
+      setCoverImagePreview(null);
+      // Fix the error by removing the number 4 that was floating here
       if (buildingId) {
-        const queryClient = useQueryClient();
-
         queryClient.invalidateQueries({ queryKey: ['realEstate', 'building', buildingId] });
-
         queryClient.invalidateQueries({ queryKey: ['buildings'] });
       }
 
-      if (onSuccess)
+      if (onSuccess) {
         onSuccess();
+      }
     }
   };
 

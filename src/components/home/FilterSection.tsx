@@ -298,7 +298,7 @@ const FilterSection = ({
 
             {filters.bathrooms && (
               <FilterChip
-                label={`${filters.bathrooms === "-1" ? "اكثر من 4" : filters.bathrooms} ${parseInt(filters.bathrooms) === 1 ? "حمام" : "حمامات"}`}
+                label={`${filters.bathrooms === "-1" ? "اكثر من 8" : filters.bathrooms} ${parseInt(filters.bathrooms) === 1 ? "حمام" : "حمامات"}`}
                 onRemove={() => setFilters({ ...filters, bathrooms: "" })}
               />
             )}
@@ -473,11 +473,11 @@ const FilterSection = ({
                 onChange={(e) => setFilters({ ...filters, bathrooms: e.target.value })}
                 options={[
                   { value: '', label: 'جميع الحمامات' },
-                  ...Array.from({ length: 4 }, (_, i) => ({
+                  ...Array.from({ length: 8 }, (_, i) => ({
                     value: String(i + 1),
                     label: `${i + 1} ${i === 0 ? 'حمام' : 'حمامات'}`
                   })),
-                  { value: -1, label: `اكثر من ${4} حمام` },
+                  { value: -1, label: `اكثر من ${8} حمام` },
                 ]}
               />
             )}
