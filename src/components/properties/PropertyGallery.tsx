@@ -22,8 +22,6 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
     setIsZoomed(false);
   }, [activeImage]);
 
-
-
   // Handle keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -43,8 +41,7 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isModalOpen]); 
-
+  }, [isModalOpen]);
 
   const handlePrevImage = () => {
     setActiveImage((prev) => (prev === 0 ? property.files.length - 1 : prev - 1));
@@ -58,11 +55,32 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
     return /\.(mp4|webm|ogg)$/i.test(url);
   };
 
-  const handleDownload = () => {
-    const link = document.createElement('a');
-    link.href = `${process.env.NEXT_PUBLIC_API_URL}/${property.files[activeImage]}`;
-    link.download = property.files[activeImage].split('/').pop() || 'image';
-    link.click();
+  const handleDownload = async () => {
+    const imageUrl = `${process.env.NEXT_PUBLIC_API_URL}/${property.files[activeImage]}`;
+    const imageName = property.files[activeImage].split('/').pop() || 'image';
+
+    try {
+      const response = await fetch(imageUrl, { mode: 'cors' });
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const blob = await response.blob();
+      const imageObjectURL = URL.createObjectURL(blob);
+
+      const link = document.createElement('a');
+      link.href = imageObjectURL;
+      link.download = imageName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(imageObjectURL);
+    } catch (error) {
+      console.error('There was a problem with the fetch operation:', error);
+    }
+  };
+
+  const handleModalBackgroundClick = (e: React.MouseEvent) => {
+    setModalOpen(false);
   };
 
   return (
@@ -111,15 +129,17 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
 
       {/* Image Gallery Thumbnails */}
       {property.files.length > 1 && (
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-4 max-w-full px-4 overflow-x-auto pb-2"
-          onClick={() => setModalOpen(true)}
-        >
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-4 max-w-full px-4 overflow-x-auto pb-2">
           {property.files.map((file: string, index: number) => (
             <motion.button
               key={index}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => setActiveImage(index)}
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent event bubbling
+                setActiveImage(index);
+                setModalOpen(true); // Open modal when clicking a thumbnail
+              }}
               className={`relative w-20 h-20 rounded-lg overflow-hidden border-2 flex-shrink-0 
                 ${activeImage === index ? 'border-blue-500 shadow-lg' : 'border-white/50'}`}
             >
@@ -164,12 +184,10 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) setModalOpen(false);
-            }}
+            onClick={handleModalBackgroundClick}
           >
             {/* Fixed size container that takes up the entire viewport */}
-            <div className="fixed inset-0 flex items-center justify-center">
+            <div className="fixed inset-0 flex items-center justify-center" onClick={handleModalBackgroundClick}>
               <motion.div
                 initial={{ scale: 0.9 }}
                 animate={{ scale: 1 }}
@@ -184,11 +202,15 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
                       autoPlay
                       controls
                       className="max-w-full max-h-full object-contain"
+                      onClick={(e) => e.stopPropagation()} // Prevent video clicks from closing the modal
                     />
                   ) : (
                     <div
                       className="relative max-w-full max-h-full mb-8"
-                      onClick={() => setIsZoomed(!isZoomed)}
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent click from bubbling up to background
+                        setIsZoomed(!isZoomed);
+                      }}
                     >
                       <img
                         src={`${process.env.NEXT_PUBLIC_API_URL}/${property.files[activeImage]}`}
@@ -200,7 +222,7 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
                   )}
 
                   {/* Modal Controls */}
-                  <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+                  <div className="absolute top-4 right-4 flex items-center gap-2 z-10" onClick={(e) => e.stopPropagation()}>
                     <motion.button
                       whileHover={{ scale: 1.1 }}
                       className="text-white bg-black/50 p-2 rounded-full"
@@ -262,6 +284,7 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
                   {/* Image Counter */}
                   <div
                     className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white bg-black/50 px-3 py-1 rounded-full text-sm z-10"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     {activeImage + 1} / {property.files.length}
                   </div>

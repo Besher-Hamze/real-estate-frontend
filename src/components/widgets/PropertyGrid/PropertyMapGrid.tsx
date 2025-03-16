@@ -6,6 +6,7 @@ import RealEstateCard from './PropertyCard';
 import { RealEstateData, MainType, SubType } from '@/lib/types';
 import { PropertyCardSkeleton } from '@/components/home/home';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 
 interface PropertyGridProps {
     filteredData: RealEstateData[];
@@ -22,6 +23,7 @@ const PropertyMapGrid: React.FC<PropertyGridProps> = ({
     currentMainType,
     currentSubType
 }) => {
+    const router = useRouter(); // Initialize the router
     const [viewMode, setViewMode] = useState<'split' | 'list' | 'map'>('split');
     const [selectedProperty, setSelectedProperty] = useState<RealEstateData | null>(null);
     const [hoveredMarkerId, setHoveredMarkerId] = useState<number | null>(null);
@@ -140,6 +142,11 @@ const PropertyMapGrid: React.FC<PropertyGridProps> = ({
                 cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }
+    };
+
+    // Function to navigate to property details page
+    const navigateToPropertyDetails = (propertyId: number) => {
+        router.push(`/properties/${propertyId}`);
     };
 
     // Function to fly to marker on map
@@ -323,7 +330,7 @@ const PropertyMapGrid: React.FC<PropertyGridProps> = ({
                                     {validMarkers.map((property) => {
                                         const [lat, lng] = property.location.split(',').map(Number);
                                         const isHighlighted = hoveredMarkerId === property.id || selectedProperty?.id === property.id;
-
+                                        
                                         return (
                                             <Marker
                                                 key={property.id}
@@ -332,8 +339,8 @@ const PropertyMapGrid: React.FC<PropertyGridProps> = ({
                                                 anchor="bottom"
                                                 onClick={(e) => {
                                                     e.originalEvent.stopPropagation();
-                                                    setSelectedProperty(property);
-                                                    scrollToPropertyCard(property.id);
+                                                    // Navigate to property details page when clicking on marker
+                                                    navigateToPropertyDetails(property.id);
                                                 }}
                                             >
                                                 <div
@@ -405,6 +412,7 @@ const PropertyMapGrid: React.FC<PropertyGridProps> = ({
                                                 boxShadow: hoveredMarkerId === item.id ? '0 10px 25px -5px rgba(59, 130, 246, 0.4)' : '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                                             }}
                                             className={`rounded-xl transition-all ${hoveredMarkerId === item.id ? 'ring-2 ring-blue-500' : ''}`}
+                                            onClick={() => navigateToPropertyDetails(item.id)} // Also add navigation to the card
                                         >
                                             <RealEstateCard
                                                 item={item}
