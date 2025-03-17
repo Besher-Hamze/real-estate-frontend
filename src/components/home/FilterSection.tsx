@@ -44,7 +44,7 @@ const defaultFilters: Filters = {
   neighborhood: '',
   finalCity: '',
   propertySize: '',
-  isFurnished: "0",
+  isFurnished: "",
   rentalPeriod: '',
   floor: '',
   view: '',

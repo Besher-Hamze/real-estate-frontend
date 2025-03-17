@@ -5,7 +5,15 @@ export const FLOOR_OPTIONS = [
   { value: '3', label: 'ثالث' },
   { value: '4', label: 'رابع' },
   { value: '5', label: 'خامس' },
+  { value: '6', label: 'سادس' },
+  { value: '7', label: 'سابع' },
+  { value: '8', label: 'ثامن' },
+  { value: '9', label: 'تاسع' },
+  { value: '10', label: 'عاشر' },
+  { value: '11', label: 'الحادي عشر' },
+  { value: '12', label: 'الثاني عشر' },
 ];
+
 
 export const FURNISHED_OPTIONS = [
   { value: 0, label: 'غير مفروش' },

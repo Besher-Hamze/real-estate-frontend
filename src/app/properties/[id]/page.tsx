@@ -1,5 +1,4 @@
 "use client"
-
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, BedDouble, Bath, Maximize2, ArrowRight, Home, Info, Star, LocateIcon, Clock } from 'lucide-react';
@@ -11,8 +10,9 @@ import PropertyGallery from '@/components/properties/PropertyGallery';
 import RealEstateCard from '@/components/widgets/PropertyGrid/PropertyCard';
 import MapboxViewer from '@/components/map/MapboxViewer';
 import { BUILDING_AGE_OPTION, RENTAL_DURATION_OPTIONS } from '@/components/ui/constants/formOptions';
-import { PropertyFeedbackForm } from '@/components/properties/PropertyFeedbackForm';
-import { PropertyReservation } from '@/components/properties/PropertyReservation';
+import { FloatingActionButtons } from '@/components/properties/FloatingActionButtons';
+import { PropertyReservationModal } from '@/components/properties/PropertyReservation';
+import { PropertyFeedbackModal } from '@/components/properties/PropertyFeedbackForm';
 
 export default function PropertyDetails() {
     const [property, setProperty] = useState<RealEstateData | null>(null);
@@ -20,6 +20,11 @@ export default function PropertyDetails() {
     const [activeImage, setActiveImage] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    
+    // حالة النوافذ المنبثقة
+    const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
+    const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+    
     const params = useParams();
     const router = useRouter();
 
@@ -67,6 +72,12 @@ export default function PropertyDetails() {
 
         fetchPropertyDetails();
     }, [params?.id]);
+
+    // فتح وإغلاق النوافذ المنبثقة
+    const openReservationModal = () => setIsReservationModalOpen(true);
+    const closeReservationModal = () => setIsReservationModalOpen(false);
+    const openFeedbackModal = () => setIsFeedbackModalOpen(true);
+    const closeFeedbackModal = () => setIsFeedbackModalOpen(false);
 
     if (isLoading) {
         return (
@@ -337,7 +348,7 @@ export default function PropertyDetails() {
                     </div>
                 </div>
 
-                {/* bg-white rounded-3xl p-8 mt-8 shadow-xl mb-8" */}
+                {/* Map Section */}
                 {property.location && (
                     <div id="property-location-section" className='p-8 mt-8 mb-8'>
                         <h2 className="text-3xl font-bold mb-8 flex items-center gap-4 text-gray-800">
@@ -350,14 +361,13 @@ export default function PropertyDetails() {
                             longitude={property.location ? parseFloat(property.location.split(',')[1]) : undefined}
                             cityName={property.cityName}
                             neighborhoodName={property.neighborhoodName}
-
                         />
                     </div>
                 )}
 
                 {/* Similar Properties Section */}
                 {similarProperties.length > 0 && (
-                    <div className=" p-8  mt-8">
+                    <div className="p-8 mt-8">
                         <h2 className="text-3xl font-bold mb-8 flex items-center gap-4 text-gray-800">
                             <Home className="w-8 h-8 text-blue-500" />
                             <span className="text-xl text-black0">
@@ -369,20 +379,36 @@ export default function PropertyDetails() {
                             {similarProperties.map((similarProperty) => (
                                 <RealEstateCard
                                     key={similarProperty.id}
-                                    item={similarProperty} mainType={undefined}
+                                    item={similarProperty} 
+                                    mainType={undefined}
                                 />
                             ))}
                         </div>
                     </div>
                 )}
-                {property && (
-                    <PropertyFeedbackForm propertyId={property.id} />
-                )}
 
-                {property && (
-                    <PropertyReservation propertyId={property.id} />
-                )}
+                {/* أزرار الإجراءات العائمة */}
+                <FloatingActionButtons 
+                    onReservationClick={openReservationModal}
+                    onFeedbackClick={openFeedbackModal}
+                />
 
+                {/* النوافذ المنبثقة */}
+                {property && (
+                    <>
+                        <PropertyReservationModal 
+                            propertyId={property.id}
+                            isOpen={isReservationModalOpen}
+                            onClose={closeReservationModal}
+                        />
+                        
+                        <PropertyFeedbackModal
+                            propertyId={property.id}
+                            isOpen={isFeedbackModalOpen}
+                            onClose={closeFeedbackModal}
+                        />
+                    </>
+                )}
             </div>
         </div>
     );

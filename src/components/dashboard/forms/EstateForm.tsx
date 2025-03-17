@@ -29,7 +29,6 @@ interface EstateFormProps {
 }
 
 export default function EstateForm({ buildingId, onSuccess }: EstateFormProps) {
-  // State to store the filter configuration from API
   const [filterConfig, setFilterConfig] = useState<any>({
     title: true,
     description: true,
@@ -78,7 +77,6 @@ export default function EstateForm({ buildingId, onSuccess }: EstateFormProps) {
   const [additionalImagePreviews, setAdditionalImagePreviews] = useState<string[]>([]);
   const [additionalFileTypes, setAdditionalFileTypes] = useState<string[]>([]);
 
-  // Fetch the filter configuration based on selected categories
   useEffect(() => {
     async function fetchFilterConfig() {
       try {
@@ -142,8 +140,13 @@ export default function EstateForm({ buildingId, onSuccess }: EstateFormProps) {
       handleChange(field, locationString);
       return;
     }
-    if (field === "bedrooms" || field === "bathrooms") {
+    if (field === "bedrooms" || field === "bathrooms" || field === "totalFloors") {
       const numValue = Number(value);
+      if (field === "totalFloors") {
+        if (numValue > 12) {
+          return;
+        }
+      }
       if (numValue <= 0) {
         return;
       }
@@ -508,7 +511,7 @@ export default function EstateForm({ buildingId, onSuccess }: EstateFormProps) {
                 <SelectField
                   value={formData.floorNumber}
                   onChange={(value) => handleFormChange("floorNumber", Number(value))}
-                  options={FLOOR_OPTIONS}
+                  options={FLOOR_OPTIONS.slice(0, Number(formData.totalFloors) + 1)}
                   placeholder="اختر الطابق"
                   error={!!errors.floorNumber}
                 />

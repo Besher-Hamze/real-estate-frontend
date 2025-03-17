@@ -1,13 +1,11 @@
 import * as yup from 'yup';
 import { InferType } from 'yup';
 
-// Common validation patterns
 const patterns = {
   arabicText: /^[\u0600-\u06FF\s]+$/,
   numbersOnly: /^\d+$/,
 };
 
-// Base validation schemas that can be reused across forms
 export const validationSchemas = {
   text: yup.string().trim(),
   requiredText: yup.string().trim().required('هذا الحقل مطلوب'),
@@ -146,11 +144,13 @@ export const createDynamicEstateSchema = (filterConfig: any = null) => {
     schemaFields.finalCityId = yup.number().nullable();
   }
 
-  if (config.nearbyLocations) {
-    schemaFields.nearbyLocations = validationSchemas.features;
-  } else {
-    schemaFields.nearbyLocations = yup.string().nullable();
-  }
+  // if (config.nearbyLocations) {
+  //   schemaFields.nearbyLocations = validationSchemas.features;
+  // } else {
+  //   schemaFields.nearbyLocations = yup.string().nullable();
+  // }
+  schemaFields.nearbyLocations = yup.string().nullable();
+
 
   // Conditional fields based on whether it's a residential property
   if (config.bedrooms) {
@@ -201,23 +201,29 @@ export const createDynamicEstateSchema = (filterConfig: any = null) => {
     schemaFields.furnished = yup.number().nullable();
   }
 
-  if (config.facade) {
-    schemaFields.facade =  yup.string().required('الإطلالة مطلوبة')
-  } else {
-    schemaFields.facade = yup.string().nullable();
-  }
+  // if (config.facade) {
+  //   schemaFields.facade =  yup.string().required('الإطلالة مطلوبة')
+  // } else {
+  //   schemaFields.facade = yup.string().nullable();
+  // }
+  schemaFields.facade = yup.string().nullable();
 
-  if (config.mainFeatures) {
-    schemaFields.mainFeatures = validationSchemas.features;
-  } else {
-    schemaFields.mainFeatures = yup.string().nullable();
-  }
 
-  if (config.additionalFeatures) {
-    schemaFields.additionalFeatures = validationSchemas.features;
-  } else {
-    schemaFields.additionalFeatures = yup.string().nullable();
-  }
+  // if (config.mainFeatures) {
+  //   schemaFields.mainFeatures = validationSchemas.features;
+  // } else {
+  //   schemaFields.mainFeatures = yup.string().nullable();
+  // }
+  schemaFields.mainFeatures = yup.string().nullable();
+
+
+  // if (config.additionalFeatures) {
+  //   schemaFields.additionalFeatures = validationSchemas.features;
+  // } else {
+  //   schemaFields.additionalFeatures = yup.string().nullable();
+  // }
+  schemaFields.additionalFeatures = yup.string().nullable();
+
 
   if (config.location) {
     schemaFields.location = yup.string().required('موقع العقار مطلوب');
@@ -254,28 +260,7 @@ export const createDynamicEstateSchema = (filterConfig: any = null) => {
     schemaFields.files = yup.mixed().nullable();
   }
 
-  // Create the schema from the fields
   return yup.object(schemaFields);
 };
 
-// Define the type based on a default configuration
 export type EstateFormData = InferType<ReturnType<typeof createDynamicEstateSchema>>;
-
-// Helper function to create context for conditional validation
-// export const createValidationContext = (formData: any) => {
-//   return {
-//     isResidential: !isLandType(formData),
-//     isRental: isRentalType(formData)
-//   };
-// };
-
-// // Helper functions for estate form
-// function isLandType(formData: any) {
-//   // Check if the finalTypeId indicates a land property
-//   return formData.finalTypeId && String(formData.finalTypeId).includes('أرض');
-// }
-
-// function isRentalType(formData: any) {
-//   // Check if the mainCategoryId indicates a rental property
-//   return formData.mainCategoryId && String(formData.mainCategoryId).includes('إيجار');
-// }

@@ -23,7 +23,8 @@ const PropertyMapGrid: React.FC<PropertyGridProps> = ({
     currentMainType,
     currentSubType
 }) => {
-    const router = useRouter(); // Initialize the router
+    const router = useRouter();
+    const [isMobile, setIsMobile] = useState(false);
     const [viewMode, setViewMode] = useState<'split' | 'list' | 'map'>('split');
     const [selectedProperty, setSelectedProperty] = useState<RealEstateData | null>(null);
     const [hoveredMarkerId, setHoveredMarkerId] = useState<number | null>(null);
@@ -42,6 +43,28 @@ const PropertyMapGrid: React.FC<PropertyGridProps> = ({
         longitude: 58.3829,
         zoom: 10
     });
+
+    // Check if the device is mobile and update view mode accordingly
+    useEffect(() => {
+        const checkIsMobile = () => {
+            const mobile = window.innerWidth < 1024;
+            setIsMobile(mobile);
+            
+            // If device is mobile and viewMode is split, change to list
+            if (mobile && viewMode === 'split') {
+                setViewMode('list');
+            }
+        };
+
+        // Initial check
+        checkIsMobile();
+
+        // Add event listener for window resize
+        window.addEventListener('resize', checkIsMobile);
+
+        // Cleanup
+        return () => window.removeEventListener('resize', checkIsMobile);
+    }, [viewMode]);
 
     // Track window resize and update map dimensions
     useEffect(() => {
@@ -196,6 +219,29 @@ const PropertyMapGrid: React.FC<PropertyGridProps> = ({
         flyToMarker(property);
     };
 
+    // Handle view mode change with mobile check
+    const handleViewModeChange = (mode: 'split' | 'list' | 'map') => {
+        // Don't allow split mode on mobile
+        if (mode === 'split' && isMobile) {
+            setViewMode('list');
+        } else {
+            setViewMode(mode);
+        }
+
+        // If switching to map mode, center on first property
+        if (mode === 'map') {
+            if (validMarkers[0]) {
+                flyToMarker(validMarkers[0]);
+            } else {
+                setViewport({
+                    latitude: 23.5880, // Default coordinates for Oman
+                    longitude: 58.3829,
+                    zoom: 10
+                });
+            }
+        }
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -230,23 +276,28 @@ const PropertyMapGrid: React.FC<PropertyGridProps> = ({
 
                 <div className="flex items-center bg-gray-100 p-1 rounded-lg self-center md:self-auto">
                     <button
-                        onClick={() => setViewMode('list')}
+                        onClick={() => handleViewModeChange('list')}
                         className={`px-3 py-2 rounded-lg flex items-center gap-2 transition-all ${viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}
                         aria-label="عرض القائمة"
                     >
                         <List className="w-4 h-4" />
                         <span className="text-sm font-medium">قائمة</span>
                     </button>
+                    
+                    {/* Only show split option on desktop */}
+                    {!isMobile && (
+                        <button
+                            onClick={() => handleViewModeChange('split')}
+                            className={`px-3 py-2 rounded-lg flex items-center gap-2 transition-all ${viewMode === 'split' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}
+                            aria-label="عرض مقسم"
+                        >
+                            <Grid className="w-4 h-4" />
+                            <span className="text-sm font-medium">مقسم</span>
+                        </button>
+                    )}
+                    
                     <button
-                        onClick={() => setViewMode('split')}
-                        className={`px-3 py-2 rounded-lg flex items-center gap-2 transition-all ${viewMode === 'split' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}
-                        aria-label="عرض مقسم"
-                    >
-                        <Grid className="w-4 h-4" />
-                        <span className="text-sm font-medium">مقسم</span>
-                    </button>
-                    <button
-                        onClick={() => setViewMode('map')}
+                        onClick={() => handleViewModeChange('map')}
                         className={`px-3 py-2 rounded-lg flex items-center gap-2 transition-all ${viewMode === 'map' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}
                         aria-label="عرض الخريطة"
                     >
@@ -330,7 +381,7 @@ const PropertyMapGrid: React.FC<PropertyGridProps> = ({
                                     {validMarkers.map((property) => {
                                         const [lat, lng] = property.location.split(',').map(Number);
                                         const isHighlighted = hoveredMarkerId === property.id || selectedProperty?.id === property.id;
-                                        
+
                                         return (
                                             <Marker
                                                 key={property.id}
@@ -392,8 +443,9 @@ const PropertyMapGrid: React.FC<PropertyGridProps> = ({
                             exit={{ opacity: 0, x: 20 }}
                             transition={{ duration: 0.3 }}
                             ref={gridContainerRef}
-                            className={`${viewMode === 'split' ? 'lg:w-1/2' : 'w-full'} ${viewMode === 'split' ? 'overflow-y-auto' : ''} bg-gray-50 rounded-xl p-4`}>                            {isLoading ? (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            className={`${viewMode === 'split' ? 'lg:w-1/2' : 'w-full'} ${viewMode === 'split' ? 'overflow-y-auto' : ''} bg-gray-50 rounded-xl p-4`}>
+                            {isLoading ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {Array(4).fill(0).map((_, index) => (
                                         <PropertyCardSkeleton key={index} />
                                     ))}
@@ -412,7 +464,7 @@ const PropertyMapGrid: React.FC<PropertyGridProps> = ({
                                                 boxShadow: hoveredMarkerId === item.id ? '0 10px 25px -5px rgba(59, 130, 246, 0.4)' : '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                                             }}
                                             className={`rounded-xl transition-all ${hoveredMarkerId === item.id ? 'ring-2 ring-blue-500' : ''}`}
-                                            onClick={() => navigateToPropertyDetails(item.id)} // Also add navigation to the card
+                                            onClick={() => navigateToPropertyDetails(item.id)}
                                         >
                                             <RealEstateCard
                                                 item={item}
