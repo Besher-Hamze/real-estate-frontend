@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-// Remove unused import Camera
+import React, { useState, useEffect, useRef } from "react";
 import { Plus } from "lucide-react";
 import { FormField } from "@/components/ui/form/FormField";
 import { InputField } from "@/components/ui/form/InputField";
@@ -19,13 +18,17 @@ import { useEstateForm } from "@/lib/hooks/useEstateForm";
 import FeaturesSelect from "@/components/ui/FeaturesSelect";
 import LocationPicker from "@/components/map/LocationPicker";
 import ImageUploadModal from "./EnhancedImageUpload";
-// Remove unused import apiClient
 import { RealEstateApi } from "@/api/realEstateApi";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface EstateFormProps {
   buildingId?: string;
   onSuccess?: () => void;
+}
+
+// Create an interface for error field references
+interface ErrorFieldRefs {
+  [key: string]: React.RefObject<HTMLDivElement>;
 }
 
 export default function EstateForm({ buildingId, onSuccess }: EstateFormProps) {
@@ -76,6 +79,37 @@ export default function EstateForm({ buildingId, onSuccess }: EstateFormProps) {
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
   const [additionalImagePreviews, setAdditionalImagePreviews] = useState<string[]>([]);
   const [additionalFileTypes, setAdditionalFileTypes] = useState<string[]>([]);
+
+  const errorFieldRefs: ErrorFieldRefs = {
+    title: useRef<any>(null),
+    description: useRef<any>(null),
+    price: useRef<any>(null),
+    viewTime: useRef<any>(null),
+    paymentMethod: useRef<any>(null),
+    mainCategoryId: useRef<any>(null),
+    subCategoryId: useRef<any>(null),
+    finalTypeId: useRef<any>(null),
+    cityId: useRef<any>(null),
+    neighborhoodId: useRef<any>(null),
+    finalCityId: useRef<any>(null),
+    nearbyLocations: useRef<any>(null),
+    location: useRef<any>(null),
+    bedrooms: useRef<any>(null),
+    bathrooms: useRef<any>(null),
+    totalFloors: useRef<any>(null),
+    floorNumber: useRef<any>(null),
+    buildingAge: useRef<any>(null),
+    ceilingHeight: useRef<any>(null),
+    furnished: useRef<any>(null),
+    facade: useRef<any>(null),
+    rentalDuration: useRef<any>(null),
+    buildingArea: useRef<any>(null),
+    mainFeatures: useRef<any>(null),
+    additionalFeatures: useRef<any>(null),
+    coverImage: useRef<any>(null),
+    files: useRef<any>(null),
+  };
+
 
   useEffect(() => {
     async function fetchFilterConfig() {
@@ -131,7 +165,6 @@ export default function EstateForm({ buildingId, onSuccess }: EstateFormProps) {
       }
     }
     fetchFilterConfig();
-    // Add finalTypes to dependency array
   }, [formData.mainCategoryId, formData.subCategoryId, formData.finalTypeId, mainTypes, finalTypes]);
 
   const handleFormChange = (field: string, value: any) => {
@@ -191,15 +224,45 @@ export default function EstateForm({ buildingId, onSuccess }: EstateFormProps) {
     }
   };
 
+  // Function to scroll to the first error
+  const scrollToFirstError = () => {
+    // Get all field names with errors
+    const errorFields = Object.keys(errors).filter(key => !!errors[key]);
+
+    if (errorFields.length > 0) {
+      // Get the first field with an error
+      const firstErrorField = errorFields[0];
+
+      // Get the reference to that field
+      const errorRef = errorFieldRefs[firstErrorField];
+
+      // Scroll to the field if we have a reference for it
+      if (errorRef && errorRef.current) {
+        errorRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+      }
+    }
+  };
+
   const queryClient = useQueryClient();
   const onSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
     const success = await submitFormData();
+
+    if (!success) {
+      // If submission failed, there are errors - scroll to the first one
+      setTimeout(() => {
+        scrollToFirstError();
+      }, 100); // Small delay to ensure DOM updates
+      return;
+    }
+
     if (success) {
       setAdditionalFileTypes([]);
       setAdditionalImagePreviews([]);
       setCoverImagePreview(null);
-      // Fix the error by removing the number 4 that was floating here
       if (buildingId) {
         queryClient.invalidateQueries({ queryKey: ['realEstate', 'building', buildingId] });
         queryClient.invalidateQueries({ queryKey: ['buildings'] });
@@ -221,428 +284,483 @@ export default function EstateForm({ buildingId, onSuccess }: EstateFormProps) {
       <h2 className="text-xl font-semibold mb-6">إضافة عقار جديد</h2>
       <div className="space-y-4">
         {filterConfig.title && (
-          <FormField label="عنوان العقار" error={errors.title}>
-            <div className="space-y-1">
-              <InputField
-                type="text"
-                value={formData.title}
-                onChange={(value: any) => {
-                  // Limit to 100 characters
-                  if (value.length <= 100) {
-                    handleFormChange("title", value);
-                  }
-                }}
-                placeholder="أدخل عنوان العقار"
-                required
-                error={!!errors.title}
-                maxLength={100}
-              />
-              <div className="flex justify-between text-xs">
-                <span className="text-gray-500">الحد الأقصى 100 حرف</span>
-                <span className={`${formData.title.length > 90 ? 'text-amber-600' : ''} ${formData.title.length >= 100 ? 'text-red-500' : ''}`}>
-                  {formData.title.length}/100
-                </span>
+          <div ref={errorFieldRefs.title}>
+            <FormField label="عنوان العقار" error={errors.title}>
+              <div className="space-y-1">
+                <InputField
+                  type="text"
+                  value={formData.title}
+                  onChange={(value: any) => {
+                    // Limit to 100 characters
+                    if (value.length <= 100) {
+                      handleFormChange("title", value);
+                    }
+                  }}
+                  placeholder="أدخل عنوان العقار"
+                  required
+                  error={!!errors.title}
+                  maxLength={100}
+                />
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-500">الحد الأقصى 100 حرف</span>
+                  <span className={`${formData.title.length > 90 ? 'text-amber-600' : ''} ${formData.title.length >= 100 ? 'text-red-500' : ''}`}>
+                    {formData.title.length}/100
+                  </span>
+                </div>
               </div>
-            </div>
-          </FormField>
+            </FormField>
+          </div>
         )}
 
 
         {filterConfig.description && (
-          <FormField label="وصف العقار" error={errors.description}>
-            <div className="space-y-1">
-              <InputField
-                type="textArea"
-                value={formData.description}
-                onChange={(value: any) => {
-                  // Limit to 1000 characters
-                  if (value.length <= 1000) {
-                    handleFormChange("description", value);
-                  }
-                }}
-                placeholder="أدخل وصف العقار"
-                required
-                error={!!errors.description}
-                maxLength={1000}
-              />
-              <div className="flex justify-between text-xs">
-                <span className="text-gray-500">الحد الأقصى 1000 حرف</span>
-                <span className={`${formData.description.length > 900 ? 'text-amber-600' : ''} ${formData.description.length >= 1000 ? 'text-red-500' : ''}`}>
-                  {formData.description.length}/1000
-                </span>
+          <div ref={errorFieldRefs.description}>
+            <FormField label="وصف العقار" error={errors.description}>
+              <div className="space-y-1">
+                <InputField
+                  type="textArea"
+                  value={formData.description}
+                  onChange={(value: any) => {
+                    // Limit to 1000 characters
+                    if (value.length <= 1000) {
+                      handleFormChange("description", value);
+                    }
+                  }}
+                  placeholder="أدخل وصف العقار"
+                  required
+                  error={!!errors.description}
+                  maxLength={1000}
+                />
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-500">الحد الأقصى 1000 حرف</span>
+                  <span className={`${formData.description.length > 900 ? 'text-amber-600' : ''} ${formData.description.length >= 1000 ? 'text-red-500' : ''}`}>
+                    {formData.description.length}/1000
+                  </span>
+                </div>
               </div>
-            </div>
-          </FormField>
+            </FormField>
+          </div>
         )}
 
 
         {filterConfig.price && (
-          <FormField label="السعر" error={errors.price}>
-            <InputField
-              type="text"
-              value={formData.price === 0 ? "" : formData.price}
-              onChange={(value) => {
-                const numValue = Number(value);
-                if (isNaN(numValue)) {
-                  handleFormChange("price", "");
-                } else {
-                  handleFormChange("price", numValue);
-                }
-              }}
-              placeholder="أدخل السعر"
-              required
-              error={!!errors.price}
-            />
-          </FormField>
+          <div ref={errorFieldRefs.price}>
+            <FormField label="السعر" error={errors.price}>
+              <InputField
+                type="text"
+                value={formData.price === 0 ? "" : formData.price}
+                onChange={(value) => {
+                  const numValue = Number(value);
+                  if (isNaN(numValue)) {
+                    handleFormChange("price", "");
+                  } else {
+                    handleFormChange("price", numValue);
+                  }
+                }}
+                placeholder="أدخل السعر"
+                required
+                error={!!errors.price}
+              />
+            </FormField>
+          </div>
         )}
 
         {filterConfig.viewTime && (
-          <FormField label="وقت المشاهدة">
-            <InputField
-              type="textArea"
-              value={formData.viewTime || ''}
-              onChange={(value) => handleChange("viewTime", value)}
-              placeholder="أدخل وقت المشاهدة (مثال: من الساعة 9 صباحًا إلى 5 مساءً)"
-            />
-          </FormField>
+          <div ref={errorFieldRefs.viewTime}>
+            <FormField label="وقت المشاهدة">
+              <InputField
+                type="textArea"
+                value={formData.viewTime || ''}
+                onChange={(value) => handleChange("viewTime", value)}
+                placeholder="أدخل وقت المشاهدة (مثال: من الساعة 9 صباحًا إلى 5 مساءً)"
+                error={!!errors.viewTime}
+              />
+            </FormField>
+          </div>
         )}
 
         {filterConfig.paymentMethod && (
-          <FormField label="طريقة الدفع">
-            <FeaturesSelect
-              features={PAYMENT_OPTIONS}
-              selectedFeatures={formData.paymentMethod.split("، ").filter(Boolean)}
-              onChange={(selected) => handleFormChange("paymentMethod", selected.join("، "))}
-              placeholder="اختر طريقة الدفع"
-              selectionText={{
-                single: "طريقة دفع",
-                multiple: "طرق دفع",
-              }}
-              error={!!errors.paymentMethod}
-              errorMessage={errors.paymentMethod}
-              minCount={1}
-            />
-          </FormField>
+          <div ref={errorFieldRefs.paymentMethod}>
+            <FormField label="طريقة الدفع">
+              <FeaturesSelect
+                features={PAYMENT_OPTIONS}
+                selectedFeatures={formData.paymentMethod.split("، ").filter(Boolean)}
+                onChange={(selected) => handleFormChange("paymentMethod", selected.join("، "))}
+                placeholder="اختر طريقة الدفع"
+                selectionText={{
+                  single: "طريقة دفع",
+                  multiple: "طرق دفع",
+                }}
+                error={!!errors.paymentMethod}
+                errorMessage={errors.paymentMethod}
+                minCount={1}
+              />
+            </FormField>
+          </div>
         )}
 
         {filterConfig.mainCategoryId && (
-          <FormField label="التصنيف الرئيسي" error={errors.mainCategoryId}>
-            <SelectField
-              value={formData.mainCategoryId}
-              onChange={(value) => {
-                handleFormChange("mainCategoryId", Number(value));
-                handleFormChange("subCategoryId", 0);
-                handleFormChange("finalTypeId", 0);
-                handleFormChange("mainFeatures", "");
-              }}
-              options={
-                mainTypes?.map((type) => ({
-                  value: type.id,
-                  label: type.name,
-                })) || []
-              }
-              placeholder="اختر الصنف الرئيسي"
-              error={!!errors.mainCategoryId}
-            />
-          </FormField>
+          <div ref={errorFieldRefs.mainCategoryId}>
+            <FormField label="التصنيف الرئيسي" error={errors.mainCategoryId}>
+              <SelectField
+                value={formData.mainCategoryId}
+                onChange={(value) => {
+                  handleFormChange("mainCategoryId", Number(value));
+                  handleFormChange("subCategoryId", 0);
+                  handleFormChange("finalTypeId", 0);
+                  handleFormChange("mainFeatures", "");
+                }}
+                options={
+                  mainTypes?.map((type) => ({
+                    value: type.id,
+                    label: type.name,
+                  })) || []
+                }
+                placeholder="اختر الصنف الرئيسي"
+                error={!!errors.mainCategoryId}
+              />
+            </FormField>
+          </div>
         )}
 
         {filterConfig.subCategoryId && formData.mainCategoryId > 0 && (
-          <FormField label="التصنيف الفرعي" error={errors.subCategoryId}>
-            <SelectField
-              value={formData.subCategoryId}
-              onChange={(value) => handleFormChange("subCategoryId", Number(value))}
-              options={
-                mainTypes
-                  ?.find((m) => m.id === formData.mainCategoryId)
-                  ?.subtypes.map((sub) => ({
-                    value: sub.id,
-                    label: sub.name,
-                  })) || []
-              }
-              placeholder="اختر الصنف الفرعي"
-              error={!!errors.subCategoryId}
-            />
-          </FormField>
+          <div ref={errorFieldRefs.subCategoryId}>
+            <FormField label="التصنيف الفرعي" error={errors.subCategoryId}>
+              <SelectField
+                value={formData.subCategoryId}
+                onChange={(value) => handleFormChange("subCategoryId", Number(value))}
+                options={
+                  mainTypes
+                    ?.find((m) => m.id === formData.mainCategoryId)
+                    ?.subtypes.map((sub) => ({
+                      value: sub.id,
+                      label: sub.name,
+                    })) || []
+                }
+                placeholder="اختر الصنف الفرعي"
+                error={!!errors.subCategoryId}
+              />
+            </FormField>
+          </div>
         )}
 
+        {/* Continue with other form fields... (adding ref to each one) */}
         {filterConfig.finalTypeId && formData.subCategoryId > 0 && (
-          <FormField label="التصنيف النهائي" error={errors.finalTypeId}>
-            <SelectField
-              value={formData.finalTypeId}
-              onChange={(value) => handleFormChange("finalTypeId", Number(value))}
-              options={finalTypes.map((type) => ({
-                value: type.id,
-                label: type.name,
-              }))}
-              placeholder="اختر الصنف النهائي"
-              error={!!errors.finalTypeId}
-            />
-          </FormField>
+          <div ref={errorFieldRefs.finalTypeId}>
+            <FormField label="التصنيف النهائي" error={errors.finalTypeId}>
+              <SelectField
+                value={formData.finalTypeId}
+                onChange={(value) => handleFormChange("finalTypeId", Number(value))}
+                options={finalTypes.map((type) => ({
+                  value: type.id,
+                  label: type.name,
+                }))}
+                placeholder="اختر الصنف النهائي"
+                error={!!errors.finalTypeId}
+              />
+            </FormField>
+          </div>
         )}
 
         {filterConfig.cityId && (
-          <FormField label="المحافظة" error={errors.cityId}>
-            <SelectField
-              value={formData.cityId}
-              onChange={(value) => {
-                handleFormChange("cityId", Number(value));
-                handleFormChange("neighborhoodId", 0);
-              }}
-              options={cities.map((city) => ({
-                value: city.id,
-                label: city.name,
-              }))}
-              placeholder="اختر المحافظة"
-              error={!!errors.cityId}
-            />
-          </FormField>
+          <div ref={errorFieldRefs.cityId}>
+            <FormField label="المحافظة" error={errors.cityId}>
+              <SelectField
+                value={formData.cityId}
+                onChange={(value) => {
+                  handleFormChange("cityId", Number(value));
+                  handleFormChange("neighborhoodId", 0);
+                }}
+                options={cities.map((city) => ({
+                  value: city.id,
+                  label: city.name,
+                }))}
+                placeholder="اختر المحافظة"
+                error={!!errors.cityId}
+              />
+            </FormField>
+          </div>
         )}
 
         {filterConfig.neighborhoodId && (
-          <FormField label="المدينة" error={errors.neighborhoodId}>
-            <SelectField
-              value={formData.neighborhoodId}
-              onChange={(value) => handleFormChange("neighborhoodId", Number(value))}
-              options={neighborhoods.map((nb) => ({
-                value: nb.id,
-                label: nb.name,
-              }))}
-              placeholder="اختر المدينة"
-              error={!!errors.neighborhoodId}
-            />
-          </FormField>
+          <div ref={errorFieldRefs.neighborhoodId}>
+            <FormField label="المدينة" error={errors.neighborhoodId}>
+              <SelectField
+                value={formData.neighborhoodId}
+                onChange={(value) => handleFormChange("neighborhoodId", Number(value))}
+                options={neighborhoods.map((nb) => ({
+                  value: nb.id,
+                  label: nb.name,
+                }))}
+                placeholder="اختر المدينة"
+                error={!!errors.neighborhoodId}
+              />
+            </FormField>
+          </div>
         )}
 
         {filterConfig.finalCityId && (
-          <FormField label="المنطقة" error={errors.neighborhoodId}>
-            <SelectField
-              value={formData.finalCityId}
-              onChange={(value) => handleFormChange("finalCityId", Number(value))}
-              options={finalCities.map((nb) => ({
-                value: nb.id,
-                label: nb.name,
-              }))}
-              placeholder="اختر المنطقة"
-              error={!!errors.neighborhoodId}
-            />
-          </FormField>
+          <div ref={errorFieldRefs.finalCityId}>
+            <FormField label="المنطقة" error={errors.neighborhoodId}>
+              <SelectField
+                value={formData.finalCityId}
+                onChange={(value) => handleFormChange("finalCityId", Number(value))}
+                options={finalCities.map((nb) => ({
+                  value: nb.id,
+                  label: nb.name,
+                }))}
+                placeholder="اختر المنطقة"
+                error={!!errors.neighborhoodId}
+              />
+            </FormField>
+          </div>
         )}
 
         {filterConfig.nearbyLocations && (
-          <FormField label="الأماكن القريبة">
-            <FeaturesSelect
-              features={NEARBY_LOCATION}
-              selectedFeatures={formData.nearbyLocations.split("، ").filter(Boolean)}
-              onChange={(features) => handleFormChange("nearbyLocations", features.join("، "))}
-              placeholder="اختر الأماكن القريبة"
-              selectionText={{
-                single: "مكان قريبة",
-                multiple: "أماكن قريب",
-              }}
-              error={!!errors.nearbyLocations}
-              errorMessage={errors.nearbyLocations}
-              minCount={1}
-            />
-          </FormField>
+          <div ref={errorFieldRefs.nearbyLocations}>
+            <FormField label="الأماكن القريبة">
+              <FeaturesSelect
+                features={NEARBY_LOCATION}
+                selectedFeatures={formData.nearbyLocations.split("، ").filter(Boolean)}
+                onChange={(features) => handleFormChange("nearbyLocations", features.join("، "))}
+                placeholder="اختر الأماكن القريبة"
+                selectionText={{
+                  single: "مكان قريبة",
+                  multiple: "أماكن قريب",
+                }}
+                error={!!errors.nearbyLocations}
+                errorMessage={errors.nearbyLocations}
+                minCount={1}
+              />
+            </FormField>
+          </div>
         )}
 
         {filterConfig.location && (
-          <FormField label="تحديد الموقع على الخريطة" error={errors.location}>
-            <LocationPicker
-              initialLatitude={
-                formData.location
-                  ? parseFloat(formData.location.split(",")[0])
-                  : undefined
-              }
-              initialLongitude={
-                formData.location
-                  ? parseFloat(formData.location.split(",")[1])
-                  : undefined
-              }
-              onLocationSelect={(latitude, longitude) => {
-                handleFormChange("location", { latitude, longitude });
-              }}
-            />
-          </FormField>
+          <div ref={errorFieldRefs.location}>
+            <FormField label="تحديد الموقع على الخريطة" error={errors.location}>
+              <LocationPicker
+                initialLatitude={
+                  formData.location
+                    ? parseFloat(formData.location.split(",")[0])
+                    : undefined
+                }
+                initialLongitude={
+                  formData.location
+                    ? parseFloat(formData.location.split(",")[1])
+                    : undefined
+                }
+                onLocationSelect={(latitude, longitude) => {
+                  handleFormChange("location", { latitude, longitude });
+                }}
+              />
+            </FormField>
+          </div>
         )}
 
+        {/* Bedrooms and Bathrooms Group */}
         {(
           <>
             {filterConfig.bedrooms && (
               <div className="grid grid-cols-2 gap-4">
-                <FormField label="عدد الغرف" error={errors.bedrooms}>
-                  <InputField
-                    type="number"
-                    value={formData.bedrooms}
-                    onChange={(value) => handleFormChange("bedrooms", Number(value))}
-                    min={1}
-                    error={!!errors.bedrooms}
-                  />
-                </FormField>
-                {filterConfig.bathrooms && (
-                  <FormField label="عدد الحمامات" error={errors.bathrooms}>
+                <div ref={errorFieldRefs.bedrooms}>
+                  <FormField label="عدد الغرف" error={errors.bedrooms}>
                     <InputField
                       type="number"
-                      value={formData.bathrooms}
-                      onChange={(value) => handleFormChange("bathrooms", Number(value))}
+                      value={formData.bedrooms}
+                      onChange={(value) => handleFormChange("bedrooms", Number(value))}
                       min={1}
-                      error={!!errors.bathrooms}
+                      error={!!errors.bedrooms}
                     />
                   </FormField>
+                </div>
+                {filterConfig.bathrooms && (
+                  <div ref={errorFieldRefs.bathrooms}>
+                    <FormField label="عدد الحمامات" error={errors.bathrooms}>
+                      <InputField
+                        type="number"
+                        value={formData.bathrooms}
+                        onChange={(value) => handleFormChange("bathrooms", Number(value))}
+                        min={1}
+                        error={!!errors.bathrooms}
+                      />
+                    </FormField>
+                  </div>
                 )}
               </div>
             )}
 
             {filterConfig.totalFloors && (
-              <FormField label="عدد الطوابق" error={errors.totalFloors}>
-                <InputField
-                  type="number"
-                  value={formData.totalFloors}
-                  onChange={(value) => handleFormChange("totalFloors", Number(value))}
-                  min={1}
-                  error={!!errors.totalFloors}
-                />
-              </FormField>
+              <div ref={errorFieldRefs.totalFloors}>
+                <FormField label="عدد الطوابق" error={errors.totalFloors}>
+                  <InputField
+                    type="number"
+                    value={formData.totalFloors}
+                    onChange={(value) => handleFormChange("totalFloors", Number(value))}
+                    min={1}
+                    error={!!errors.totalFloors}
+                  />
+                </FormField>
+              </div>
             )}
 
             {filterConfig.floorNumber && (
-              <FormField label="الطابق" error={errors.floorNumber}>
-                <SelectField
-                  value={formData.floorNumber}
-                  onChange={(value) => handleFormChange("floorNumber", Number(value))}
-                  options={FLOOR_OPTIONS.slice(0, Number(formData.totalFloors) + 1)}
-                  placeholder="اختر الطابق"
-                  error={!!errors.floorNumber}
-                />
-              </FormField>
+              <div ref={errorFieldRefs.floorNumber}>
+                <FormField label="الطابق" error={errors.floorNumber}>
+                  <SelectField
+                    value={formData.floorNumber}
+                    onChange={(value) => handleFormChange("floorNumber", Number(value))}
+                    options={FLOOR_OPTIONS.slice(0, Number(formData.totalFloors) + 1)}
+                    placeholder="اختر الطابق"
+                    error={!!errors.floorNumber}
+                  />
+                </FormField>
+              </div>
             )}
 
             {filterConfig.buildingAge && (
-              <FormField label="عمر البناء">
-                <SelectField
-                  value={formData.buildingAge}
-                  onChange={(value) => handleChange("buildingAge", value)}
-                  options={BUILDING_AGE_OPTION}
-                  placeholder="اختر عمر المبنى"
-                />
-              </FormField>
+              <div ref={errorFieldRefs.buildingAge}>
+                <FormField label="عمر البناء">
+                  <SelectField
+                    value={formData.buildingAge}
+                    onChange={(value) => handleChange("buildingAge", value)}
+                    options={BUILDING_AGE_OPTION}
+                    placeholder="اختر عمر المبنى"
+                  />
+                </FormField>
+              </div>
             )}
 
             {filterConfig.ceilingHeight && (
-              <FormField label="إرتفاع السقف" error={errors.ceilingHeight}>
-                <InputField
-                  type="number"
-                  value={formData.ceilingHeight}
-                  onChange={(value) => handleFormChange("ceilingHeight", Number(value))}
-                  min={1}
-                  error={!!errors.ceilingHeight}
-                />
-              </FormField>
+              <div ref={errorFieldRefs.ceilingHeight}>
+                <FormField label="إرتفاع السقف" error={errors.ceilingHeight}>
+                  <InputField
+                    type="number"
+                    value={formData.ceilingHeight}
+                    onChange={(value) => handleFormChange("ceilingHeight", Number(value))}
+                    min={1}
+                    error={!!errors.ceilingHeight}
+                  />
+                </FormField>
+              </div>
             )}
 
             {filterConfig.furnished && (
-              <FormField label="مفروشة" error={errors.furnished}>
-                <SelectField
-                  value={formData.furnished}
-                  onChange={(value) => handleFormChange("furnished", Number(value))}
-                  options={FURNISHED_OPTIONS}
-                  placeholder="اختر حالة الفرش"
-                  error={!!errors.furnished}
-                />
-              </FormField>
+              <div ref={errorFieldRefs.furnished}>
+                <FormField label="مفروشة" error={errors.furnished}>
+                  <SelectField
+                    value={formData.furnished}
+                    onChange={(value) => handleFormChange("furnished", Number(value))}
+                    options={FURNISHED_OPTIONS}
+                    placeholder="اختر حالة الفرش"
+                    error={!!errors.furnished}
+                  />
+                </FormField>
+              </div>
             )}
 
             {filterConfig.facade && (
-              <FormField label="الإطلالة" error={errors.facade}>
-                <SelectField
-                  value={formData.facade}
-                  onChange={(value) => handleFormChange("facade", value)}
-                  options={VIEW_OPTIONS}
-                  placeholder="اختر الإطلالة"
-                  error={!!errors.facade}
-                />
-              </FormField>
+              <div ref={errorFieldRefs.facade}>
+                <FormField label="الإطلالة" error={errors.facade}>
+                  <SelectField
+                    value={formData.facade}
+                    onChange={(value) => handleFormChange("facade", value)}
+                    options={VIEW_OPTIONS}
+                    placeholder="اختر الإطلالة"
+                    error={!!errors.facade}
+                  />
+                </FormField>
+              </div>
             )}
           </>
         )}
 
         {filterConfig.rentalDuration && (
-          <FormField label="مدة العقد" error={errors.rentalDuration}>
-            <SelectField
-              value={formData.rentalDuration}
-              onChange={(value) => handleFormChange("rentalDuration", value)}
-              options={RENTAL_DURATION_OPTIONS}
-              placeholder="اختر مدة العقد"
-              error={!!errors.rentalDuration}
-            />
-          </FormField>
+          <div ref={errorFieldRefs.rentalDuration}>
+            <FormField label="مدة العقد" error={errors.rentalDuration}>
+              <SelectField
+                value={formData.rentalDuration}
+                onChange={(value) => handleFormChange("rentalDuration", value)}
+                options={RENTAL_DURATION_OPTIONS}
+                placeholder="اختر مدة العقد"
+                error={!!errors.rentalDuration}
+              />
+            </FormField>
+          </div>
         )}
 
         {filterConfig.buildingArea && (
-          <FormField label="المساحة" error={errors.buildingArea}>
-            <InputField
-              type="text"
-              value={formData.buildingArea}
-              onChange={(value) => {
-                if (Number(value) > 0) {
-                  handleFormChange("buildingArea", value);
-                } else {
-                  handleFormChange("buildingArea", "");
-                }
-              }}
-              placeholder="المساحة بالمتر المربع"
-              error={!!errors.buildingArea}
-            />
-          </FormField>
+          <div ref={errorFieldRefs.buildingArea}>
+            <FormField label="المساحة" error={errors.buildingArea}>
+              <InputField
+                type="text"
+                value={formData.buildingArea}
+                onChange={(value) => {
+                  if (Number(value) > 0) {
+                    handleFormChange("buildingArea", value);
+                  } else {
+                    handleFormChange("buildingArea", "");
+                  }
+                }}
+                placeholder="المساحة بالمتر المربع"
+                error={!!errors.buildingArea}
+              />
+            </FormField>
+          </div>
         )}
 
         {filterConfig.mainFeatures && (
-          <FormField label="الميزات الاساسية">
-            <FeaturesSelect
-              features={FEATURES_BY_TYPE[getPropertyType()]}
-              selectedFeatures={formData.mainFeatures.split("، ").filter(Boolean)}
-              onChange={(features) => handleFormChange("mainFeatures", features.join("، "))}
-              placeholder="اختر الميزات الأساسية"
-              selectionText={{
-                single: "ميزة أساسية",
-                multiple: "ميزات أساسية",
-              }}
-              error={!!errors.mainFeatures}
-              errorMessage={errors.mainFeatures}
-              minCount={1}
-            />
-          </FormField>
+          <div ref={errorFieldRefs.mainFeatures}>
+            <FormField label="الميزات الاساسية">
+              <FeaturesSelect
+                features={FEATURES_BY_TYPE[getPropertyType()]}
+                selectedFeatures={formData.mainFeatures.split("، ").filter(Boolean)}
+                onChange={(features) => handleFormChange("mainFeatures", features.join("، "))}
+                placeholder="اختر الميزات الأساسية"
+                selectionText={{
+                  single: "ميزة أساسية",
+                  multiple: "ميزات أساسية",
+                }}
+                error={!!errors.mainFeatures}
+                errorMessage={errors.mainFeatures}
+                minCount={1}
+              />
+            </FormField>
+          </div>
         )}
 
         {filterConfig.additionalFeatures && (
-          <FormField label="الميزات الإضافية">
-            <FeaturesSelect
-              features={ADDITIONAL_FEATURES}
-              selectedFeatures={formData.additionalFeatures.split("، ").filter(Boolean)}
-              onChange={(features) => handleFormChange("additionalFeatures", features.join("، "))}
-              placeholder="اختر الميزات الإضافية"
-              selectionText={{
-                single: "ميزة إضافية",
-                multiple: "ميزات إضافية",
-              }}
-              error={!!errors.additionalFeatures}
-              errorMessage={errors.additionalFeatures}
-              minCount={1}
-            />
-          </FormField>
+          <div ref={errorFieldRefs.additionalFeatures}>
+            <FormField label="الميزات الإضافية">
+              <FeaturesSelect
+                features={ADDITIONAL_FEATURES}
+                selectedFeatures={formData.additionalFeatures.split("، ").filter(Boolean)}
+                onChange={(features) => handleFormChange("additionalFeatures", features.join("، "))}
+                placeholder="اختر الميزات الإضافية"
+                selectionText={{
+                  single: "ميزة إضافية",
+                  multiple: "ميزات إضافية",
+                }}
+                error={!!errors.additionalFeatures}
+                errorMessage={errors.additionalFeatures}
+                minCount={1}
+              />
+            </FormField>
+          </div>
         )}
 
         {filterConfig.coverImage && (
-          <FormField label="صور العقار" error={errors.coverImage || errors.files}>
-            <ImageUploadModal
-              additionalImagePreviews={additionalImagePreviews}
-              additionalFileTypes={additionalFileTypes}
-              handleFileUpload={handleFileUpload}
-              coverImagePreview={coverImagePreview}
-              handleImageUpload={handleImageUpload}
-            />
-          </FormField>
+          <div ref={errorFieldRefs.coverImage}>
+            <FormField label="صور العقار" error={errors.coverImage || errors.files}>
+              <ImageUploadModal
+                additionalImagePreviews={additionalImagePreviews}
+                additionalFileTypes={additionalFileTypes}
+                handleFileUpload={handleFileUpload}
+                coverImagePreview={coverImagePreview}
+                handleImageUpload={handleImageUpload}
+              />
+            </FormField>
+          </div>
         )}
 
         <button

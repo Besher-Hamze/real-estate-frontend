@@ -11,6 +11,8 @@ import { FinalCityType } from "@/lib/types";
 import { toast } from "react-toastify";
 import apiClient from "@/api";
 import axios from "axios";
+import { useQueryClient } from "@tanstack/react-query";
+import { estateQuery } from "@/lib/constants/queryNames";
 
 interface EditEstateFormProps {
     editingEstate: any;
@@ -35,6 +37,7 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
 }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [filesToDelete, setFilesToDelete] = useState<string[]>([]);
 
     const [isCoverImageUploading, setIsCoverImageUploading] = useState(false);
     const [uploadingImageIndexes, setUploadingImageIndexes] = useState<number[]>([]);
@@ -208,19 +211,16 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Validate file size (max 5MB)
         if (file.size > 5 * 1024 * 1024) {
             toast.error('حجم الملف كبير جدًا. الحد الأقصى هو 5 ميجابايت');
             return;
         }
 
-        // Validate file type
         if (!file.type.startsWith('image/')) {
             toast.error('يرجى اختيار ملف صورة صالح');
             return;
         }
 
-        // Create preview immediately
         const reader = new FileReader();
         reader.onload = (e) => {
             if (e.target?.result) {
@@ -230,23 +230,18 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
         reader.readAsDataURL(file);
 
         try {
-            // Set specific loading state for cover image
             setIsCoverImageUploading(true);
             setCoverImageProgress(0); // Reset progress
 
-            // Upload to API with -1 index to indicate it's the cover image
             const uploadedUrl = await uploadFileToAPI(file, -1);
 
-            // Store the URL
             setCoverImageUrl(uploadedUrl);
             handleChange('coverImage', uploadedUrl);
 
         } catch (error) {
             console.error("Cover image upload failed:", error);
-            // Revert the preview on error
             setCoverImagePreview(null);
         } finally {
-            // Wait a moment before hiding loading indicator to make sure user sees 100%
             setTimeout(() => {
                 setIsCoverImageUploading(false);
                 setCoverImageProgress(0);
@@ -254,7 +249,6 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
         }
     };
 
-    // Handle additional files upload
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -362,79 +356,68 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
         }
     };
 
-    // Function to delete a file from the API
-    const handleDeleteFile = async (fileUrl: string): Promise<boolean> => {
+
+
+    const client = useQueryClient();
+    const deleteFilesFromAPI = async (fileUrls: string[]): Promise<boolean> => {
+        if (!fileUrls.length) return true;
+
         try {
-            if (!fileUrl) return false;
+            const deletePromises = fileUrls.map(fileUrl =>
+                axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/realestate/deleteFile/${fileUrl}`)
+            );
 
-            const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/realestate/deleteFile/${fileUrl}`);
-
-            if (response.status === 200) {
-                toast.success('تم حذف الملف بنجاح');
-                return true;
-            } else {
-                throw new Error(`Delete failed with status: ${response.status}`);
-            }
+            await Promise.all(deletePromises);
+            client.invalidateQueries({
+                queryKey: [estateQuery]
+            })
+            return true;
         } catch (error) {
-            console.error("Failed to delete file:", error);
-            toast.error('فشل حذف الملف، يرجى المحاولة مرة أخرى');
+            console.error("Failed to delete files:", error);
             return false;
         }
     };
 
-    // Delete additional image
-    const handleDeleteAdditionalImage = async (index: number) => {
+    const handleDeleteAdditionalImage = (index: number) => {
         try {
             const fileUrl = additionalImagesUrls[index];
 
-            // If there's a valid URL and it's not just a preview, delete from server
             if (fileUrl && typeof fileUrl === 'string' && !fileUrl.startsWith('data:')) {
-                // Add index to loading state
-                setUploadingImageIndexes(prev => [...prev, index]);
-
-                // Send delete request to API
-                const deleteSuccess = await handleDeleteFile(fileUrl);
-
-                if (!deleteSuccess) {
-                    throw new Error("File deletion failed");
-                }
+                setFilesToDelete(prev => [...prev, fileUrl]);
             }
 
-            // Create new copies of arrays
             const newPreviews = [...additionalImagePreviews];
             const newUrls = [...additionalImagesUrls];
             const newTypes = [...additionalFileTypes];
 
-            // Remove the item at the specified index
             newPreviews.splice(index, 1);
             newUrls.splice(index, 1);
             newTypes.splice(index, 1);
 
-            // Update state
             setAdditionalImagePreviews(newPreviews);
             setAdditionalImagesUrls(newUrls);
             setAdditionalFileTypes(newTypes);
 
-            // Update main form state
             const updatedFiles = Array.isArray(editingEstate.files) ? [...editingEstate.files] : [];
             updatedFiles.splice(index, 1);
             handleChange('files', updatedFiles);
 
+            toast.info('تم حذف الملف من القائمة - سيتم الحذف النهائي عند حفظ التغييرات');
         } catch (error) {
-            console.error("Failed to delete file:", error);
-            toast.error('فشل حذف الملف، يرجى المحاولة مرة أخرى');
-        } finally {
-            // Remove this index from loading indexes
-            setUploadingImageIndexes(prev => prev.filter(i => i !== index));
+            console.error("Failed to prepare file for deletion:", error);
+            toast.error('فشل إعداد الملف للحذف');
         }
     };
+
 
 
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!coverImageUrl && !coverImagePreview) {
-            toast.error('يرجى إضافة صورة الغلاف');
+
+
+        if (isUploading) {
+            toast.warning('يرجى الانتظار حتى اكتمال رفع جميع الملفات');
             return;
         }
 
@@ -454,12 +437,24 @@ const EditEstateForm: React.FC<EditEstateFormProps> = ({
                     (url: string) => !url.startsWith('data:')
                 );
             }
+
+            // First submit the updated estate data
             await onSubmit(estateToSubmit);
+
+            if (filesToDelete.length > 0) {
+                await deleteFilesFromAPI(filesToDelete);
+                setFilesToDelete([]);
+            }
+
+            toast.success('تم حفظ التغييرات بنجاح');
         } catch (error) {
+            console.error("Error submitting form:", error);
+            toast.error('حدث خطأ أثناء حفظ التغييرات');
         } finally {
             setIsSubmitting(false);
         }
     };
+
 
     return (
         <form

@@ -150,7 +150,7 @@ const FeaturesSelect: React.FC<SelectionProps> = ({
             </Select>
 
             {/* Min/Max count indicators */}
-            {(minCount || maxCount) && (
+            {/* {(minCount || maxCount) && (
                 <div className="mt-1 text-xs text-gray-500">
                     {minCount && maxCount ? 
                         `يجب اختيار ${minCount} إلى ${maxCount} ميزات` : 
@@ -158,7 +158,7 @@ const FeaturesSelect: React.FC<SelectionProps> = ({
                         `يمكنك اختيار حتى ${maxCount} ميزات`
                     }
                 </div>
-            )}
+            )} */}
 
             {/* Error message */}
             {error && errorMessage && (

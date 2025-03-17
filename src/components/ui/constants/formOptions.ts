@@ -16,9 +16,9 @@ export const FLOOR_OPTIONS = [
 
 
 export const FURNISHED_OPTIONS = [
-  { value: 0, label: 'غير مفروش' },
-  { value: 1, label: 'مفروش' },
-  { value: 2, label: 'مفروش جزيئيا' },
+  { value: 0, label: 'غير مفروشة' },
+  { value: 1, label: 'مفروشة' },
+  { value: 2, label: 'مفروشة جزيئيا' },
 ];
 
 export const VIEW_OPTIONS = [
