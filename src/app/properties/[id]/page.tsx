@@ -9,7 +9,7 @@ import { RealEstateData } from '@/lib/types';
 import PropertyGallery from '@/components/properties/PropertyGallery';
 import RealEstateCard from '@/components/widgets/PropertyGrid/PropertyCard';
 import MapboxViewer from '@/components/map/MapboxViewer';
-import { BUILDING_AGE_OPTION, RENTAL_DURATION_OPTIONS } from '@/components/ui/constants/formOptions';
+import { BUILDING_AGE_OPTION, FLOOR_OPTIONS, RENTAL_DURATION_OPTIONS } from '@/components/ui/constants/formOptions';
 import { FloatingActionButtons } from '@/components/properties/FloatingActionButtons';
 import { PropertyReservationModal } from '@/components/properties/PropertyReservation';
 import { PropertyFeedbackModal } from '@/components/properties/PropertyFeedbackForm';
@@ -20,11 +20,11 @@ export default function PropertyDetails() {
     const [activeImage, setActiveImage] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    
+
     // حالة النوافذ المنبثقة
     const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
     const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
-    
+
     const params = useParams();
     const router = useRouter();
 
@@ -316,9 +316,9 @@ export default function PropertyDetails() {
                             <span className="text-gray-600">الواجهة</span>
                             <span className="font-semibold">{property.facade}</span>
                         </div>}
-                        {property.floorNumber && <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                        {property.floorNumber!=undefined && <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                             <span className="text-gray-600">رقم الطابق</span>
-                            <span className="font-semibold">{property.floorNumber}</span>
+                            <span className="font-semibold">{FLOOR_OPTIONS.find(f => Number(f.value) == property.floorNumber)?.label}</span>
                         </div>}
                         {property.buildingAge && <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                             <span className="text-gray-600">عمر البناء</span>
@@ -327,7 +327,7 @@ export default function PropertyDetails() {
 
                         {property.furnished && <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                             <span className="text-gray-600">مفروش</span>
-                            <span className="font-semibold">{property.furnished ? 'نعم' : 'لا'}</span>
+                            <span className="font-semibold">{property.furnished}</span>
                         </div>}
                         {property.mainCategoryName == "إيجار" && <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                             <span className="text-gray-600">مدة العقد</span>
@@ -379,7 +379,7 @@ export default function PropertyDetails() {
                             {similarProperties.map((similarProperty) => (
                                 <RealEstateCard
                                     key={similarProperty.id}
-                                    item={similarProperty} 
+                                    item={similarProperty}
                                     mainType={undefined}
                                 />
                             ))}
@@ -388,7 +388,7 @@ export default function PropertyDetails() {
                 )}
 
                 {/* أزرار الإجراءات العائمة */}
-                <FloatingActionButtons 
+                <FloatingActionButtons
                     onReservationClick={openReservationModal}
                     onFeedbackClick={openFeedbackModal}
                 />
@@ -396,12 +396,12 @@ export default function PropertyDetails() {
                 {/* النوافذ المنبثقة */}
                 {property && (
                     <>
-                        <PropertyReservationModal 
+                        <PropertyReservationModal
                             propertyId={property.id}
                             isOpen={isReservationModalOpen}
                             onClose={closeReservationModal}
                         />
-                        
+
                         <PropertyFeedbackModal
                             propertyId={property.id}
                             isOpen={isFeedbackModalOpen}
