@@ -9,11 +9,12 @@ export interface UpdateCity {
 
 export interface UpdateNeighborhood {
     name?: string;
-    cityId?:number;
+    cityId?: number;
 }
 export interface UpdateFinalCity {
     name?: string;
-    neighborhoodId?:number;
+    neighborhoodId?: number;
+    location?: string;
 }
 
 

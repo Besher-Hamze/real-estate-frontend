@@ -16,15 +16,15 @@ import { useParams, useRouter } from 'next/navigation';
 import RealEstateCard from '@/components/widgets/PropertyGrid/PropertyCard';
 import Map, { Marker, NavigationControl, Popup } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import RealEstateListView from '@/components/building/RealEstateBuilding';
 
-// إضافة واجهة البناء
 interface BuildingType {
-  id: string;
-  title: string;
-  status: 'مكتمل' | 'قيد الإنشاء' | 'مخطط';
-  location: string;
-  buildingAge: string;
-  realEstateCount: number;
+    id: string;
+    title: string;
+    status: 'مكتمل' | 'قيد الإنشاء' | 'مخطط';
+    location: string;
+    buildingAge: string;
+    realEstateCount: number;
 }
 
 function BuildingContent({ buildingId }: { buildingId: string }) {
@@ -34,12 +34,10 @@ function BuildingContent({ buildingId }: { buildingId: string }) {
     const [selectedBuilding, setSelectedBuilding] = useState<BuildingType | null>(null);
     const router = useRouter();
 
-    // مرجع الخريطة
     const mapRef = useRef<any>(null);
 
-    // إحداثيات العرض الأولي للخريطة
     const [viewport, setViewport] = useState({
-        latitude: 23.5880, // الإحداثيات الافتراضية لعمان
+        latitude: 23.5880,
         longitude: 58.3829,
         zoom: 10
     });
@@ -56,17 +54,14 @@ function BuildingContent({ buildingId }: { buildingId: string }) {
         enabled: !!buildingId
     });
 
-    // استعلام لجلب جميع المباني
     const { data: allBuildings = [], isLoading: isAllBuildingsLoading } = useQuery<BuildingType[]>({
         queryKey: ['buildings'],
         queryFn: () => buildingApi.fetchBuildings(),
     });
 
-    // تحديث إحداثيات الخريطة عند تحميل بيانات المبنى
     useEffect(() => {
         if (building?.location) {
             try {
-                // نفترض أن الموقع مخزن بصيغة "latitude,longitude"
                 const [lat, lng] = building.location.split(',').map(Number);
                 if (!isNaN(lat) && !isNaN(lng)) {
                     setViewport({
@@ -101,7 +96,6 @@ function BuildingContent({ buildingId }: { buildingId: string }) {
         router.push(`/buildings/${building.id}`);
     };
 
-    // استخراج المباني ذات الإحداثيات الصالحة
     const validBuildingMarkers = allBuildings.filter(b => {
         if (!b.location) return false;
         try {
@@ -156,18 +150,7 @@ function BuildingContent({ buildingId }: { buildingId: string }) {
 
                     {realEstates.length === 0 ? (
                         <EmptyRealEstateState />
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {realEstates.map((estate) => (
-                                <RealEstateCard
-                                    key={estate.id}
-                                    item={estate}
-                                    onHover={() => handlePropertyHover(estate.id)}
-                                    onLeave={handlePropertyLeave}
-                                    mainType={undefined} />
-                            ))}
-                        </div>
-                    )}
+                    ) : (<RealEstateListView items={realEstates} />)}
                 </div>
 
                 {/* Buildings Map Section */}
@@ -214,7 +197,6 @@ function BuildingContent({ buildingId }: { buildingId: string }) {
                                         const isHighlighted = hoveredBuildingId === building.id;
                                         const isCurrentBuilding = building.id === buildingId;
 
-                                        // تخطي الإحداثيات غير الصالحة
                                         if (isNaN(lat) || isNaN(lng)) {
                                             return null;
                                         }
@@ -337,7 +319,7 @@ function BuildingStatusBadge({ status }: { status?: string }) {
 function EmptyRealEstateState() {
     const params = useParams();
     const buildingId = params.buildingId as string;
-    
+
     return (
         <div className="text-center bg-white p-12 rounded-xl shadow-md">
             <Building2 className="w-24 h-24 text-gray-400 mx-auto mb-6" />
@@ -347,13 +329,6 @@ function EmptyRealEstateState() {
             <p className="text-gray-600 mb-6">
                 لم يتم إضافة أي عقارات حتى الآن
             </p>
-            <Link
-                href={`/admin/real-estates/add?buildingId=${buildingId}`}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg inline-flex items-center gap-2 transition-colors"
-            >
-                <Plus className="w-5 h-5" />
-                إضافة عقار جديد
-            </Link>
         </div>
     );
 }

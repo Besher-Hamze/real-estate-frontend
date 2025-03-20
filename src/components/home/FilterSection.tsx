@@ -166,7 +166,7 @@ const FilterSection = ({
     }
   }, [filters.neighborhood]);
 
-  
+
   const handlePriceChange = (type: 'min' | 'max', value: string): void => {
     const cleanValue = value.replace(/,/g, '');
     if (type === 'min') {
@@ -224,6 +224,11 @@ const FilterSection = ({
   const getNeighborhoodName = (neighborhoodId: string): string => {
     const neighborhood = neighborhoods.find(n => n.id.toString() === neighborhoodId);
     return neighborhood ? neighborhood.name : neighborhoodId;
+  };
+
+  const getFinalCityName = (finalCityId: string): string => {
+    const finalCity = finalCities.find(n => n.id.toString() === finalCityId);
+    return finalCity ? finalCity.name : finalCityId;
   };
 
   const getFinalTypeName = (finalTypeId: string): string => {
@@ -327,6 +332,12 @@ const FilterSection = ({
             {filters.neighborhood && (
               <FilterChip
                 label={`المدينة: ${getNeighborhoodName(filters.neighborhood)}`}
+                onRemove={() => setFilters({ ...filters, neighborhood: "" })}
+              />
+            )}
+            {filters.finalCity && (
+              <FilterChip
+                label={`المنطقة: ${getFinalCityName(filters.finalCity)}`}
                 onRemove={() => setFilters({ ...filters, neighborhood: "" })}
               />
             )}
@@ -441,8 +452,8 @@ const FilterSection = ({
                 value={filters.finalCity}
                 onChange={(e) => setFilters({ ...filters, finalCity: e.target.value })}
                 options={[{ value: '', label: 'الكل' }, ...finalCities.map(n => ({ value: n.id, label: n.name }))]}
-                className={!filters.finalCity ? 'opacity-50 cursor-not-allowed' : ''}
-                enable={filters.finalCity !== ""}
+                className={!filters.neighborhood ? 'opacity-50 cursor-not-allowed' : ''}
+                enable={filters.neighborhood !== ""}
               />
             )}
 

@@ -68,6 +68,7 @@ export interface RealEstateData {
   buildingItemId?: string;
   viewTime: string;
   location: string; // ex: "1.43,1.44"
+  createdAt: string;
 }
 export interface CityType {
   id: number;
@@ -82,6 +83,7 @@ export interface FinalCityType {
   id: number;
   name: string;
   neighborhoodId: number
+  location?: string;
 }
 export interface MainType {
   id: number;

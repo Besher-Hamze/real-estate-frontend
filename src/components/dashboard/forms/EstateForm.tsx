@@ -167,6 +167,34 @@ export default function EstateForm({ buildingId, onSuccess }: EstateFormProps) {
     fetchFilterConfig();
   }, [formData.mainCategoryId, formData.subCategoryId, formData.finalTypeId, mainTypes, finalTypes]);
 
+  useEffect(() => {
+    if (formData.finalCityId) {
+      const selectedFinalCity = finalCities.find(c => c.id === formData.finalCityId);
+      
+      if (selectedFinalCity && selectedFinalCity.location) {
+        const [lat, lng] = selectedFinalCity.location.split(",");
+        
+        if (lat && lng) {
+          // Important: First clear the current location so the map doesn't try to use both values
+          handleChange("location", ""); // Reset location
+          
+          // Then in the next render cycle, set the new location
+          setTimeout(() => {
+            handleFormChange("location", { 
+              latitude: parseFloat(lat), 
+              longitude: parseFloat(lng) 
+            });
+          }, 0);
+          
+          console.log("Updated location based on selected finalCity:", {
+            finalCityId: formData.finalCityId,
+            location: selectedFinalCity.location
+          });
+        }
+      }
+    }
+  }, [formData.finalCityId]);
+  
   const handleFormChange = (field: string, value: any) => {
     if (field === "location") {
       const locationString = `${value.latitude},${value.longitude}`;
@@ -501,20 +529,23 @@ export default function EstateForm({ buildingId, onSuccess }: EstateFormProps) {
 
         {filterConfig.finalCityId && (
           <div ref={errorFieldRefs.finalCityId}>
-            <FormField label="المنطقة" error={errors.neighborhoodId}>
+            <FormField label="المنطقة" error={errors.finalCityId}>
               <SelectField
                 value={formData.finalCityId}
-                onChange={(value) => handleFormChange("finalCityId", Number(value))}
+                onChange={(value) => {
+                  handleFormChange("finalCityId", Number(value));
+                }}
                 options={finalCities.map((nb) => ({
                   value: nb.id,
                   label: nb.name,
                 }))}
                 placeholder="اختر المنطقة"
-                error={!!errors.neighborhoodId}
+                error={!!errors.finalCityId}
               />
             </FormField>
           </div>
         )}
+
 
         {filterConfig.nearbyLocations && (
           <div ref={errorFieldRefs.nearbyLocations}>
@@ -540,15 +571,16 @@ export default function EstateForm({ buildingId, onSuccess }: EstateFormProps) {
           <div ref={errorFieldRefs.location}>
             <FormField label="تحديد الموقع على الخريطة" error={errors.location}>
               <LocationPicker
+                key={formData.finalCityId || 'default'} // Add this key to force remount
                 initialLatitude={
                   formData.location
                     ? parseFloat(formData.location.split(",")[0])
-                    : undefined
+                    : parseFloat(finalCities.find(c => c.id === formData.finalCityId)?.location?.split(",")[0] ?? "0")
                 }
                 initialLongitude={
                   formData.location
                     ? parseFloat(formData.location.split(",")[1])
-                    : undefined
+                    : parseFloat(finalCities.find(c => c.id === formData.finalCityId)?.location?.split(",")[1] ?? "0")
                 }
                 onLocationSelect={(latitude, longitude) => {
                   handleFormChange("location", { latitude, longitude });

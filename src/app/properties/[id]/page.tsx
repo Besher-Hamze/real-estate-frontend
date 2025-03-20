@@ -10,7 +10,7 @@ import PropertyGallery from '@/components/properties/PropertyGallery';
 import RealEstateCard from '@/components/widgets/PropertyGrid/PropertyCard';
 import MapboxViewer from '@/components/map/MapboxViewer';
 import { BUILDING_AGE_OPTION, FLOOR_OPTIONS, FURNISHED_OPTIONS, RENTAL_DURATION_OPTIONS } from '@/components/ui/constants/formOptions';
-import { FloatingActionButtons } from '@/components/properties/FloatingActionButtons';
+import PropertyActionButtons from '@/components/properties/PropertyActionButtons';
 import { PropertyReservationModal } from '@/components/properties/PropertyReservation';
 import { PropertyFeedbackModal } from '@/components/properties/PropertyFeedbackForm';
 
@@ -365,6 +365,11 @@ export default function PropertyDetails() {
                     </div>
                 )}
 
+                {/* أزرار الإجراءات العائمة */}
+                <PropertyActionButtons
+                    onReservationClick={openReservationModal}
+                    onFeedbackClick={openFeedbackModal}
+                />
                 {/* Similar Properties Section */}
                 {similarProperties.length > 0 && (
                     <div className="p-8 mt-8">
@@ -387,11 +392,7 @@ export default function PropertyDetails() {
                     </div>
                 )}
 
-                {/* أزرار الإجراءات العائمة */}
-                <FloatingActionButtons
-                    onReservationClick={openReservationModal}
-                    onFeedbackClick={openFeedbackModal}
-                />
+
 
                 {/* النوافذ المنبثقة */}
                 {property && (

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Edit2, Trash2, Check, X, CheckSquare, Square } from "lucide-react";
+import { Edit2, Trash2, Check, X, CheckSquare, Square, MapPin } from "lucide-react";
 import { useNeighborhood } from "@/lib/hooks/useNeighborhood";
 import { DataTable } from '@/components/ui/data-table/DataTable';
 import { toast } from 'react-toastify';
@@ -12,6 +12,8 @@ import { BulkDeleteDialog } from "../BulkDeleteDialog";
 import { useFinalCities } from "@/lib/hooks/useFinalCity";
 import { finalCityApi } from "@/api/finalCityApi";
 import { FinalCityType, NeighborhoodType } from "@/lib/types";
+import LocationPicker from "@/components/map/LocationPicker";
+import { Modal } from "@/components/ui/modal/Modal";
 
 export default function FinalCityTable() {
   const { finalCities, isLoading, error, refetch } = useFinalCities();
@@ -27,10 +29,16 @@ export default function FinalCityTable() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
   const [editCityId, setEditCityId] = useState<number | null>(null);
+  const [editLocation, setEditLocation] = useState("");
+  
+  // State for location editing modal
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [editingItemId, setEditingItemId] = useState<number | null>(null);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
 
   const getNeighborhoodName = (neighborhoodId: number) => {
     const neighborhood = neighborhoods?.find((c) => c.id === neighborhoodId);
@@ -41,6 +49,7 @@ export default function FinalCityTable() {
     setEditingId(nb.id);
     setEditName(nb.name);
     setEditCityId(nb.neighborhoodId);
+    setEditLocation(nb.location || "");
   };
 
   const handleSaveEdit = async (id: number) => {
@@ -50,19 +59,25 @@ export default function FinalCityTable() {
         return;
       }
 
+      setUpdatingId(id);
+      
       await finalCityApi.updagteFinalCity(id, {
         name: editName,
         neighborhoodId: editCityId,
+        location: editLocation
       });
 
       refetch();
       setEditingId(null);
       setEditName("");
       setEditCityId(null);
-      toast.success("تم تحديث المنطقةبنجاح");
+      setEditLocation("");
+      toast.success("تم تحديث المنطقة بنجاح");
     } catch (error) {
       toast.error("حدث خطأ أثناء تحديث المنطقة");
       console.error(error);
+    } finally {
+      setUpdatingId(null);
     }
   };
 
@@ -70,6 +85,7 @@ export default function FinalCityTable() {
     setEditingId(null);
     setEditName("");
     setEditCityId(null);
+    setEditLocation("");
   };
 
   const openDeleteDialog = (id: number) => {
@@ -83,7 +99,7 @@ export default function FinalCityTable() {
       setDeletingId(pendingDeleteId);
       await finalCityApi.deleteFinalCity(pendingDeleteId);
       refetch();
-      toast.success("تم حذف المنطقةبنجاح");
+      toast.success("تم حذف المنطقة بنجاح");
     } catch (error) {
       toast.error("حدث خطأ أثناء حذف المنطقة");
       console.error(error);
@@ -113,6 +129,47 @@ export default function FinalCityTable() {
     } finally {
       selection.setIsBulkDeleting(false);
       setIsBulkDeleteDialogOpen(false);
+    }
+  };
+
+  // Open location modal
+  const openLocationModal = (item: FinalCityType) => {
+    setEditingItemId(item.id);
+    setEditLocation(item.location || "");
+    setIsLocationModalOpen(true);
+  };
+
+  // Handle location selection
+  const handleLocationSelect = (latitude: number, longitude: number) => {
+    setEditLocation(`${latitude},${longitude}`);
+  };
+
+  // Save location changes
+  const saveLocationChanges = async () => {
+    if (!editingItemId) return;
+    
+    try {
+      setUpdatingId(editingItemId);
+      
+      const itemToUpdate = finalCities?.find(item => item.id === editingItemId);
+      if (!itemToUpdate) return;
+      
+      await finalCityApi.updagteFinalCity(editingItemId, {
+        name: itemToUpdate.name,
+        neighborhoodId: itemToUpdate.neighborhoodId,
+        location: editLocation
+      });
+      
+      refetch();
+      toast.success("تم تحديث الموقع بنجاح");
+      setIsLocationModalOpen(false);
+      setEditingItemId(null);
+      setEditLocation("");
+    } catch (error) {
+      toast.error("حدث خطأ أثناء تحديث الموقع");
+      console.error(error);
+    } finally {
+      setUpdatingId(null);
     }
   };
 
@@ -189,6 +246,24 @@ export default function FinalCityTable() {
           </div>
         )
       )
+    },
+    {
+      header: "الإحداثيات",
+      accessorKey: "location",
+      cell: (row: FinalCityType) => (
+        <div className="flex items-center gap-2">
+          <button
+            className="p-1.5 ml-1 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors flex items-center gap-1"
+            onClick={() => openLocationModal(row)}
+            type="button"
+            disabled={editingId !== null && editingId !== row.id}
+            title="تغيير الإحداثيات"
+          >
+            <MapPin className="w-4 h-4" />
+            <span className="text-xs font-medium">تغيير الإحداثيات</span>
+          </button>
+        </div>
+      )
     }
   ];
 
@@ -235,6 +310,56 @@ export default function FinalCityTable() {
         onRefresh={refetch}
         rowClassName={(row) => selection.isSelected(row.id) ? "bg-blue-50" : ""}
       />
+
+      {/* Location Picker Modal */}
+      <Modal
+        isOpen={isLocationModalOpen}
+        onClose={() => setIsLocationModalOpen(false)}
+        title="تحديد الموقع على الخريطة"
+      >
+        <div className="p-4">
+          <LocationPicker
+            initialLatitude={
+              editLocation
+                ? parseFloat(editLocation.split(",")[0])
+                : undefined
+            }
+            initialLongitude={
+              editLocation
+                ? parseFloat(editLocation.split(",")[1])
+                : undefined
+            }
+            onLocationSelect={handleLocationSelect}
+          />
+          
+          <div className="mt-6 flex justify-between">
+            <button
+              className="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded-lg transition-colors"
+              onClick={() => setIsLocationModalOpen(false)}
+            >
+              إلغاء
+            </button>
+            
+            <button
+              className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
+              onClick={saveLocationChanges}
+              disabled={updatingId !== null}
+            >
+              {updatingId !== null ? (
+                <>
+                  <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                  <span>جاري الحفظ...</span>
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4" />
+                  <span>حفظ الموقع</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       <ConfirmationDialog
         isOpen={isDialogOpen}

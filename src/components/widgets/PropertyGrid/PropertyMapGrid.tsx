@@ -44,13 +44,21 @@ const PropertyMapGrid: React.FC<PropertyGridProps> = ({
         zoom: 10
     });
 
-    // Check if the device is mobile and update view mode accordingly
+
+    function getPinColor(mainCategoryName: string) {
+        if (mainCategoryName.includes("إيجار")) {
+            return "bg-green-600";
+        } else if (mainCategoryName.includes("بيع")) {
+            return "bg-red-600";
+        } else {
+            return "bg-yellow-600";
+        }
+    }
     useEffect(() => {
         const checkIsMobile = () => {
             const mobile = window.innerWidth < 1024;
             setIsMobile(mobile);
-            
-            // If device is mobile and viewMode is split, change to list
+
             if (mobile && viewMode === 'split') {
                 setViewMode('list');
             }
@@ -283,7 +291,7 @@ const PropertyMapGrid: React.FC<PropertyGridProps> = ({
                         <List className="w-4 h-4" />
                         <span className="text-sm font-medium">قائمة</span>
                     </button>
-                    
+
                     {/* Only show split option on desktop */}
                     {!isMobile && (
                         <button
@@ -295,7 +303,7 @@ const PropertyMapGrid: React.FC<PropertyGridProps> = ({
                             <span className="text-sm font-medium">مقسم</span>
                         </button>
                     )}
-                    
+
                     <button
                         onClick={() => handleViewModeChange('map')}
                         className={`px-3 py-2 rounded-lg flex items-center gap-2 transition-all ${viewMode === 'map' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}
@@ -420,7 +428,7 @@ const PropertyMapGrid: React.FC<PropertyGridProps> = ({
                                                         whileHover={{ scale: 1.2 }}
                                                         className={`${isHighlighted ? 'z-20' : 'z-10'} transition-all duration-200`}
                                                     >
-                                                        <div className={`${property.mainCategoryName?.includes('إيجار') ? 'bg-green-600' : 'bg-red-600'} rounded-full p-2 text-white flex items-center justify-center shadow-md`}>
+                                                        <div className={`${getPinColor(property.mainCategoryName ?? "")} rounded-full p-2 text-white flex items-center justify-center shadow-md`}>
                                                             <MapPin className="w-4 h-4" />
                                                         </div>
                                                     </motion.div>

@@ -14,6 +14,7 @@ export interface CreateNeighborhood {
 export interface CreateFinalCity {
     neighborhoodId: number;
     name: string;
+    location: string;
 }
 
 export interface CreateSubTypeForm {

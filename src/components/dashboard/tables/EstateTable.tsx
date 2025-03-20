@@ -13,13 +13,13 @@ import apiClient from "@/api";
 import { finalTypeTypeApi } from "@/api/finalTypeApi";
 import { CityType, FinalCityType, FinalType, MainType, NeighborhoodType, RealEstateData } from "@/lib/types";
 import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
-import EditEstateForm from "../estate-components/Edit-Estate";
 import QRCode from 'qrcode';
 
 import { useSelectionManager } from "@/lib/hooks/useSelectionManager";
 import { BulkActionsBar } from "../BulkActionsBar";
 import { BulkDeleteDialog } from "../BulkDeleteDialog";
 import { finalCityApi } from "@/api/finalCityApi";
+import { EditEstateForm } from "../estate-components/Edit-Estate";
 
 interface EstateTableProps {
   realEstateData: RealEstateData[] | undefined;

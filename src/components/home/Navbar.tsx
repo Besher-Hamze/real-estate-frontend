@@ -2,14 +2,12 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ChevronDown, MapPin, Heart } from 'lucide-react';
 import Link from 'next/link';
-import { useRealEstate } from '@/lib/hooks/useRealEstate';
 
 export default function Navbar() {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState<any>(null);
     const [favoriteCount, setFavoriteCount] = useState(0);
-
     useEffect(() => {
         const handleScroll = () => {
             setIsScrolled(window.scrollY > 20);
@@ -28,7 +26,6 @@ export default function Navbar() {
 
         loadFavoriteCount();
 
-        // Add event listener to update favorites in real-time across tabs
         window.addEventListener('storage', loadFavoriteCount);
 
         return () => {
@@ -170,7 +167,7 @@ export default function Navbar() {
                                     />
                                     {/* Favorites Count Badge */}
                                     {favoriteCount > 0 && (
-                                        <motion.div 
+                                        <motion.div
                                             initial={{ scale: 0 }}
                                             animate={{ scale: 1 }}
                                             className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full min-w-5 h-5 flex items-center justify-center px-1 font-medium"

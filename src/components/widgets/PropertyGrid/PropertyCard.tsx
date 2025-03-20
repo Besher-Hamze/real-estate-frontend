@@ -17,8 +17,8 @@ import {
   EmailIcon
 } from 'react-share';
 import { toast } from "react-toastify";
+import { Clock } from "lucide-react";
 
-// Updated interface with hover and leave callbacks
 interface EnhancedRealEstateCardProps extends RealEstateCardProps {
   onHover?: () => void;
   onLeave?: () => void;
@@ -32,36 +32,49 @@ const RealEstateCard: React.FC<EnhancedRealEstateCardProps> = ({
   onHover,
   onLeave
 }) => {
-  // State to manage favorite status
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
-  // State for share options visibility
   const [showShareOptions, setShowShareOptions] = useState<boolean>(false);
-  // State for carousel
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
-  // Ref to track hover state
   const cardRef = useRef<HTMLDivElement>(null);
-  // Ref to store timer ID for hover image change
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  // State to track if user is hovering over the card
   const [isHovering, setIsHovering] = useState<boolean>(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Create array of all images, starting with coverImage and then adding files
   const images = React.useMemo(() => {
-    // Start with the cover image
     const allImages = [item.coverImage];
-
-    // Add other images from files array if it exists and has items
     if (item.files && Array.isArray(item.files) && item.files.length > 0) {
-      // Append all files to the images array
       allImages.push(...item.files);
     }
-
-    // Return unique images (remove duplicates)
     return [...new Set(allImages)].filter(Boolean);
   }, [item.coverImage, item.files]);
 
-  // Check if property is in favorites on component mount
+  const formatRelativeTime = (createdAt: string | undefined): string => {
+    if (!createdAt) return 'تاريخ غير معروف';
+
+    const now = new Date();
+    const createdDate = new Date(createdAt);
+
+    const timeDiff = now.getTime() - createdDate.getTime();
+
+    const minutesDiff = Math.floor(timeDiff / (1000 * 60));
+    const hoursDiff = Math.floor(timeDiff / (1000 * 60 * 60));
+    const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+    const weeksDiff = Math.floor(daysDiff / 7);
+    const monthsDiff = Math.floor(daysDiff / 30);
+
+    if (minutesDiff < 60) {
+      return minutesDiff <= 1 ? 'منذ دقيقة' : `منذ ${minutesDiff} دقيقة`;
+    } else if (hoursDiff < 24) {
+      return hoursDiff === 1 ? 'منذ ساعة' : `منذ ${hoursDiff} ساعة`;
+    } else if (daysDiff < 7) {
+      return daysDiff === 1 ? 'منذ يوم' : `منذ ${daysDiff} أيام`;
+    } else if (weeksDiff < 4) {
+      return weeksDiff === 1 ? 'منذ أسبوع' : `منذ ${weeksDiff} أسابيع`;
+    } else {
+      return monthsDiff === 1 ? 'منذ شهر' : `منذ ${monthsDiff} أشهر`;
+    }
+  };
+
   useEffect(() => {
     const favorites = localStorage.getItem('favorites');
     if (favorites) {
@@ -70,7 +83,6 @@ const RealEstateCard: React.FC<EnhancedRealEstateCardProps> = ({
     }
   }, [item.id]);
 
-  // Close share options when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (showShareOptions && cardRef.current && !cardRef.current.contains(event.target as Node)) {
@@ -92,20 +104,16 @@ const RealEstateCard: React.FC<EnhancedRealEstateCardProps> = ({
         currentMedia.toLowerCase().endsWith('.avi'));
   }, [currentImageIndex, images]);
 
-  // Effect for image auto-cycling on hover
   useEffect(() => {
     if (isHovering && images.length > 1) {
-      // Start cycling through images when hovering
       timerRef.current = setInterval(() => {
         setCurrentImageIndex(prevIndex => (prevIndex + 1) % images.length);
-      }, 1500); // Change image every 1.5 seconds
+      }, 1500);
     } else if (timerRef.current) {
-      // Clear the timer when not hovering
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
 
-    // Cleanup on unmount
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -124,12 +132,10 @@ const RealEstateCard: React.FC<EnhancedRealEstateCardProps> = ({
     }
   }, [isHovering, isCurrentMediaVideo]);
 
-  // Toggle favorite status
   const toggleFavorite = (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent navigation to property details
+    e.preventDefault();
     e.stopPropagation();
 
-    // Get current favorites from localStorage
     const favorites = localStorage.getItem('favorites');
     let favoritesArray: number[] = [];
 
@@ -137,30 +143,23 @@ const RealEstateCard: React.FC<EnhancedRealEstateCardProps> = ({
       favoritesArray = JSON.parse(favorites);
     }
 
-    // Toggle favorite status
     if (isFavorite) {
-      // Remove from favorites
       favoritesArray = favoritesArray.filter(id => id !== item.id);
     } else {
-      // Add to favorites
       favoritesArray.push(item.id);
     }
 
-    // Update localStorage
     localStorage.setItem('favorites', JSON.stringify(favoritesArray));
 
-    // Update state
     setIsFavorite(!isFavorite);
   };
 
-  // Toggle share options visibility
   const shareProperty = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setShowShareOptions(!showShareOptions);
   };
 
-  // Copy link to clipboard
   const copyLink = () => {
     const shareUrl = `${process.env.NEXT_PUBLIC_FRONTEND}/properties/${item.id}`;
 
@@ -179,7 +178,6 @@ const RealEstateCard: React.FC<EnhancedRealEstateCardProps> = ({
     setShowShareOptions(false);
   };
 
-  // وظيفة مساعدة لنسخ النص بالطريقة البديلة
   const fallbackCopyText = (text: string, buttonElement: Element) => {
     try {
       const tempInput = document.createElement('input');
@@ -191,15 +189,12 @@ const RealEstateCard: React.FC<EnhancedRealEstateCardProps> = ({
       document.execCommand('copy');
       document.body.removeChild(tempInput);
 
-      // إظهار رسالة نجاح النسخ
       const tooltip = document.createElement('div');
       tooltip.textContent = 'تم نسخ الرابط!';
       tooltip.className = 'absolute -top-10 left-1/2 -translate-x-1/2 bg-black text-white px-3 py-1 rounded-lg text-sm z-50';
 
-      // إضافة الرسالة إلى الزر
       buttonElement.appendChild(tooltip);
 
-      // إزالة الرسالة بعد ثانيتين
       setTimeout(() => {
         tooltip.remove();
       }, 2000);
@@ -208,7 +203,6 @@ const RealEstateCard: React.FC<EnhancedRealEstateCardProps> = ({
     }
   };
 
-  // Carousel navigation
   const goToNextImage = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -225,14 +219,12 @@ const RealEstateCard: React.FC<EnhancedRealEstateCardProps> = ({
     );
   };
 
-  // Handle direct dot navigation
   const goToImage = (index: number, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setCurrentImageIndex(index);
   };
 
-  // Handle mouse enter with callback for map interaction
   const handleMouseEnter = useCallback(() => {
     setIsHovering(true);
     if (onHover) {
@@ -426,21 +418,30 @@ const RealEstateCard: React.FC<EnhancedRealEstateCardProps> = ({
             {item.cityName} - {item.neighborhoodName}
           </span>
         </div>
+        <div className="flex items-center gap-2 text-gray-500 mb-4 text-sm">
+          <Clock className="w-4 h-4" />
+          <span>{formatRelativeTime(item.createdAt)}</span>
+        </div>
+
         <div className="flex justify-between items-center bg-gray-50 p-4 rounded-lg mb-4">
           {(item.subCategoryName !== "أرض" && item.finalTypeName !== "أرض") && (
             <>
-              <div className="flex items-center gap-1">
+              {item.bedrooms && <div className="flex items-center gap-1">
                 <BedDouble className="w-4 h-4 text-blue-600" />
                 <span className="text-sm text-black font-medium">
                   {item.bedrooms}
                 </span>
               </div>
-              <div className="flex items-center gap-1">
-                <Bath className="w-4 h-4 text-blue-600" />
-                <span className="text-sm text-black font-medium">
-                  {item.bathrooms}
-                </span>
-              </div>
+              }
+              {
+                item.bathrooms && <div className="flex items-center gap-1">
+                  <Bath className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm text-black font-medium">
+                    {item.bathrooms}
+                  </span>
+                </div>
+
+              }
             </>
           )}
           <div className="flex items-center gap-1">
