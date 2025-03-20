@@ -61,11 +61,11 @@ const RealEstateListItem: React.FC<RealEstateListItemProps> = ({
       className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 relative"
       onMouseEnter={() => {
         setIsHovered(true);
-        onHover && onHover();
+        // onHover && onHover();
       }}
       onMouseLeave={() => {
         setIsHovered(false);
-        onLeave && onLeave();
+        // onLeave && onLeave();
       }}
     >
       <div className="flex justify-between items-start mb-4">
