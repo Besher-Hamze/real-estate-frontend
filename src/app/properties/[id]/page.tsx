@@ -312,7 +312,7 @@ export default function PropertyDetails() {
                 <div className="bg-white rounded-2xl p-8 shadow-lg">
                     <h2 className="text-2xl font-bold mb-6">تفاصيل إضافية</h2>
                     <div className="grid grid-cols-2 gap-6">
-                        {property.facade && <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                        {property.facade != undefined && <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                             <span className="text-gray-600">الواجهة</span>
                             <span className="font-semibold">{property.facade}</span>
                         </div>}
@@ -320,12 +320,12 @@ export default function PropertyDetails() {
                             <span className="text-gray-600">رقم الطابق</span>
                             <span className="font-semibold">{FLOOR_OPTIONS.find(f => Number(f.value) == property.floorNumber)?.label}</span>
                         </div>}
-                        {property.buildingAge && <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                        {property.buildingAge != undefined && <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                             <span className="text-gray-600">عمر البناء</span>
                             <span className="font-semibold">{BUILDING_AGE_OPTION.find((b) => b.value === property.buildingAge)?.label}</span>
                         </div>}
 
-                        {property.furnished && <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                        {property.furnished != undefined && <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                             <span className="text-gray-600">مفروش</span>
                             <span className="font-semibold">{FURNISHED_OPTIONS.find(f => f.value.toString() == property.furnished)?.label}</span>
                         </div>}
@@ -334,7 +334,7 @@ export default function PropertyDetails() {
                             <span className="font-semibold">{getRentalText(property.rentalDuration)}</span>
                         </div>
                         }
-                        {property.paymentMethod && <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                        {property.paymentMethod != undefined && <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                             <span className="text-gray-600">طرق الدفع </span>
                             <div className="flex gap-2">
                                 {property.paymentMethod.split(',').map((p, index) => (
@@ -369,7 +369,9 @@ export default function PropertyDetails() {
                 <PropertyActionButtons
                     onReservationClick={openReservationModal}
                     onFeedbackClick={openFeedbackModal}
-                />
+                    propertyId={property.id}
+                    propertyTitle={property.title}
+                    propertyLocation={property.location} />
                 {/* Similar Properties Section */}
                 {similarProperties.length > 0 && (
                     <div className="p-8 mt-8">

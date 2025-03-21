@@ -24,6 +24,11 @@ export const filterRealEstateData = (
       return false;
     }
 
+    
+    if (parseFloat(item.buildingArea) < parseFloat(filters.minArea) || parseFloat(item.buildingArea) > parseFloat(filters.maxArea)) {
+      return false;
+    }
+
     if (filters.bedrooms) {
       if (filters.bedrooms === "-1") {
         if (item.bedrooms <= 8) {
@@ -35,23 +40,23 @@ export const filterRealEstateData = (
     }
 
 
-    if (filters.propertySize) {
-      const area = parseFloat(item.buildingArea);
-      switch (filters.propertySize) {
-        case "small":
-          if (area >= 100) return false;
-          break;
-        case "medium":
-          if (area < 100 || area >= 200) return false;
-          break;
-        case "large":
-          if (area < 200 || area >= 300) return false;
-          break;
-        case "xlarge":
-          if (area < 300) return false;
-          break;
-      }
-    }
+    // if (filters.propertySize) {
+    //   const area = parseFloat(item.buildingArea);
+    //   switch (filters.propertySize) {
+    //     case "small":
+    //       if (area >= 100) return false;
+    //       break;
+    //     case "medium":
+    //       if (area < 100 || area >= 200) return false;
+    //       break;
+    //     case "large":
+    //       if (area < 200 || area >= 300) return false;
+    //       break;
+    //     case "xlarge":
+    //       if (area < 300) return false;
+    //       break;
+    //   }
+    // }
 
     if (filters.bathrooms) {
       if (filters.bathrooms === "-1") {
@@ -168,7 +173,9 @@ export const initialFilterState: Filters = {
   rentalPeriod: "",
   view: "",
   buildingArea: "",
-  finalCity: ""
+  finalCity: "",
+  maxArea: "",
+  minArea: ""
 };
 
 // خيار الترتيب الافتراضي

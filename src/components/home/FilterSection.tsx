@@ -34,6 +34,7 @@ import { SelectField } from './SelectField';
 import { finalCityApi } from '@/api/finalCityApi';
 import { FLOOR_OPTIONS, FURNISHED_OPTIONS, RENTAL_DURATION_OPTIONS, VIEW_OPTIONS } from '../ui/constants/formOptions';
 import { RealEstateApi } from '@/api/realEstateApi';
+import { AreaRangeDropdown, PriceRangeDropdown } from '../ui/form/RangeDropdown';
 
 // Default filter values
 const defaultFilters: Filters = {
@@ -49,6 +50,8 @@ const defaultFilters: Filters = {
   floor: '',
   view: '',
   buildingArea: "",
+  maxArea: "",
+  minArea: ""
 };
 interface BackendFilterConfig {
   finalTypeId?: boolean;
@@ -104,6 +107,40 @@ const FilterSection = ({
     buildingArea: true,
     price: true
   });
+  const [minAreaInput, setMinAreaInput] = useState('');
+  const [maxAreaInput, setMaxAreaInput] = useState('');
+  const [minPriceInput, setMinPriceInput] = useState(priceRange[0].toString());
+  const [maxPriceInput, setMaxPriceInput] = useState(priceRange[1].toString());
+  const handleAreaMinChange = (value: string) => {
+    setMinAreaInput(value);
+    const areaValue = value.trim() === '' ? '' : value;
+    setFilters({ ...filters, minArea: areaValue });
+  };
+
+  const handleAreaMaxChange = (value: string) => {
+    setMaxAreaInput(value);
+    const areaValue = value.trim() === '' ? '' : value;
+    setFilters({ ...filters, maxArea: areaValue });
+  };
+
+  // Update your price handler:
+  const handlePriceMinChange = (value: string) => {
+    const cleanValue = value.replace(/,/g, '');
+    setMinPriceInput(cleanValue);
+    const numericValue = cleanValue === '' ? 0 : parseInt(cleanValue);
+    if (!isNaN(numericValue)) {
+      setPriceRange([numericValue, priceRange[1]]);
+    }
+  };
+
+  const handlePriceMaxChange = (value: string) => {
+    const cleanValue = value.replace(/,/g, '');
+    setMaxPriceInput(cleanValue);
+    const numericValue = cleanValue === '' ? 1000000 : parseInt(cleanValue);
+    if (!isNaN(numericValue)) {
+      setPriceRange([priceRange[0], numericValue]);
+    }
+  };
 
   useEffect(() => {
     const fetchFilterConfiguration = async () => {
@@ -186,10 +223,16 @@ const FilterSection = ({
 
   // Reset filters to default
   const resetFilters = () => {
-    setFilters(defaultFilters);
+    setFilters({
+      ...defaultFilters,
+      minArea: '',
+      maxArea: ''
+    });
     setPriceRange([0, 1000000]);
-    setMinInput("0");
-    setMaxInput("1000000");
+    setMinPriceInput("");
+    setMaxPriceInput("");
+    setMinAreaInput("");
+    setMaxAreaInput("");
 
     if (setSelectedMainTypeId) {
       setSelectedMainTypeId(null);
@@ -198,6 +241,7 @@ const FilterSection = ({
       setSelectedSubTypeId(null);
     }
   };
+
 
   // Check for any active filters
   const hasActiveFilters =
@@ -308,6 +352,27 @@ const FilterSection = ({
               />
             )}
 
+            {filters.minArea && (
+              <FilterChip
+                label={`المساحة من: ${filters.minArea} متر مربع`}
+                onRemove={() => {
+                  setFilters({ ...filters, minArea: '' });
+                  setMinAreaInput('');
+                }}
+              />
+            )}
+
+            {filters.maxArea && (
+              <FilterChip
+                label={`المساحة إلى: ${filters.maxArea} متر مربع`}
+                onRemove={() => {
+                  setFilters({ ...filters, maxArea: '' });
+                  setMaxAreaInput('');
+                }}
+              />
+            )}
+
+
             {filters.propertySize && (
               <FilterChip
                 label={getPropertySizeLabel(filters.propertySize as PropertySize)}
@@ -384,7 +449,7 @@ const FilterSection = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg my-8 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-lg my-8 ">
       <div
         className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 border-b border-blue-100 cursor-pointer hover:bg-blue-100 transition-colors"
         onClick={() => setIsExpanded(!isExpanded)}
@@ -495,20 +560,15 @@ const FilterSection = ({
 
             {/* Render Property Size filter if buildingArea is enabled */}
             {backendFilterConfig.buildingArea && (
-              <SelectField
-                label="المساحة"
-                icon={Building}
-                value={filters.propertySize}
-                onChange={(e) => setFilters({ ...filters, propertySize: e.target.value })}
-                options={[
-                  { value: '', label: 'الكل' },
-                  { value: 'small', label: 'أقل من 100 متر مربع' },
-                  { value: 'medium', label: '100 - 199 متر مربع' },
-                  { value: 'large', label: '200 - 299 متر مربع' },
-                  { value: 'xlarge', label: '300 متر مربع فأكثر' }
-                ]}
+              <AreaRangeDropdown
+                minArea={minAreaInput}
+                maxArea={maxAreaInput}
+                onMinAreaChange={handleAreaMinChange}
+                onMaxAreaChange={handleAreaMaxChange}
               />
             )}
+
+
 
             {/* Render Rental Duration only if allowed (it is false in our config) */}
             {isRental && backendFilterConfig.rentalDuration && (
@@ -565,10 +625,18 @@ const FilterSection = ({
                 ]}
               />
             )}
+            {backendFilterConfig.price && (
+              <PriceRangeDropdown
+                minPrice={minPriceInput}
+                maxPrice={maxPriceInput}
+                onMinPriceChange={handlePriceMinChange}
+                onMaxPriceChange={handlePriceMaxChange}
+              />
+            )}
           </div>
 
           {/* Price Range filter */}
-          {backendFilterConfig.price && (
+          {/* {backendFilterConfig.price && (
             <div className="mt-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <div className="flex items-center gap-2">
@@ -611,7 +679,10 @@ const FilterSection = ({
                 </div>
               </div>
             </div>
-          )}
+          )} */}
+
+
+
         </div>
       </div>
     </div>

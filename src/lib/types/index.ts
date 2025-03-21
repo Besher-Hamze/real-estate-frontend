@@ -185,6 +185,8 @@ export interface Filters {
   floor: string;
   view: string;
   buildingArea: string;
+  minArea: string;
+  maxArea: string;
 }
 
 export type SortField = 'price' | 'createdAt' | 'buildingArea' | 'bedrooms';
