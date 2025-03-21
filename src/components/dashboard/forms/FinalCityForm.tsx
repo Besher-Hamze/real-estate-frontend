@@ -8,7 +8,7 @@ import { finalCityQuery } from "@/lib/constants/queryNames";
 import { FormField } from "@/components/ui/form/FormField";
 import LocationPicker from "@/components/map/LocationPicker";
 import { useFinalCities } from "@/lib/hooks/useFinalCity";
-import { Loader2 } from "lucide-react";
+import { Loader2, MapPin } from "lucide-react";
 
 export default function FinalCityForm() {
     const { neighborhoods } = useNeighborhood();
@@ -20,7 +20,20 @@ export default function FinalCityForm() {
         neighborhoodId: 0,
         location: ""
     });
+    
+    // State for manual coordinate entry
+    const [latitude, setLatitude] = useState<string>("");
+    const [longitude, setLongitude] = useState<string>("");
     const [errors, setErrors] = useState<Record<string, string>>({});
+
+    // Update manual coordinate inputs when location changes from map
+    useEffect(() => {
+        if (formData.location) {
+            const [lat, lng] = formData.location.split(",");
+            setLatitude(lat);
+            setLongitude(lng);
+        }
+    }, [formData.location]);
 
     const handleFormChange = (field: string, value: any) => {
         if (field === "location" && typeof value === "object") {
@@ -43,6 +56,35 @@ export default function FinalCityForm() {
                 delete newErrors[field];
                 return newErrors;
             });
+        }
+    };
+
+    // Function to update location from manual latitude/longitude inputs
+    const updateLocationFromCoordinates = () => {
+        if (!latitude || !longitude) {
+            toast.error("يرجى إدخال قيم صحيحة للإحداثيات");
+            return;
+        }
+
+        try {
+            const lat = parseFloat(latitude);
+            const lng = parseFloat(longitude);
+            
+            // Basic validation for coordinate ranges
+            if (lat < -90 || lat > 90) {
+                setErrors(prev => ({ ...prev, latitude: "قيمة خط العرض يجب أن تكون بين -90 و 90" }));
+                return;
+            }
+            
+            if (lng < -180 || lng > 180) {
+                setErrors(prev => ({ ...prev, longitude: "قيمة خط الطول يجب أن تكون بين -180 و 180" }));
+                return;
+            }
+            
+            handleFormChange("location", { latitude: lat, longitude: lng });
+            toast.success("تم تحديث الموقع");
+        } catch (error) {
+            toast.error("حدث خطأ في تحديث الموقع");
         }
     };
 
@@ -84,6 +126,8 @@ export default function FinalCityForm() {
                 neighborhoodId: 0,
                 location: ""
             });
+            setLatitude("");
+            setLongitude("");
         } catch (error) {
             toast.error("فشل في إضافة المنطقة");
             console.error(error);
@@ -130,11 +174,55 @@ export default function FinalCityForm() {
                     />
                 </FormField>
                 
+                {/* Coordinate input fields */}
+                <div className="grid grid-cols-2 gap-4">
+                    <FormField 
+                        label="خط العرض (Latitude)" 
+                        error={errors.latitude}
+                    >
+                        <input
+                            type="text"
+                            className="w-full p-3 border border-gray-300 rounded-lg"
+                            placeholder="مثال: 23.5880"
+                            value={latitude}
+                            onChange={(e) => setLatitude(e.target.value)}
+                            disabled={isLoading}
+                        />
+                    </FormField>
+                    
+                    <FormField 
+                        label="خط الطول (Longitude)" 
+                        error={errors.longitude}
+                    >
+                        <input
+                            type="text"
+                            className="w-full p-3 border border-gray-300 rounded-lg"
+                            placeholder="مثال: 58.4059"
+                            value={longitude}
+                            onChange={(e) => setLongitude(e.target.value)}
+                            disabled={isLoading}
+                        />
+                    </FormField>
+                </div>
+                
+                <div className="flex justify-end">
+                    <button
+                        type="button"
+                        className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors"
+                        onClick={updateLocationFromCoordinates}
+                        disabled={isLoading}
+                    >
+                        <MapPin className="w-4 h-4" />
+                        تحديث الموقع على الخريطة
+                    </button>
+                </div>
+                
                 <FormField 
                     label="تحديد الموقع على الخريطة" 
                     error={errors.location}
                 >
                     <LocationPicker
+                        key={`map-${latitude}-${longitude}`}
                         initialLatitude={
                             formData.location
                                 ? parseFloat(formData.location.split(",")[0])
