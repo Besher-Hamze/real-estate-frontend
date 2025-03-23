@@ -244,7 +244,41 @@ export default function PropertyDetails() {
                         )}
                     </div>
                 </div>}
+                {/* Facade */}
+                {property.facade && <div className="bg-white rounded-3xl p-8 shadow-xl mb-8 hover:shadow-2xl transition-all duration-300">
+                    <h2 className="text-3xl font-bold mb-8 flex items-center gap-4 text-gray-800">
+                        <Home className="w-8 h-8 text-blue-500" />
+                        <span className="text-xl text-black0">
+                            الإطلالات المتوفرة
+                        </span>
+                    </h2>
 
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
+                        {property.facade?.split("،") && property.facade.split("،").length > 0 ? (
+                            property.facade.split("،").map((feature: string, index: number) => (
+                                <div
+                                    key={index}
+                                    className="group relative flex items-center gap-4 p-5 
+               bg-gradient-to-br from-blue-50 to-white 
+               rounded-xl shadow-sm hover:shadow-md transition-all duration-300 
+               hover:translate-y-[-2px] border border-blue-100/50"
+                                >
+                                    <span className="text-base font-medium text-gray-700 group-hover:text-blue-600 
+                   transition-colors duration-300"
+                                    >
+                                        {feature}
+                                    </span>
+                                </div>
+                            ))
+
+                        ) : (
+                            <div className="col-span-full flex items-center justify-center p-8 
+              bg-gray-50 rounded-xl border border-gray-100">
+                                <p className="text-gray-500 text-lg">لا توجد إطلالات متوفرة لهذا العقار.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>}
                 {property.viewTime && property.viewTime.trim() !== '' && (
                     <div className="bg-white rounded-3xl p-8 shadow-xl my-8">
                         <h2 className="text-3xl font-bold mb-8 flex items-center gap-4 text-gray-800">
@@ -312,10 +346,6 @@ export default function PropertyDetails() {
                 <div className="bg-white rounded-2xl p-8 shadow-lg">
                     <h2 className="text-2xl font-bold mb-6">تفاصيل إضافية</h2>
                     <div className="grid grid-cols-2 gap-6">
-                        {property.facade != undefined && <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                            <span className="text-gray-600">الواجهة</span>
-                            <span className="font-semibold">{property.facade}</span>
-                        </div>}
                         {property.floorNumber != undefined && <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                             <span className="text-gray-600">رقم الطابق</span>
                             <span className="font-semibold">{FLOOR_OPTIONS.find(f => Number(f.value) == property.floorNumber)?.label}</span>

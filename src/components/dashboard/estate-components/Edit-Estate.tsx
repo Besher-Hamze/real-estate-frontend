@@ -14,6 +14,7 @@ import axios from "axios";
 import { useQueryClient } from "@tanstack/react-query";
 import { estateQuery } from "@/lib/constants/queryNames";
 import { RealEstateApi } from "@/api/realEstateApi";
+import ViewingTimeSelector from "@/components/forms/ViewingTimeSelector";
 
 interface EditEstateFormProps {
     editingEstate: any;
@@ -715,11 +716,10 @@ export const EditEstateForm: React.FC<EditEstateFormProps> = ({
             {filterConfig.viewTime && (
                 <div ref={errorFieldRefs.viewTime}>
                     <FormField label="وقت المشاهدة">
-                        <InputField
-                            type="textArea"
-                            value={editingEstate.viewTime || ''}
-                            onChange={(value) => handleChange("viewTime", value)}
-                            placeholder="أدخل وقت المشاهدة (مثال: من الساعة 9 صباحًا إلى 5 مساءً)"
+                        <ViewingTimeSelector
+                            value={editingEstate.viewTime}
+                            onChange={(value) => handleChange('viewTime', value)}
+                            label="وقت المشاهدة"
                         />
                     </FormField>
                 </div>
@@ -983,11 +983,15 @@ export const EditEstateForm: React.FC<EditEstateFormProps> = ({
             {filterConfig.facade && (
                 <div ref={errorFieldRefs.facade}>
                     <FormField label="الإطلالة">
-                        <SelectField
-                            value={editingEstate.facade}
-                            onChange={(value) => handleChange('facade', value)}
-                            options={VIEW_OPTIONS}
+                        <FeaturesSelect
+                            features={VIEW_OPTIONS.map(f => f.value)}
+                            selectedFeatures={editingEstate.facade?.split("، ").filter(Boolean) || []}
+                            onChange={(features) => handleChange("facade", features.join("، "))}
                             placeholder="اختر الإطلالة"
+                            selectionText={{
+                                single: "إطلالة",
+                                multiple: "إطلالات",
+                            }}
                         />
                     </FormField>
                 </div>

@@ -20,6 +20,7 @@ import LocationPicker from "@/components/map/LocationPicker";
 import ImageUploadModal from "./EnhancedImageUpload";
 import { RealEstateApi } from "@/api/realEstateApi";
 import { useQueryClient } from "@tanstack/react-query";
+import ViewingTimeSelector from "@/components/forms/ViewingTimeSelector";
 
 interface EstateFormProps {
   buildingId?: string;
@@ -170,22 +171,22 @@ export default function EstateForm({ buildingId, onSuccess }: EstateFormProps) {
   useEffect(() => {
     if (formData.finalCityId) {
       const selectedFinalCity = finalCities.find(c => c.id === formData.finalCityId);
-      
+
       if (selectedFinalCity && selectedFinalCity.location) {
         const [lat, lng] = selectedFinalCity.location.split(",");
-        
+
         if (lat && lng) {
           // Important: First clear the current location so the map doesn't try to use both values
           handleChange("location", ""); // Reset location
-          
+
           // Then in the next render cycle, set the new location
           setTimeout(() => {
-            handleFormChange("location", { 
-              latitude: parseFloat(lat), 
-              longitude: parseFloat(lng) 
+            handleFormChange("location", {
+              latitude: parseFloat(lat),
+              longitude: parseFloat(lng)
             });
           }, 0);
-          
+
           console.log("Updated location based on selected finalCity:", {
             finalCityId: formData.finalCityId,
             location: selectedFinalCity.location
@@ -194,7 +195,7 @@ export default function EstateForm({ buildingId, onSuccess }: EstateFormProps) {
       }
     }
   }, [formData.finalCityId]);
-  
+
   const handleFormChange = (field: string, value: any) => {
     if (field === "location") {
       const locationString = `${value.latitude},${value.longitude}`;
@@ -396,13 +397,13 @@ export default function EstateForm({ buildingId, onSuccess }: EstateFormProps) {
         {filterConfig.viewTime && (
           <div ref={errorFieldRefs.viewTime}>
             <FormField label="وقت المشاهدة">
-              <InputField
-                type="textArea"
-                value={formData.viewTime || ''}
-                onChange={(value) => handleChange("viewTime", value)}
-                placeholder="أدخل وقت المشاهدة (مثال: من الساعة 9 صباحًا إلى 5 مساءً)"
-                error={!!errors.viewTime}
+              <ViewingTimeSelector
+                value={formData.viewTime}
+                onChange={(value) => handleChange('viewTime', value)}
+                error={errors.viewTime}
+                label="وقت المشاهدة"
               />
+
             </FormField>
           </div>
         )}
@@ -692,15 +693,23 @@ export default function EstateForm({ buildingId, onSuccess }: EstateFormProps) {
             )}
 
             {filterConfig.facade && (
+
               <div ref={errorFieldRefs.facade}>
                 <FormField label="الإطلالة" error={errors.facade}>
-                  <SelectField
-                    value={formData.facade}
-                    onChange={(value) => handleFormChange("facade", value)}
-                    options={VIEW_OPTIONS}
+                  <FeaturesSelect
+                    features={VIEW_OPTIONS.map(value => value.value)}
+                    selectedFeatures={formData.facade.split("، ").filter(Boolean)}
+                    onChange={(features) => handleFormChange("facade", features.join("، "))}
                     placeholder="اختر الإطلالة"
+                    selectionText={{
+                      single: "إطلالة",
+                      multiple: "إطلالات",
+                    }}
                     error={!!errors.facade}
+                    errorMessage={errors.facade}
+                    minCount={1}
                   />
+
                 </FormField>
               </div>
             )}
