@@ -574,14 +574,10 @@ export default function EstateForm({ buildingId, onSuccess }: EstateFormProps) {
               <LocationPicker
                 key={formData.finalCityId || 'default'} // Add this key to force remount
                 initialLatitude={
-                  formData.location
-                    ? parseFloat(formData.location.split(",")[0])
-                    : parseFloat(finalCities.find(c => c.id === formData.finalCityId)?.location?.split(",")[0] ?? "0")
+                  parseFloat(finalCities.find(c => c.id === formData.finalCityId)?.location?.split(",")[0] ?? "0")
                 }
                 initialLongitude={
-                  formData.location
-                    ? parseFloat(formData.location.split(",")[1])
-                    : parseFloat(finalCities.find(c => c.id === formData.finalCityId)?.location?.split(",")[1] ?? "0")
+                     parseFloat(finalCities.find(c => c.id === formData.finalCityId)?.location?.split(",")[1] ?? "0")
                 }
                 onLocationSelect={(latitude, longitude) => {
                   handleFormChange("location", { latitude, longitude });

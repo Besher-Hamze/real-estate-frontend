@@ -38,6 +38,7 @@ export const RealEstateApi = {
                 subCategoryName,
                 finalTypeName,
                 finalCityName,
+                createdAt,
                 ...cleanedEstate
             } = estate;
 

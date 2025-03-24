@@ -241,6 +241,21 @@ export const EditEstateForm: React.FC<EditEstateFormProps> = ({
             setEditingEstate((prev: any) => ({ ...prev, [field]: locationString }));
             return;
         }
+        if (field === 'finalCityId') {
+            setEditingEstate((prev: any) => ({ ...prev, [field]: value }));
+
+            const selectedFinalCity = finalCities.find(c => c.id === value);
+
+            if (selectedFinalCity && selectedFinalCity.location) {
+                const [lat, lng] = selectedFinalCity.location.split(",");
+
+                if (lat && lng) {
+                    const locationString = `${lat},${lng}`;
+                    setEditingEstate((prev: any) => ({ ...prev, ["location"]: locationString }))
+                }
+            }
+            return;
+        }
         if ((field === "bedrooms" || field === "bathrooms" || field === "totalFloors")) {
             const numValue = Number(value);
             if (field === "totalFloors") {
@@ -255,30 +270,30 @@ export const EditEstateForm: React.FC<EditEstateFormProps> = ({
         setEditingEstate((prev: any) => ({ ...prev, [field]: value }));
     };
 
-    useEffect(() => {
-        // When finalCityId changes, update the location
-        if (editingEstate.finalCityId) {
-            const selectedFinalCity = finalCities.find(c => c.id === editingEstate.finalCityId);
+    // useEffect(() => {
+    //     // When finalCityId changes, update the location
+    //     if (editingEstate.finalCityId) {
+    //         const selectedFinalCity = finalCities.find(c => c.id === editingEstate.finalCityId);
 
-            if (selectedFinalCity && selectedFinalCity.location) {
-                // Only update if we don't already have a location or if we're explicitly changing areas
-                const [lat, lng] = selectedFinalCity.location.split(",");
+    //         if (selectedFinalCity && selectedFinalCity.location) {
+    //             // Only update if we don't already have a location or if we're explicitly changing areas
+    //             const [lat, lng] = selectedFinalCity.location.split(",");
 
-                if (lat && lng) {
-                    // Update the location in the form
-                    handleChange("location", {
-                        latitude: parseFloat(lat),
-                        longitude: parseFloat(lng)
-                    });
+    //             if (lat && lng) {
+    //                 // Update the location in the form
+    //                 handleChange("location", {
+    //                     latitude: parseFloat(lat),
+    //                     longitude: parseFloat(lng)
+    //                 });
 
-                    console.log("Updated location based on selected finalCity:", {
-                        finalCityId: editingEstate.finalCityId,
-                        location: selectedFinalCity.location
-                    });
-                }
-            }
-        }
-    }, [editingEstate.finalCityId]);
+    //                 console.log("Updated location based on selected finalCity:", {
+    //                     finalCityId: editingEstate.finalCityId,
+    //                     location: selectedFinalCity.location
+    //                 });
+    //             }
+    //         }
+    //     }
+    // }, [editingEstate.finalCityId]);
 
     // Function to upload file to API with progress tracking
     const uploadFileToAPI = async (file: File, index: number = -1): Promise<string> => {
@@ -602,7 +617,6 @@ export const EditEstateForm: React.FC<EditEstateFormProps> = ({
                 );
             }
 
-            // First submit the updated estate data
             const success = await onSubmit(estateToSubmit);
 
             if (filesToDelete.length > 0) {
@@ -867,16 +881,12 @@ export const EditEstateForm: React.FC<EditEstateFormProps> = ({
                 <div ref={errorFieldRefs.location}>
                     <FormField label="تحديد الموقع على الخريطة">
                         <LocationPicker
-                            key={`location-${editingEstate.finalCityId || 'default'}`} // Add key prop to force remount
+                            key={`location-${editingEstate.finalCityId || 'default'}`}
                             initialLatitude={
-                                editingEstate.location
-                                    ? parseFloat(editingEstate.location.split(',')[0])
-                                    : parseFloat(finalCities.find(c => c.id === editingEstate.finalCityId)?.location?.split(",")[0] ?? "0")
+                                parseFloat(editingEstate.location.split(',')[0])
                             }
                             initialLongitude={
-                                editingEstate.location
-                                    ? parseFloat(editingEstate.location.split(',')[1])
-                                    : parseFloat(finalCities.find(c => c.id === editingEstate.finalCityId)?.location?.split(",")[1] ?? "0")
+                                parseFloat(editingEstate.location.split(',')[1])
                             }
                             onLocationSelect={(latitude, longitude) => {
                                 handleChange('location', { latitude, longitude });
