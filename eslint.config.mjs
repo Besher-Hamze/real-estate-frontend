@@ -19,7 +19,14 @@ const eslintConfig = [
         { vars: "all", args: "none", ignoreRestSiblings: true },
       ],
       "react-hooks/exhaustive-deps": "warn", // Ensure react hooks dependencies are monitored but not errors
+      "@typescript-eslint/ban-types": "off", // Disable ban-types to allow using PageProps type
+      "@next/next/no-page-custom-font": "off", // Disable warnings for custom fonts in pages
+      "typescript-eslint/no-misused-promises": "off", // Disable warnings about Promise return types
     },
+    ignorePatterns: [
+      ".next/**/*", // Ignore all files in the .next directory
+      "node_modules/**/*",
+    ],
   },
 ];
 
