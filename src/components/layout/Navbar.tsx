@@ -2,7 +2,7 @@
 "use client";
 import React, { useState } from 'react';
 import Link from 'next/link';
-import Button from '../ui/Button';
+import Button from '../ui/button';
 import { IoMenu, IoClose } from 'react-icons/io5';
 
 const Navbar = () => {

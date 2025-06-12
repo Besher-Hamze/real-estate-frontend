@@ -1,10 +1,253 @@
-import { RealEstateData } from "@/lib/types";
-import axios from "axios";
+import { RealEstateData, CreateRealEstateData, RealEstateFilters } from "@/lib/types";
 import apiClient from ".";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-
 export const RealEstateApi = {
+    /**
+     * جلب جميع العقارات
+     */
+    fetchAll: async (filters?: Partial<RealEstateFilters>): Promise<RealEstateData[]> => {
+        try {
+            const params = new URLSearchParams();
+            if (filters) {
+                Object.entries(filters).forEach(([key, value]) => {
+                    if (value && value !== '') {
+                        params.append(key, value);
+                    }
+                });
+            }
+
+            const response = await apiClient.get<RealEstateData[]>(`/api/real-estate?${params.toString()}`);
+            return response.data;
+        } catch (error) {
+            console.error("Failed to fetch real estate data:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * جلب عقار واحد بالتفصيل
+     */
+    fetchById: async (id: number): Promise<RealEstateData> => {
+        try {
+            const response = await apiClient.get<RealEstateData>(`/api/real-estate/${id}`);
+            return response.data;
+        } catch (error) {
+            console.error("Failed to fetch real estate by ID:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * إنشاء عقار جديد مع الخصائص الديناميكية
+     */
+    create: async (data: CreateRealEstateData): Promise<RealEstateData> => {
+        try {
+            const formData = new FormData();
+
+            // إضافة البيانات الأساسية
+            formData.append('title', data.title);
+            formData.append('description', data.description);
+            formData.append('price', data.price.toString());
+            formData.append('mainCategoryId', data.mainCategoryId.toString());
+            formData.append('subCategoryId', data.subCategoryId.toString());
+            formData.append('finalTypeId', data.finalTypeId.toString());
+            formData.append('cityId', data.cityId.toString());
+            formData.append('neighborhoodId', data.neighborhoodId.toString());
+            formData.append('finalCityId', data.finalCityId.toString());
+            formData.append('location', data.location);
+            formData.append('viewTime', data.viewTime);
+
+            if (data.buildingItemId) {
+                formData.append('buildingItemId', data.buildingItemId);
+            }
+
+            // إضافة الخصائص الديناميكية
+            formData.append('dynamicProperties', JSON.stringify(data.dynamicProperties));
+
+            // إضافة الملفات
+            if (data.coverImage) {
+                formData.append('coverImage', data.coverImage);
+            }
+
+            data.files.forEach((file, index) => {
+                formData.append(`files`, file);
+            });
+
+            const response = await apiClient.post<RealEstateData>('/api/realestate', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            return response.data;
+        } catch (error) {
+            console.error("Failed to create real estate:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * تحديث عقار موجود
+     */
+    update: async (id: number, data: Partial<CreateRealEstateData>): Promise<RealEstateData> => {
+        try {
+            const formData = new FormData();
+
+            // إضافة البيانات الأساسية
+            if (data.title) formData.append('title', data.title);
+            if (data.description) formData.append('description', data.description);
+            if (data.price) formData.append('price', data.price.toString());
+            if (data.mainCategoryId) formData.append('mainCategoryId', data.mainCategoryId.toString());
+            if (data.subCategoryId) formData.append('subCategoryId', data.subCategoryId.toString());
+            if (data.finalTypeId) formData.append('finalTypeId', data.finalTypeId.toString());
+            if (data.cityId) formData.append('cityId', data.cityId.toString());
+            if (data.neighborhoodId) formData.append('neighborhoodId', data.neighborhoodId.toString());
+            if (data.finalCityId) formData.append('finalCityId', data.finalCityId.toString());
+            if (data.location) formData.append('location', data.location);
+            if (data.viewTime) formData.append('viewTime', data.viewTime);
+            if (data.buildingItemId) formData.append('buildingItemId', data.buildingItemId);
+
+            // إضافة الخصائص الديناميكية
+            if (data.dynamicProperties) {
+                formData.append('dynamicProperties', JSON.stringify(data.dynamicProperties));
+            }
+
+            // إضافة الملفات الجديدة
+            if (data.coverImage) {
+                formData.append('coverImage', data.coverImage);
+            }
+
+            if (data.files) {
+                data.files.forEach((file) => {
+                    formData.append(`files`, file);
+                });
+            }
+
+            const response = await apiClient.put<RealEstateData>(`/api/real-estate/${id}`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            return response.data;
+        } catch (error) {
+            console.error("Failed to update real estate:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * حذف عقار
+     */
+    delete: async (id: number): Promise<void> => {
+        try {
+            await apiClient.delete(`/api/real-estate/${id}`);
+        } catch (error) {
+            console.error("Failed to delete real estate:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * البحث في العقارات
+     */
+    search: async (query: string, filters?: Partial<RealEstateFilters>): Promise<RealEstateData[]> => {
+        try {
+            const params = new URLSearchParams();
+            params.append('q', query);
+
+            if (filters) {
+                Object.entries(filters).forEach(([key, value]) => {
+                    if (value && value !== '') {
+                        params.append(key, value);
+                    }
+                });
+            }
+
+            const response = await apiClient.get<RealEstateData[]>(`/api/real-estate/search?${params.toString()}`);
+            return response.data;
+        } catch (error) {
+            console.error("Failed to search real estate:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * جلب العقارات المفضلة
+     */
+    fetchFavorites: async (): Promise<RealEstateData[]> => {
+        try {
+            const response = await apiClient.get<RealEstateData[]>('/api/real-estate/favorites');
+            return response.data;
+        } catch (error) {
+            console.error("Failed to fetch favorites:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * إضافة/إزالة من المفضلة
+     */
+    toggleFavorite: async (id: number): Promise<{ isFavorite: boolean }> => {
+        try {
+            const response = await apiClient.post<{ isFavorite: boolean }>(`/api/real-estate/${id}/favorite`);
+            return response.data;
+        } catch (error) {
+            console.error("Failed to toggle favorite:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * جلب العقارات حسب النوع النهائي
+     */
+    fetchByFinalType: async (finalTypeId: number): Promise<RealEstateData[]> => {
+        try {
+            const response = await apiClient.get<RealEstateData[]>(`/api/real-estate/final-type/${finalTypeId}`);
+            return response.data;
+        } catch (error) {
+            console.error("Failed to fetch real estate by final type:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * جلب العقارات حسب المدينة
+     */
+    fetchByCity: async (cityId: number): Promise<RealEstateData[]> => {
+        try {
+            const response = await apiClient.get<RealEstateData[]>(`/api/real-estate/city/${cityId}`);
+            return response.data;
+        } catch (error) {
+            console.error("Failed to fetch real estate by city:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * جلب إحصائيات العقارات
+     */
+    fetchStats: async (): Promise<{
+        total: number;
+        forSale: number;
+        forRent: number;
+        cities: number;
+        averagePrice: number;
+    }> => {
+        try {
+            const response = await apiClient.get('/api/real-estate/stats');
+            return response.data;
+        } catch (error) {
+            console.error("Failed to fetch real estate stats:", error);
+            throw error;
+        }
+    },
+
+    // ===== الدوال القديمة للتوافق مع النظام الحالي =====
+
+    /**
+     * @deprecated استخدم fetchAll بدلاً من ذلك
+     */
     fetchRealEstate: async (): Promise<RealEstateData[]> => {
         try {
             const response = await apiClient.get<RealEstateData[]>('api/realestate');
@@ -15,9 +258,12 @@ export const RealEstateApi = {
         }
     },
 
+    /**
+     * @deprecated استخدم create بدلاً من ذلك
+     */
     addRealEstate: async (estate: FormData) => {
         try {
-            const response = await axios.post(`${API_BASE_URL}/api/realestate`, estate, {
+            const response = await apiClient.post('api/realestate', estate, {
                 headers: {
                     "Content-Type": "multipart/form-data",
                 },
@@ -28,9 +274,12 @@ export const RealEstateApi = {
             throw error;
         }
     },
+
+    /**
+     * @deprecated استخدم update بدلاً من ذلك
+     */
     updateRealEstate: async (id: number, estate: any) => {
         try {
-
             const {
                 cityName,
                 neighborhoodName,
@@ -42,13 +291,7 @@ export const RealEstateApi = {
                 ...cleanedEstate
             } = estate;
 
-            const filteredEstate = { ...cleanedEstate };
-
-
-
-
-            const response = await apiClient.put(`${API_BASE_URL}/api/realestate/${id}`, filteredEstate);
-
+            const response = await apiClient.put(`api/realestate/${id}`, cleanedEstate);
             return response.data;
         } catch (error) {
             console.error("Failed to update real estate:", error);
@@ -56,10 +299,12 @@ export const RealEstateApi = {
         }
     },
 
+    /**
+     * @deprecated استخدم fetchById بدلاً من ذلك
+     */
     fetchRealEstateById: async (id: number): Promise<RealEstateData> => {
         try {
             const response = await apiClient.get<RealEstateData>(`api/realestate/${id}`);
-
             return response.data;
         } catch (error) {
             console.error("Failed to fetch real estate by ID:", error);
@@ -67,7 +312,9 @@ export const RealEstateApi = {
         }
     },
 
-
+    /**
+     * جلب العقارات المشابهة
+     */
     fetchSimilarRealEstate: async (id: number): Promise<RealEstateData[]> => {
         try {
             const response = await apiClient.get<RealEstateData[]>(`/api/realestate/similar/${id}`);
@@ -78,38 +325,25 @@ export const RealEstateApi = {
         }
     },
 
-
+    /**
+     * جلب العقارات حسب عنصر المبنى
+     */
     fetchRealEstateByBuildingItemId: async (buildingItemId: string): Promise<RealEstateData[]> => {
         try {
-
             const response = await apiClient.get<RealEstateData[]>(`api/realestate/items/${buildingItemId}`);
             if ((response.data as any).message) {
                 return [];
             }
-
             return response.data;
         } catch (error) {
-            console.error("Failed to fetch real estate by ID:", error);
+            console.error("Failed to fetch real estate by building item ID:", error);
             throw error;
         }
     },
 
-    fetchRealEstateByBuildingId: async (buildingItemId: string): Promise<RealEstateData[]> => {
-        try {
-
-            const response = await apiClient.get<RealEstateData[]>(`api/realestate/items/${buildingItemId}`);
-            if ((response.data as any).message) {
-                return [];
-            }
-
-            return response.data;
-        } catch (error) {
-            console.error("Failed to fetch real estate by ID:", error);
-            throw error;
-        }
-    },
-
-
+    /**
+     * @deprecated استخدم delete بدلاً من ذلك
+     */
     deleteRealEstate: async (id: number) => {
         try {
             const response = await apiClient.delete(`api/realestate/${id}`);
@@ -120,18 +354,19 @@ export const RealEstateApi = {
         }
     },
 
-    fetchFilter: async (mainTypName: string, subTypeName?: string, finalTypeName?: string) => {
+    /**
+     * فلترة العقارات حسب النوع
+     */
+    fetchFilter: async (mainTypeName: string, subTypeName?: string, finalTypeName?: string) => {
         try {
             const response = await apiClient.post(`api/realestate/filter`, {
-                main: mainTypName,
+                main: mainTypeName,
                 sub: subTypeName,
                 finall: finalTypeName,
             });
             return response.data;
         } catch (error) {
-            console.error("Failed to fetch filter ");
-            console.log(error);
-            
+            console.error("Failed to fetch filter:", error);
             throw error;
         }
     },

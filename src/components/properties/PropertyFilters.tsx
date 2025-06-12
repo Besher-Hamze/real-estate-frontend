@@ -1,6 +1,6 @@
 // components/properties/PropertyFilters.tsx
 import React, { useState } from 'react';
-import Button from '../ui/Button';
+import Button from '../ui/button';
 
 interface PropertyFiltersProps {
   onFilterChange: (filters: any) => void;

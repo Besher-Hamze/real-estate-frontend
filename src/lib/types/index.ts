@@ -85,35 +85,6 @@ export interface FinalCityType {
   neighborhoodId: number
   location?: string;
 }
-export interface MainType {
-  id: number;
-  name: string;
-  icon: string;
-  subtypes: SubType[];
-}
-
-export interface SubType {
-  id: number;
-  name: string;
-  mainId: number;
-}
-
-export interface FinalType {
-  id: number;
-  name: string;
-  subId: number;
-}
-
-
-export interface BuildingItem {
-  id: string;
-  name: string;
-  price: string;
-  area: string;
-  type: 'apartment' | 'shop',
-  realestateCount: number;
-}
-
 
 export interface Building {
   id: string;
@@ -170,8 +141,6 @@ export interface RealEstateCardProps {
 
 export type PriceRange = [number, number];
 
-
-
 export interface Filters {
   bedrooms: string;
   bathrooms: string;
@@ -209,7 +178,6 @@ export interface FilterParams {
 
 export type PropertySize = "small" | "medium" | "large" | "xlarge" | "";
 
-
 export interface FilterChipProps {
   label: string;
   onRemove: () => void;
@@ -245,4 +213,98 @@ export interface SelectFieldProps {
   options: SelectOption[];
   className?: string;
   enable?: boolean;
+}
+
+// ========== الواجهات الجديدة للنظام الديناميكي ==========
+
+// واجهة الخاصية الديناميكية من API
+export interface ApiDynamicProperty {
+  id: number;
+  finalTypeId: number;
+  propertyKey: string;
+  propertyName: string;
+  groupName: string;
+  dataType: 'text' | 'number' | 'single_choice' | 'multiple_choice' | 'boolean' | 'date' | 'file';
+  allowedValues?: string[] | null;
+  isFilter: boolean;
+  displayOrder: number;
+  isRequired: boolean;
+  placeholder?: string | null;
+  groupSelect: boolean;
+  unit?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  finalType?: {
+    id: number;
+    subId: number;
+    name: string;
+    subType?: {
+      id: number;
+      mainId: number;
+      name: string;
+      mainType?: {
+        id: number;
+        name: string;
+        icon: string;
+      };
+    };
+  };
+  _count?: {
+    propertyValues: number;
+  };
+  propertyValues?: any[];
+}
+
+// واجهة المجموعة من API
+export interface ApiPropertyGroup {
+  groupName: string;
+  _count: {
+    groupName: number;
+  };
+}
+
+// واجهة الخصائص المجمعة حسب المجموعة
+export interface GroupedProperties {
+  [groupName: string]: ApiDynamicProperty[];
+}
+
+// واجهة بيانات النموذج الديناميكي
+export interface DynamicFormData {
+  [propertyKey: string]: any;
+}
+
+// واجهة العقار المحسّنة مع الخصائص الديناميكية
+export interface EnhancedRealEstateData extends RealEstateData {
+  dynamicProperties?: DynamicFormData;
+}
+
+// واجهة خطوة النموذج
+export interface PropertyFormStep {
+  id: number;
+  title: string;
+  description?: string;
+  isActive: boolean;
+  isCompleted: boolean;
+}
+
+// واجهة بيانات إنشاء العقار الجديدة
+export interface CreateRealEstateData {
+  // الحقول الثابتة
+  title: string;
+  description: string;
+  price: number;
+  mainCategoryId: number;
+  subCategoryId: number;
+  finalTypeId: number;
+  cityId: number;
+  neighborhoodId: number;
+  finalCityId: number;
+  location: string;
+  viewTime: string;
+  coverImage: File | null;
+  files: File[];
+  buildingItemId?: string;
+  
+  // الخصائص الديناميكية
+  dynamicProperties: DynamicFormData;
 }
