@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   Filter,
   ChevronDown,
-  ChevronsLeftRight,
   ChevronUp,
   Building,
   MapPin,
@@ -13,17 +12,31 @@ import {
   HomeIcon,
   LayersIcon,
   Building2Icon,
-  X
+  X,
+  Loader2,
+  Hash,
+  Type,
+  CheckSquare,
+  Calendar,
+  FileText,
+  Search,
+  Sliders,
+  Grid3X3,
+  Settings,
+  Tag
 } from 'lucide-react';
 import { finalTypeTypeApi } from '@/api/finalTypeApi';
+import { FilterPropertiesApi } from '@/api/filterPropertiesApi';
 import {
   CityType,
   Filters,
   FinalType,
   NeighborhoodType,
-  PropertySize,
   FilterSectionProps,
-  FinalCityType
+  FinalCityType,
+  ApiDynamicProperty,
+  RealEstateData,
+  PropertyValue
 } from '@/lib/types';
 import { cityApi } from '@/api/cityApi';
 import { neighborhoodApi } from '@/api/NeighborhoodApi';
@@ -32,12 +45,14 @@ import SortComponent from './SortComponent';
 import { FilterChip } from './home';
 import { SelectField } from './SelectField';
 import { finalCityApi } from '@/api/finalCityApi';
-import { FLOOR_OPTIONS, FURNISHED_OPTIONS, RENTAL_DURATION_OPTIONS, VIEW_OPTIONS } from '../ui/constants/formOptions';
-import { RealEstateApi } from '@/api/realEstateApi';
-import { AreaRangeDropdown, PriceRangeDropdown } from '../ui/form/RangeDropdown';
+
+// Extended filters to include dynamic properties
+interface ExtendedFilters extends Filters {
+  [key: string]: any; // For dynamic properties
+}
 
 // Default filter values
-const defaultFilters: Filters = {
+const defaultFilters: ExtendedFilters = {
   bedrooms: '',
   bathrooms: '',
   finalType: '',
@@ -53,23 +68,174 @@ const defaultFilters: Filters = {
   maxArea: "",
   minArea: ""
 };
-interface BackendFilterConfig {
-  finalTypeId?: boolean;
-  cityId?: boolean;
-  neighborhoodId?: boolean;
-  finalCityId?: boolean;
-  bedrooms?: boolean;
-  bathrooms?: boolean;
-  rentalDuration?: boolean;
-  viewTime?: boolean;
-  floorNumber?: boolean;
-  furnished?: boolean;
-  buildingArea?: boolean;
-  price?: boolean;
-}
 
+// Enhanced component for rendering different data types with better UI
+const DynamicPropertyField = ({
+  property,
+  value,
+  onChange
+}: {
+  property: ApiDynamicProperty;
+  value: any;
+  onChange: (value: any) => void;
+}) => {
+  const getIcon = (dataType: string) => {
+    switch (dataType) {
+      case 'number': return Hash;
+      case 'text': return Type;
+      case 'boolean': return CheckSquare;
+      case 'date': return Calendar;
+      case 'single_choice': return Building;
+      case 'multiple_choice': return Grid3X3;
+      default: return FileText;
+    }
+  };
 
+  const Icon = getIcon(property.dataType);
 
+  switch (property.dataType) {
+    case 'number':
+      return (
+        <div className="space-y-3 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+          <label className="block text-sm font-semibold text-gray-800">
+            <div className="flex items-center gap-2">
+              <Icon className="w-4 h-4 text-blue-600" />
+              {property.propertyName}
+              {property.unit && <span className="text-blue-500 text-xs bg-blue-100 px-2 py-1 rounded-full">({property.unit})</span>}
+            </div>
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="relative">
+              <input
+                type="number"
+                placeholder="الحد الأدنى"
+                value={value?.min || ''}
+                onChange={(e) => onChange({ ...value, min: e.target.value })}
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm"
+              />
+              <span className="absolute left-3 top-3 text-gray-400 text-xs">من</span>
+            </div>
+            <div className="relative">
+              <input
+                type="number"
+                placeholder="الحد الأقصى"
+                value={value?.max || ''}
+                onChange={(e) => onChange({ ...value, max: e.target.value })}
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm"
+              />
+              <span className="absolute left-3 top-3 text-gray-400 text-xs">إلى</span>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 'single_choice':
+      return (
+        <div className="space-y-3 p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-100">
+          <label className="block text-sm font-semibold text-gray-800">
+            <div className="flex items-center gap-2">
+              <Icon className="w-4 h-4 text-green-600" />
+              {property.propertyName}
+            </div>
+          </label>
+          <select
+            value={value || ''}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 text-sm bg-white"
+          >
+            <option value="">الكل</option>
+            {(property.allowedValues as string[])?.map(val => (
+              <option key={val} value={val}>{val}</option>
+            ))}
+          </select>
+        </div>
+      );
+
+    case 'multiple_choice':
+      return (
+        <div className="space-y-3 p-4 bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl border border-purple-100">
+          <label className="block text-sm font-semibold text-gray-800">
+            <div className="flex items-center gap-2">
+              <Icon className="w-4 h-4 text-purple-600" />
+              {property.propertyName}
+              {(value || []).length > 0 && (
+                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">
+                  {(value || []).length} محدد
+                </span>
+              )}
+            </div>
+          </label>
+          <div className="space-y-2 max-h-40 overflow-y-auto bg-white rounded-lg p-3 border border-purple-100">
+            {(property.allowedValues as string[])?.map(option => (
+              <label key={option} className="flex items-center gap-3 p-2 hover:bg-purple-50 rounded-lg cursor-pointer transition-colors group">
+                <input
+                  type="checkbox"
+                  checked={(value || []).includes(option)}
+                  onChange={(e) => {
+                    const currentValues = value || [];
+                    if (e.target.checked) {
+                      onChange([...currentValues, option]);
+                    } else {
+                      onChange(currentValues.filter((v: string) => v !== option));
+                    }
+                  }}
+                  className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 transition-colors"
+                />
+                <span className="text-sm group-hover:text-purple-700 transition-colors">{option}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      );
+
+    case 'boolean':
+      return (
+        <div className="p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border border-amber-100">
+          <label className="flex items-center gap-3 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={value || false}
+              onChange={(e) => onChange(e.target.checked)}
+              className="rounded border-gray-300 text-amber-600 focus:ring-amber-500 transition-colors"
+            />
+            <div className="flex items-center gap-2">
+              <Icon className="w-4 h-4 text-amber-600" />
+              <span className="text-sm font-semibold text-gray-800 group-hover:text-amber-700 transition-colors">
+                {property.propertyName}
+              </span>
+            </div>
+          </label>
+        </div>
+      );
+
+    case 'text':
+      return (
+        <div className="space-y-3 p-4 bg-gradient-to-br from-gray-50 to-slate-50 rounded-xl border border-gray-100">
+          <label className="block text-sm font-semibold text-gray-800">
+            <div className="flex items-center gap-2">
+              <Icon className="w-4 h-4 text-gray-600" />
+              {property.propertyName}
+            </div>
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              placeholder={property.placeholder || `ابحث في ${property.propertyName}`}
+              value={value || ''}
+              onChange={(e) => onChange(e.target.value)}
+              className="w-full px-4 py-3 pl-10 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-all duration-200 text-sm"
+            />
+            <Search className="absolute right-3 top-3 w-4 h-4 text-gray-400" />
+          </div>
+        </div>
+      );
+
+    default:
+      return null;
+  }
+};
+
+// Enhanced FilterSection with better UI
 const FilterSection = ({
   filters = defaultFilters,
   setFilters,
@@ -86,97 +252,68 @@ const FilterSection = ({
   sortOption,
   setSortOption
 }: FilterSectionProps) => {
+  // State management
   const [isExpanded, setIsExpanded] = useState(true);
-  const [minInput, setMinInput] = useState(priceRange[0].toString());
-  const [maxInput, setMaxInput] = useState(priceRange[1].toString());
   const [finalTypes, setFinalTypes] = useState<FinalType[]>([]);
   const [neighborhoods, setNeighborhoods] = useState<NeighborhoodType[]>([]);
   const [finalCities, setFinalCities] = useState<FinalCityType[]>([]);
   const [cities, setCities] = useState<CityType[]>([]);
-  const [backendFilterConfig, setBackendFilterConfig] = useState<BackendFilterConfig>({
-    finalTypeId: true,
-    cityId: true,
-    neighborhoodId: true,
-    finalCityId: true,
-    bedrooms: true,
-    bathrooms: true,
-    rentalDuration: true,
-    viewTime: true,
-    floorNumber: true,
-    furnished: true,
-    buildingArea: true,
-    price: true
-  });
-  const [minAreaInput, setMinAreaInput] = useState('');
-  const [maxAreaInput, setMaxAreaInput] = useState('');
-  const [minPriceInput, setMinPriceInput] = useState(priceRange[0].toString());
-  const [maxPriceInput, setMaxPriceInput] = useState(priceRange[1].toString());
-  const handleAreaMinChange = (value: string) => {
-    setMinAreaInput(value);
-    const areaValue = value.trim() === '' ? '' : value;
-    setFilters({ ...filters, minArea: areaValue });
-  };
+  const [isLoadingProperties, setIsLoadingProperties] = useState(false);
+  const [dynamicProperties, setDynamicProperties] = useState<ApiDynamicProperty[]>([]);
+  const [dynamicFilters, setDynamicFilters] = useState<Record<string, any>>({});
+  const [activeTab, setActiveTab] = useState<'location' | 'properties'>('location');
 
-  const handleAreaMaxChange = (value: string) => {
-    setMaxAreaInput(value);
-    const areaValue = value.trim() === '' ? '' : value;
-    setFilters({ ...filters, maxArea: areaValue });
-  };
-
-  // Update your price handler:
-  const handlePriceMinChange = (value: string) => {
-    const cleanValue = value.replace(/,/g, '');
-    setMinPriceInput(cleanValue);
-    const numericValue = cleanValue === '' ? 0 : parseInt(cleanValue);
-    if (!isNaN(numericValue)) {
-      setPriceRange([numericValue, priceRange[1]]);
+  // Get the current finalTypeId from the selected finalType filter
+  const currentFinalTypeId = useMemo(() => {
+    if (filters.finalType) {
+      return parseInt(filters.finalType);
     }
-  };
+    return null;
+  }, [filters.finalType]);
 
-  const handlePriceMaxChange = (value: string) => {
-    const cleanValue = value.replace(/,/g, '');
-    setMaxPriceInput(cleanValue);
-    const numericValue = cleanValue === '' ? 1000000 : parseInt(cleanValue);
-    if (!isNaN(numericValue)) {
-      setPriceRange([priceRange[0], numericValue]);
-    }
-  };
+  // Group dynamic properties
+  const groupedProperties = useMemo(() => {
+    return dynamicProperties.reduce((groups: Record<string, ApiDynamicProperty[]>, property) => {
+      const groupName = (property.groupName && property.groupName.trim() !== '')
+        ? property.groupName
+        : 'خصائص أساسية';
 
-  useEffect(() => {
-    const fetchFilterConfiguration = async () => {
-      try {
-        if (currentMainType && currentSubType) {
-          const filterConfig = await RealEstateApi.fetchFilter(
-            currentMainType.name,
-            currentSubType.name,
-            finalTypes.find(f => f.id == parseInt(filters.finalType))?.name
-          );
-          console.log(filterConfig);
-
-          setBackendFilterConfig(filterConfig);
-        }
-      } catch (error) {
-        console.error('Failed to fetch filter configuration', error);
-        setBackendFilterConfig({
-          finalTypeId: true,
-          cityId: true,
-          neighborhoodId: true,
-          finalCityId: true,
-          bedrooms: true,
-          bathrooms: true,
-          rentalDuration: true,
-          viewTime: true,
-          floorNumber: true,
-          furnished: true,
-          buildingArea: true,
-          price: true
-        });
+      if (!groups[groupName]) {
+        groups[groupName] = [];
       }
-    };
 
-    fetchFilterConfiguration();
-  }, [currentMainType, currentSubType, filters.finalType]);
+      groups[groupName].push(property);
+      return groups;
+    }, {});
+  }, [dynamicProperties]);
 
+  // Fetch dynamic filter properties based on finalTypeId
+  const fetchFilterProperties = useCallback(async () => {
+    if (!currentFinalTypeId) {
+      setDynamicProperties([]);
+      return;
+    }
+
+    setIsLoadingProperties(true);
+    try {
+      const response = await FilterPropertiesApi.getFilterProperties(currentFinalTypeId);
+
+      if (response && Array.isArray(response)) {
+        // Sort properties by displayOrder
+        const sortedProperties = response.sort((a, b) => a.displayOrder - b.displayOrder);
+        setDynamicProperties(sortedProperties);
+      } else {
+        setDynamicProperties([]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch filter properties:', error);
+      setDynamicProperties([]);
+    } finally {
+      setIsLoadingProperties(false);
+    }
+  }, [currentFinalTypeId]);
+
+  // Data fetching effects
   useEffect(() => {
     if (subId) {
       finalTypeTypeApi.fetchFinalTypeBySubId(subId).then(setFinalTypes);
@@ -192,6 +329,7 @@ const FilterSection = ({
       neighborhoodApi.fetchNeighborhoodByCityId(parseInt(filters.city)).then(setNeighborhoods);
     } else {
       setNeighborhoods([]);
+      setFilters({ ...filters, neighborhood: '', finalCity: '' });
     }
   }, [filters.city]);
 
@@ -200,489 +338,342 @@ const FilterSection = ({
       finalCityApi.fetchFinalCityByNeighborhoodId(parseInt(filters.neighborhood)).then(setFinalCities);
     } else {
       setFinalCities([]);
+      setFilters({ ...filters, finalCity: '' });
     }
   }, [filters.neighborhood]);
 
+  // Fetch filter properties when finalTypeId changes
+  useEffect(() => {
+    fetchFilterProperties();
+  }, [fetchFilterProperties]);
 
-  const handlePriceChange = (type: 'min' | 'max', value: string): void => {
-    const cleanValue = value.replace(/,/g, '');
-    if (type === 'min') {
-      setMinInput(cleanValue);
-      const numericValue = parseInt(cleanValue);
-      if (!isNaN(numericValue)) {
-        setPriceRange([numericValue, priceRange[1]]);
-      }
-    } else {
-      setMaxInput(cleanValue);
-      const numericValue = parseInt(cleanValue);
-      if (!isNaN(numericValue)) {
-        setPriceRange([priceRange[0], numericValue]);
+  // Clear dynamic filters when finalType changes
+  useEffect(() => {
+    if (currentFinalTypeId) {
+      setDynamicFilters({});
+      const newFilters = { ...filters };
+      Object.keys(newFilters).forEach(key => {
+        if (key.startsWith('property_')) {
+          delete newFilters[key];
+        }
+      });
+      if (JSON.stringify(newFilters) !== JSON.stringify(filters)) {
+        setFilters(newFilters);
       }
     }
-  };
+  }, [currentFinalTypeId]);
 
-  // Reset filters to default
-  const resetFilters = () => {
-    setFilters({
-      ...defaultFilters,
-      minArea: '',
-      maxArea: ''
-    });
+  // Handler for dynamic property changes
+  const handleDynamicPropertyChange = useCallback((propertyKey: string, value: any) => {
+    setDynamicFilters(prev => ({
+      ...prev,
+      [propertyKey]: value
+    }));
+
+    setFilters(prevFilters => ({
+      ...prevFilters,
+      [`property_${propertyKey}`]: value
+    }));
+  }, [setFilters]);
+
+  const resetFilters = useCallback(() => {
+    setFilters(defaultFilters);
+    setDynamicFilters({});
     setPriceRange([0, 1000000]);
-    setMinPriceInput("");
-    setMaxPriceInput("");
-    setMinAreaInput("");
-    setMaxAreaInput("");
 
-    if (setSelectedMainTypeId) {
-      setSelectedMainTypeId(null);
+    if (setSelectedMainTypeId) setSelectedMainTypeId(null);
+    if (setSelectedSubTypeId) setSelectedSubTypeId(null);
+  }, [setFilters, setPriceRange, setSelectedMainTypeId, setSelectedSubTypeId]);
+
+  // Helper functions for displaying filter values
+  const getDisplayName = useCallback((type: string, id: string) => {
+    switch (type) {
+      case 'city':
+        return cities.find(c => c.id.toString() === id)?.name || id;
+      case 'neighborhood':
+        return neighborhoods.find(n => n.id.toString() === id)?.name || id;
+      case 'finalCity':
+        return finalCities.find(f => f.id.toString() === id)?.name || id;
+      case 'finalType':
+        return finalTypes.find(f => f.id.toString() === id)?.name || id;
+      default:
+        return id;
     }
-    if (setSelectedSubTypeId) {
-      setSelectedSubTypeId(null);
-    }
-  };
+  }, [cities, neighborhoods, finalCities, finalTypes]);
 
+  // Check for active filters
+  const hasActiveFilters = useMemo(() => {
+    return selectedMainTypeId ||
+      selectedSubTypeId ||
+      Object.values(filters).some(value => value && value !== '') ||
+      Object.values(dynamicFilters).some(value => {
+        if (Array.isArray(value)) return value.length > 0;
+        if (typeof value === 'object' && value !== null) {
+          return Object.values(value).some(v => v && v !== '');
+        }
+        return value && value !== '';
+      }) ||
+      priceRange[0] > 0 ||
+      priceRange[1] < 1000000;
+  }, [selectedMainTypeId, selectedSubTypeId, filters, dynamicFilters, priceRange]);
 
-  // Check for any active filters
-  const hasActiveFilters =
-    selectedMainTypeId ||
-    selectedSubTypeId ||
-    filters.bedrooms ||
-    filters.propertySize ||
-    priceRange[0] > 0 ||
-    priceRange[1] < 1000000 ||
-    filters.bathrooms ||
-    filters.city ||
-    filters.finalType ||
-    filters.isFurnished ||
-    filters.neighborhood ||
-    filters.floor ||
-    filters.view ||
-    filters.rentalPeriod;
+  // Count active filters
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (selectedMainTypeId) count++;
+    if (selectedSubTypeId) count++;
+    if (priceRange[0] > 0 || priceRange[1] < 1000000) count++;
 
-  const getCityName = (cityId: string): string => {
-    const city = cities.find(c => c.id.toString() === cityId);
-    return city ? city.name : cityId;
-  };
+    Object.entries(filters).forEach(([key, value]) => {
+      if (!key.startsWith('property_') && value && value !== '') count++;
+    });
 
-  const getNeighborhoodName = (neighborhoodId: string): string => {
-    const neighborhood = neighborhoods.find(n => n.id.toString() === neighborhoodId);
-    return neighborhood ? neighborhood.name : neighborhoodId;
-  };
+    Object.values(dynamicFilters).forEach(value => {
+      if (Array.isArray(value) && value.length > 0) count++;
+      else if (typeof value === 'object' && value !== null) {
+        if (Object.values(value).some(v => v && v !== '')) count++;
+      } else if (value && value !== '') count++;
+    });
 
-  const getFinalCityName = (finalCityId: string): string => {
-    const finalCity = finalCities.find(n => n.id.toString() === finalCityId);
-    return finalCity ? finalCity.name : finalCityId;
-  };
+    return count;
+  }, [selectedMainTypeId, selectedSubTypeId, filters, dynamicFilters, priceRange]);
 
-  const getFinalTypeName = (finalTypeId: string): string => {
-    const finalType = finalTypes.find(f => f.id.toString() === finalTypeId);
-    return finalType ? finalType.name : finalTypeId;
-  };
+  // Render static filters (location-based)
+  const renderStaticFilters = () => (
+    <div className="space-y-4">
+      {/* City Filter */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <SelectField
+          label="المحافظة"
+          icon={MapPin}
+          value={filters.city}
+          onChange={(e) => setFilters({ ...filters, city: e.target.value, neighborhood: '', finalCity: '' })}
+          options={[
+            { value: '', label: 'الكل' },
+            ...cities.map(c => ({ value: c.id, label: c.name }))
+          ]}
+        />
 
-  const getFloorLabel = (floor: string): string => {
-    const floorLabels: Record<string, string> = {
-      '0': 'أرضي',
-      '1': 'أول',
-      '2': 'ثاني',
-      '3': 'ثالث',
-      '4': 'رابع',
-      '5': 'خامس'
-    };
+        <SelectField
+          label="المدينة"
+          icon={Building2Icon}
+          value={filters.neighborhood}
+          onChange={(e) => setFilters({ ...filters, neighborhood: e.target.value, finalCity: '' })}
+          options={[
+            { value: '', label: 'الكل' },
+            ...neighborhoods.map(n => ({ value: n.id, label: n.name }))
+          ]}
+          className={!filters.city ? 'opacity-50 cursor-not-allowed' : ''}
+          enable={filters.city !== ""}
+        />
 
-    return floorLabels[floor] || floor;
-  };
+        <SelectField
+          label="المنطقة"
+          icon={Building2Icon}
+          value={filters.finalCity}
+          onChange={(e) => setFilters({ ...filters, finalCity: e.target.value })}
+          options={[
+            { value: '', label: 'الكل' },
+            ...finalCities.map(n => ({ value: n.id, label: n.name }))
+          ]}
+          className={!filters.neighborhood ? 'opacity-50 cursor-not-allowed' : ''}
+          enable={filters.neighborhood !== ""}
+        />
+      </div>
 
-  const getRentalPeriodLabel = (period: string): string => {
-    const periodLabels: Record<string, string> = {
-      '1': 'شهر',
-      '3': 'ثلاثة شهور',
-      '6': 'ستة شهور',
-      '12': 'سنة'
-    };
+      {/* Final Type Filter */}
+      {finalTypes.length > 0 && (
+        <div className="mt-4">
+          <SelectField
+            label="التصنيف النهائي"
+            icon={Building}
+            value={filters.finalType}
+            onChange={(e) => {
+              setDynamicFilters({});
+              const newFilters = { ...filters, finalType: e.target.value };
+              Object.keys(newFilters).forEach(key => {
+                if (key.startsWith('property_')) {
+                  delete newFilters[key];
+                }
+              });
+              setFilters(newFilters);
+            }}
+            options={[
+              { value: '', label: 'الكل' },
+              ...finalTypes.map(f => ({ value: f.id, label: f.name }))
+            ]}
+          />
+        </div>
+      )}
+    </div>
+  );
 
-    return periodLabels[period] || period;
-  };
+  // Render dynamic property groups
+  const renderDynamicPropertyGroups = () => {
+    if (Object.keys(groupedProperties).length === 0) return null;
 
-  // Render active filters (chips)
-  const renderActiveFilters = () => {
-    if (!hasActiveFilters) return null;
-    return (
-      <div className="mb-6 px-6 pb-0 pt-0">
-        <div className="border-t border-gray-200 pt-4">
-          <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-gray-600 text-sm ml-2">الفلاتر النشطة:</span>
-
-            {selectedMainTypeId && currentMainType && (
-              <FilterChip
-                label={currentMainType.name}
-                onRemove={() => {
-                  if (setSelectedMainTypeId) setSelectedMainTypeId(null);
-                }}
-              />
-            )}
-
-            {selectedSubTypeId && currentSubType && (
-              <FilterChip
-                label={currentSubType.name}
-                onRemove={() => {
-                  if (setSelectedSubTypeId) setSelectedSubTypeId(null);
-                }}
-              />
-            )}
-
-            {filters.finalType && (
-              <FilterChip
-                label={getFinalTypeName(filters.finalType)}
-                onRemove={() => setFilters({ ...filters, finalType: "" })}
-              />
-            )}
-
-            {filters.bedrooms && (
-              <FilterChip
-                label={`${filters.bedrooms === "-1" ? "اكثر من 8" : filters.bedrooms} ${parseInt(filters.bedrooms) === 1 ? "غرفة" : "غرف"}`}
-                onRemove={() => setFilters({ ...filters, bedrooms: "" })}
-              />
-            )}
-
-            {filters.bathrooms && (
-              <FilterChip
-                label={`${filters.bathrooms === "-1" ? "اكثر من 8" : filters.bathrooms} ${parseInt(filters.bathrooms) === 1 ? "حمام" : "حمامات"}`}
-                onRemove={() => setFilters({ ...filters, bathrooms: "" })}
-              />
-            )}
-
-            {filters.minArea && (
-              <FilterChip
-                label={`المساحة من: ${filters.minArea} متر مربع`}
-                onRemove={() => {
-                  setFilters({ ...filters, minArea: '' });
-                  setMinAreaInput('');
-                }}
-              />
-            )}
-
-            {filters.maxArea && (
-              <FilterChip
-                label={`المساحة إلى: ${filters.maxArea} متر مربع`}
-                onRemove={() => {
-                  setFilters({ ...filters, maxArea: '' });
-                  setMaxAreaInput('');
-                }}
-              />
-            )}
-
-
-            {filters.propertySize && (
-              <FilterChip
-                label={getPropertySizeLabel(filters.propertySize as PropertySize)}
-                onRemove={() => setFilters({ ...filters, propertySize: "" })}
-              />
-            )}
-
-            {(priceRange[0] > 0 || priceRange[1] < 1000000) && (
-              <FilterChip
-                label={`${priceRange[0].toLocaleString()} - ${priceRange[1].toLocaleString()} ر.ع`}
-                onRemove={() => setPriceRange([0, 1000000])}
-              />
-            )}
-
-            {filters.city && (
-              <FilterChip
-                label={`المحافظة: ${getCityName(filters.city)}`}
-                onRemove={() => setFilters({ ...filters, city: "", neighborhood: "" })}
-              />
-            )}
-
-            {filters.neighborhood && (
-              <FilterChip
-                label={`المدينة: ${getNeighborhoodName(filters.neighborhood)}`}
-                onRemove={() => setFilters({ ...filters, neighborhood: "" })}
-              />
-            )}
-            {filters.finalCity && (
-              <FilterChip
-                label={`المنطقة: ${getFinalCityName(filters.finalCity)}`}
-                onRemove={() => setFilters({ ...filters, neighborhood: "" })}
-              />
-            )}
-
-            {filters.floor && (
-              <FilterChip
-                label={`الطابق: ${getFloorLabel(filters.floor)}`}
-                onRemove={() => setFilters({ ...filters, floor: "" })}
-              />
-            )}
-
-            {filters.view && (
-              <FilterChip
-                label={`الإطلالة: ${filters.view}`}
-                onRemove={() => setFilters({ ...filters, view: "" })}
-              />
-            )}
-
-            {filters.rentalPeriod && (
-              <FilterChip
-                label={`مدة الإيجار: ${getRentalPeriodLabel(filters.rentalPeriod)}`}
-                onRemove={() => setFilters({ ...filters, rentalPeriod: "" })}
-              />
-            )}
-
-            {filters.isFurnished && (
-              <FilterChip
-                label="مفروش"
-                onRemove={() => setFilters({ ...filters, isFurnished: "" })}
-              />
-            )}
-
-            <button
-              onClick={resetFilters}
-              className="text-red-600 hover:text-red-700 text-sm font-medium flex items-center gap-1 mr-auto"
-            >
-              <X className="w-4 h-4" />
-              مسح الكل
-            </button>
-          </div>
+    return Object.entries(groupedProperties).map(([groupName, properties]) => (
+      <div key={groupName} className="space-y-4">
+        <div className="flex items-center gap-2 mb-4">
+          <Settings className="w-5 h-5 text-indigo-600" />
+          <h4 className="text-lg font-bold text-gray-800">{groupName}</h4>
+          <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">
+            {properties.length} خاصية
+          </span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {properties.map((property) => (
+            <DynamicPropertyField
+              key={property.propertyKey}
+              property={property}
+              value={dynamicFilters[property.propertyKey]}
+              onChange={(value) => handleDynamicPropertyChange(property.propertyKey, value)}
+            />
+          ))}
         </div>
       </div>
-    );
+    ));
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg my-8 ">
+    <div className="bg-white rounded-2xl shadow-xl border border-gray-100 my-8 overflow-hidden">
+      {/* Enhanced Header */}
       <div
-        className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 border-b border-blue-100 cursor-pointer hover:bg-blue-100 transition-colors"
+        className="bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 p-6 cursor-pointer hover:from-indigo-700 hover:via-purple-700 hover:to-blue-700 transition-all duration-300"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-blue-600" />
-            <span className="font-semibold text-gray-800 text-lg">تصفية العقارات</span>
+          <div className="flex items-center gap-4">
+            <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm">
+              <Filter className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="font-bold text-white text-xl">تصفية العقارات</h2>
+              <p className="text-white/80 text-sm">ابحث بدقة عن العقار المناسب</p>
+            </div>
+            {isLoadingProperties && (
+              <Loader2 className="w-5 h-5 text-white animate-spin" />
+            )}
+            {activeFilterCount > 0 && (
+              <div className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
+                <span className="text-white text-sm font-medium">
+                  {activeFilterCount} فلتر نشط
+                </span>
+              </div>
+            )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm">
             {isExpanded ? (
-              <ChevronUp className="w-5 h-5 text-blue-600 transition-transform duration-300" />
+              <ChevronUp className="w-5 h-5 text-white transition-transform duration-300" />
             ) : (
-              <ChevronDown className="w-5 h-5 text-blue-600 transition-transform duration-300" />
+              <ChevronDown className="w-5 h-5 text-white transition-transform duration-300" />
             )}
           </div>
         </div>
       </div>
-      <SortComponent currentSort={sortOption} onSortChange={setSortOption} className="p-4" />
-      {renderActiveFilters()}
-      <div className={`transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
-        <div className="p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
 
-            {/* Render Final Type filter */}
-            {backendFilterConfig.finalTypeId && (
-              <SelectField
-                label="التصنيف"
-                icon={Building}
-                value={filters.finalType}
-                onChange={(e) => setFilters({ ...filters, finalType: e.target.value })}
-                options={[{ value: '', label: 'الكل' }, ...finalTypes.map(f => ({ value: f.id, label: f.name }))]}
-              />
-            )}
+      {/* Sort Component */}
+      <div className="border-b border-gray-100">
+        <SortComponent currentSort={sortOption} onSortChange={setSortOption} className="p-4" />
+      </div>
 
-            {/* Render City filter */}
-            {backendFilterConfig.cityId && (
-              <SelectField
-                label="المحافظة"
-                icon={MapPin}
-                value={filters.city}
-                onChange={(e) => setFilters({ ...filters, city: e.target.value, neighborhood: '' })}
-                options={[{ value: '', label: 'الكل' }, ...cities.map(c => ({ value: c.id, label: c.name }))]}
-              />
-            )}
-
-            {/* Render Neighborhood filter */}
-            {backendFilterConfig.neighborhoodId && (
-              <SelectField
-                label="المدينة"
-                icon={Building2Icon}
-                value={filters.neighborhood}
-                onChange={(e) => setFilters({ ...filters, neighborhood: e.target.value })}
-                options={[{ value: '', label: 'الكل' }, ...neighborhoods.map(n => ({ value: n.id, label: n.name }))]}
-                className={!filters.city ? 'opacity-50 cursor-not-allowed' : ''}
-                enable={filters.city !== ""}
-              />
-            )}
-
-            {/* Render Final City filter */}
-            {backendFilterConfig.finalCityId && (
-              <SelectField
-                label="المنطقة"
-                icon={Building2Icon}
-                value={filters.finalCity}
-                onChange={(e) => setFilters({ ...filters, finalCity: e.target.value })}
-                options={[{ value: '', label: 'الكل' }, ...finalCities.map(n => ({ value: n.id, label: n.name }))]}
-                className={!filters.neighborhood ? 'opacity-50 cursor-not-allowed' : ''}
-                enable={filters.neighborhood !== ""}
-              />
-            )}
-
-            {/* Render Bedrooms filter */}
-            {backendFilterConfig.bedrooms && (
-              <SelectField
-                label="عدد الغرف"
-                icon={BedDouble}
-                value={filters.bedrooms}
-                onChange={(e) => setFilters({ ...filters, bedrooms: e.target.value })}
-                options={[
-                  { value: '', label: 'جميع الغرف' },
-                  ...Array.from({ length: 8 }, (_, i) => ({
-                    value: String(i + 1),
-                    label: `${i + 1} ${i === 0 ? 'غرفة' : 'غرف'}`
-                  })),
-                  { value: -1, label: `اكثر من ${8} غرف` },
-                ]}
-              />
-            )}
-
-            {/* Render Bathrooms filter */}
-            {backendFilterConfig.bathrooms && (
-              <SelectField
-                label="عدد الحمامات"
-                icon={Bath}
-                value={filters.bathrooms}
-                onChange={(e) => setFilters({ ...filters, bathrooms: e.target.value })}
-                options={[
-                  { value: '', label: 'جميع الحمامات' },
-                  ...Array.from({ length: 8 }, (_, i) => ({
-                    value: String(i + 1),
-                    label: `${i + 1} ${i === 0 ? 'حمام' : 'حمامات'}`
-                  })),
-                  { value: -1, label: `اكثر من ${8} حمام` },
-                ]}
-              />
-            )}
-
-            {/* Render Property Size filter if buildingArea is enabled */}
-            {backendFilterConfig.buildingArea && (
-              <AreaRangeDropdown
-                minArea={minAreaInput}
-                maxArea={maxAreaInput}
-                onMinAreaChange={handleAreaMinChange}
-                onMaxAreaChange={handleAreaMaxChange}
-              />
-            )}
-
-
-
-            {/* Render Rental Duration only if allowed (it is false in our config) */}
-            {isRental && backendFilterConfig.rentalDuration && (
-              <SelectField
-                label="مدة الإيجار"
-                icon={Clock}
-                value={filters.rentalPeriod}
-                onChange={(e) => setFilters({ ...filters, rentalPeriod: e.target.value })}
-                options={[
-                  { value: '', label: 'جميع المدد' },
-                  ...RENTAL_DURATION_OPTIONS,
-                ]}
-              />
-            )}
-
-            {/* Render View filter */}
-            {backendFilterConfig.viewTime && (
-              <SelectField
-                label="الإطلالة"
-                icon={Mountain}
-                value={filters.view}
-                onChange={(e) => setFilters({ ...filters, view: e.target.value })}
-                options={[
-                  { value: '', label: 'جميع الإطلالات' },
-                  ...VIEW_OPTIONS,
-                ]}
-              />
-            )}
-
-            {/* Render Floor filter */}
-            {backendFilterConfig.floorNumber && (
-              <SelectField
-                label="الطابق"
-                icon={LayersIcon}
-                value={filters.floor}
-                onChange={(e) => setFilters({ ...filters, floor: e.target.value })}
-                options={[
-                  { value: '', label: 'الكل' },
-                  ...FLOOR_OPTIONS,
-                ]}
-              />
-            )}
-
-            {/* Render Furnished filter */}
-            {backendFilterConfig.furnished && (
-              <SelectField
-                label="حالة الفرش"
-                icon={HomeIcon}
-                value={filters.isFurnished === null ? '' : filters.isFurnished.toString()}
-                onChange={(e) => setFilters({ ...filters, isFurnished: e.target.value })}
-                options={[
-                  { value: '', label: 'الكل' },
-                  ...FURNISHED_OPTIONS,
-                ]}
-              />
-            )}
-            {backendFilterConfig.price && (
-              <PriceRangeDropdown
-                minPrice={minPriceInput}
-                maxPrice={maxPriceInput}
-                onMinPriceChange={handlePriceMinChange}
-                onMaxPriceChange={handlePriceMaxChange}
-              />
-            )}
-          </div>
-
-          {/* Price Range filter */}
-          {/* {backendFilterConfig.price && (
-            <div className="mt-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <div className="flex items-center gap-2">
-                  <ChevronsLeftRight className="w-4 h-4 text-blue-600" />
-                  نطاق السعر
-                  <span className="text-blue-600 font-semibold">
-                    ({parseInt(minInput.replace(/,/g, '')).toLocaleString()} - {parseInt(maxInput.replace(/,/g, '')).toLocaleString()})
+      {/* Filter Content */}
+      <div className={`transition-all duration-500 ease-in-out ${isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
+        }`}>
+        <div className="p-6">
+          {/* Tab Navigation */}
+          {dynamicProperties.length > 0 && (
+            <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
+              <button
+                onClick={() => setActiveTab('location')}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-md transition-all duration-200 ${activeTab === 'location'
+                  ? 'bg-white text-indigo-600 shadow-sm font-medium'
+                  : 'text-gray-600 hover:text-gray-800'
+                  }`}
+              >
+                <MapPin className="w-4 h-4" />
+                الموقع والتصنيف
+              </button>
+              <button
+                onClick={() => setActiveTab('properties')}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-md transition-all duration-200 ${activeTab === 'properties'
+                  ? 'bg-white text-indigo-600 shadow-sm font-medium'
+                  : 'text-gray-600 hover:text-gray-800'
+                  }`}
+              >
+                <Sliders className="w-4 h-4" />
+                الخصائص المتقدمة
+                {dynamicProperties.length > 0 && (
+                  <span className="bg-indigo-100 text-indigo-600 text-xs px-2 py-1 rounded-full">
+                    {dynamicProperties.length}
                   </span>
-                </div>
-              </label>
-              <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                <div className="space-y-4">
-                  <input
-                    type="range"
-                    min="0"
-                    max="1000000"
-                    step="10000"
-                    value={parseInt(maxInput.replace(/,/g, ''))}
-                    onChange={(e) => handlePriceChange('max', e.target.value)}
-                    className="w-full accent-blue-600"
-                  />
-                  <div className="flex gap-4">
-                    <input
-                      type="number"
-                      value={minInput ?? 0}
-                      onChange={(e) => handlePriceChange('min', e.target.value)}
-                      className="flex-1 bg-white rounded-lg px-4 py-2 text-sm border focus:ring-2 focus:ring-blue-200 focus:border-blue-500"
-                      placeholder="الحد الأدنى"
-                      dir="ltr"
-                    />
-                    <input
-                      type="number"
-                      value={maxInput}
-                      onChange={(e) => handlePriceChange('max', e.target.value)}
-                      className="flex-1 bg-white rounded-lg px-4 py-2 text-sm border focus:ring-2 focus:ring-blue-200 focus:border-blue-500"
-                      placeholder="الحد الأقصى"
-                      dir="ltr"
-                    />
-                  </div>
-                </div>
-              </div>
+                )}
+              </button>
             </div>
-          )} */}
+          )}
 
+          {/* Content based on active tab */}
+          {activeTab === 'location' ? (
+            <div className="space-y-6">
+              <div className="flex items-center gap-2 mb-4">
+                <MapPin className="w-5 h-5 text-indigo-600" />
+                <h3 className="text-lg font-bold text-gray-800">الموقع والتصنيف</h3>
+              </div>
+              {renderStaticFilters()}
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {/* Message when no final type is selected */}
+              {!currentFinalTypeId && finalTypes.length > 0 && (
+                <div className="text-center py-12 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+                  <Building className="w-16 h-16 mx-auto mb-4 text-blue-300" />
+                  <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                    اختر التصنيف النهائي أولاً
+                  </h3>
+                  <p className="text-gray-500">
+                    لعرض خصائص الفلترة المتقدمة، يرجى اختيار التصنيف النهائي من تبويب "الموقع والتصنيف"
+                  </p>
+                </div>
+              )}
 
+              {/* Loading State */}
+              {isLoadingProperties && (
+                <div className="text-center py-12">
+                  <Loader2 className="w-12 h-12 mx-auto mb-4 text-indigo-600 animate-spin" />
+                  <p className="text-gray-600 font-medium">جاري تحميل خصائص الفلترة...</p>
+                </div>
+              )}
 
+              {/* No Properties Message */}
+              {!isLoadingProperties && dynamicProperties.length === 0 && currentFinalTypeId && (
+                <div className="text-center py-12 bg-gradient-to-br from-gray-50 to-slate-50 rounded-xl border border-gray-100">
+                  <FileText className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                  <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                    لا توجد خصائص فلترة متاحة
+                  </h3>
+                  <p className="text-gray-500">
+                    لم يتم تعريف خصائص فلترة لهذا النوع من العقارات بعد
+                  </p>
+                </div>
+              )}
+
+              {/* Dynamic Properties */}
+              {!isLoadingProperties && dynamicProperties.length > 0 && renderDynamicPropertyGroups()}
+            </div>
+          )}
+
+          {/* Reset Filters Button */}
+          {hasActiveFilters && (
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              <button
+                onClick={resetFilters}
+                className="w-full bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-medium py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                <X className="w-5 h-5" />
+                مسح جميع الفلاتر ({activeFilterCount})
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

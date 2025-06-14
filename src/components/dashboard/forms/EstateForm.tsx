@@ -577,7 +577,7 @@ export default function EstateForm({ buildingId, onSuccess }: EstateFormProps) {
                   parseFloat(finalCities.find(c => c.id === formData.finalCityId)?.location?.split(",")[0] ?? "0")
                 }
                 initialLongitude={
-                     parseFloat(finalCities.find(c => c.id === formData.finalCityId)?.location?.split(",")[1] ?? "0")
+                  parseFloat(finalCities.find(c => c.id === formData.finalCityId)?.location?.split(",")[1] ?? "0")
                 }
                 onLocationSelect={(latitude, longitude) => {
                   handleFormChange("location", { latitude, longitude });

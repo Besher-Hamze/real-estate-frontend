@@ -16,7 +16,7 @@ export const RealEstateApi = {
                 });
             }
 
-            const response = await apiClient.get<RealEstateData[]>(`/api/real-estate?${params.toString()}`);
+            const response = await apiClient.get<RealEstateData[]>(`/api/realestate?${params.toString()}`);
             return response.data;
         } catch (error) {
             console.error("Failed to fetch real estate data:", error);
@@ -29,7 +29,7 @@ export const RealEstateApi = {
      */
     fetchById: async (id: number): Promise<RealEstateData> => {
         try {
-            const response = await apiClient.get<RealEstateData>(`/api/real-estate/${id}`);
+            const response = await apiClient.get<RealEstateData>(`/api/realestate/${id}`);
             return response.data;
         } catch (error) {
             console.error("Failed to fetch real estate by ID:", error);
@@ -56,13 +56,21 @@ export const RealEstateApi = {
             formData.append('finalCityId', data.finalCityId.toString());
             formData.append('location', data.location);
             formData.append('viewTime', data.viewTime);
-
+            formData.append('paymentMethod', data.paymentMethod);
             if (data.buildingItemId) {
-                formData.append('buildingItemId', data.buildingItemId);
+                formData.append('buildingId', data.buildingItemId);
             }
 
-            // إضافة الخصائص الديناميكية
-            formData.append('dynamicProperties', JSON.stringify(data.dynamicProperties));
+            if (data.dynamicProperties) {
+                // Option 1: If dynamicProperties is an object
+                Object.entries(data.dynamicProperties).forEach(([key, value]) => {
+                    formData.append(`properties[${key}]`, String(value));
+                });
+
+                // Option 2: If you also want to send as JSON (alternative approach)
+                // formData.append('dynamicProperties', JSON.stringify(data.dynamicProperties));
+            }
+
 
             // إضافة الملفات
             if (data.coverImage) {
@@ -123,7 +131,7 @@ export const RealEstateApi = {
                 });
             }
 
-            const response = await apiClient.put<RealEstateData>(`/api/real-estate/${id}`, formData, {
+            const response = await apiClient.put<RealEstateData>(`/api/realestate/${id}`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -141,7 +149,7 @@ export const RealEstateApi = {
      */
     delete: async (id: number): Promise<void> => {
         try {
-            await apiClient.delete(`/api/real-estate/${id}`);
+            await apiClient.delete(`/api/realestate/${id}`);
         } catch (error) {
             console.error("Failed to delete real estate:", error);
             throw error;
@@ -164,7 +172,7 @@ export const RealEstateApi = {
                 });
             }
 
-            const response = await apiClient.get<RealEstateData[]>(`/api/real-estate/search?${params.toString()}`);
+            const response = await apiClient.get<RealEstateData[]>(`/api/realestate/search?${params.toString()}`);
             return response.data;
         } catch (error) {
             console.error("Failed to search real estate:", error);
@@ -177,7 +185,7 @@ export const RealEstateApi = {
      */
     fetchFavorites: async (): Promise<RealEstateData[]> => {
         try {
-            const response = await apiClient.get<RealEstateData[]>('/api/real-estate/favorites');
+            const response = await apiClient.get<RealEstateData[]>('/api/realestate/favorites');
             return response.data;
         } catch (error) {
             console.error("Failed to fetch favorites:", error);
@@ -190,7 +198,7 @@ export const RealEstateApi = {
      */
     toggleFavorite: async (id: number): Promise<{ isFavorite: boolean }> => {
         try {
-            const response = await apiClient.post<{ isFavorite: boolean }>(`/api/real-estate/${id}/favorite`);
+            const response = await apiClient.post<{ isFavorite: boolean }>(`/api/realestate/${id}/favorite`);
             return response.data;
         } catch (error) {
             console.error("Failed to toggle favorite:", error);
@@ -203,7 +211,7 @@ export const RealEstateApi = {
      */
     fetchByFinalType: async (finalTypeId: number): Promise<RealEstateData[]> => {
         try {
-            const response = await apiClient.get<RealEstateData[]>(`/api/real-estate/final-type/${finalTypeId}`);
+            const response = await apiClient.get<RealEstateData[]>(`/api/realestate/final-type/${finalTypeId}`);
             return response.data;
         } catch (error) {
             console.error("Failed to fetch real estate by final type:", error);
@@ -216,7 +224,7 @@ export const RealEstateApi = {
      */
     fetchByCity: async (cityId: number): Promise<RealEstateData[]> => {
         try {
-            const response = await apiClient.get<RealEstateData[]>(`/api/real-estate/city/${cityId}`);
+            const response = await apiClient.get<RealEstateData[]>(`/api/realestate/city/${cityId}`);
             return response.data;
         } catch (error) {
             console.error("Failed to fetch real estate by city:", error);
@@ -235,7 +243,7 @@ export const RealEstateApi = {
         averagePrice: number;
     }> => {
         try {
-            const response = await apiClient.get('/api/real-estate/stats');
+            const response = await apiClient.get('/api/realestate/stats');
             return response.data;
         } catch (error) {
             console.error("Failed to fetch real estate stats:", error);

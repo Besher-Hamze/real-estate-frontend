@@ -423,7 +423,7 @@ const RealEstateCard: React.FC<EnhancedRealEstateCardProps> = ({
           <span>{formatRelativeTime(item.createdAt)}</span>
         </div>
 
-        <div className="flex justify-between items-center bg-gray-50 p-4 rounded-lg mb-4">
+        {/* <div className="flex justify-between items-center bg-gray-50 p-4 rounded-lg mb-4">
           {(item.subCategoryName !== "أرض" && item.finalTypeName !== "أرض") && (
             <>
               {item.bedrooms && <div className="flex items-center gap-1">
@@ -450,13 +450,13 @@ const RealEstateCard: React.FC<EnhancedRealEstateCardProps> = ({
               {item.buildingArea} م²
             </span>
           </div>
-        </div>
+        </div> */}
         <div className="flex justify-between items-center">
           <div>
             <span className="text-sm text-gray-600">السعر</span>
             <div className="flex items-center gap-1">
               <span className="text-xl font-bold text-blue-600">
-                {item.price.toLocaleString()}
+                {item.price}
               </span>
               <span className="text-sm font-medium text-gray-600">ر.ع</span>
             </div>

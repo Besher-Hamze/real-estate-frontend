@@ -3,23 +3,20 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Edit2, Eye, Trash2, X, CheckSquare, Square, QrCode } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/ui/data-table/DataTable";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
 import { estateQuery } from "@/lib/constants/queryNames";
 import { toast } from "react-toastify";
 import { RealEstateApi } from "@/api/realEstateApi";
-import apiClient from "@/api";
-import { finalTypeTypeApi } from "@/api/finalTypeApi";
-import { CityType, FinalCityType, FinalType, MainType, NeighborhoodType, RealEstateData } from "@/lib/types";
+import { MainType, RealEstateData } from "@/lib/types";
 import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 import QRCode from 'qrcode';
 
 import { useSelectionManager } from "@/lib/hooks/useSelectionManager";
 import { BulkActionsBar } from "../BulkActionsBar";
 import { BulkDeleteDialog } from "../BulkDeleteDialog";
-import { finalCityApi } from "@/api/finalCityApi";
-import { EditEstateForm } from "../estate-components/Edit-Estate";
 
 interface EstateTableProps {
   realEstateData: RealEstateData[] | undefined;
@@ -28,11 +25,14 @@ interface EstateTableProps {
 }
 
 export default function EstateTable({ realEstateData, isLoading, mainTypes }: EstateTableProps) {
+  const router = useRouter();
+
   // Use the selection manager hook
   const selection = useSelectionManager({
     items: realEstateData,
     idExtractor: (estate) => estate.id
   });
+
   const [selectedProperty, setSelectedProperty] = useState<RealEstateData | null>(null);
   const [showQRModal, setShowQRModal] = useState(false);
   const [qrGenerated, setQrGenerated] = useState(false);
@@ -41,21 +41,10 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
   // Bulk delete dialog state
   const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
 
-  const [editingEstate, setEditingEstate] = useState<RealEstateData | null>(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  // New state for edit exit confirmation dialog
-  const [isEditExitConfirmOpen, setIsEditExitConfirmOpen] = useState(false);
-
-  const [cities, setCities] = useState<CityType[]>([]);
-  const [finalTypes, setFinalTypes] = useState<FinalType[]>([]);
-  const [neighborhoods, setNeighborhoods] = useState<NeighborhoodType[]>([]);
-  const [finalCities, setFinalCities] = useState<FinalCityType[]>([]);
-
   const client = useQueryClient();
-  const modalRef = useRef<HTMLDivElement>(null);
 
   const handleGenerateQR = (property: RealEstateData) => {
     setSelectedProperty(property);
@@ -79,6 +68,7 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
       document.body.removeChild(link);
     }
   };
+
   useEffect(() => {
     const generateQR = async () => {
       if (showQRModal && selectedProperty && qrCanvasRef.current && !qrGenerated) {
@@ -98,106 +88,14 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
     generateQR();
   }, [showQRModal, selectedProperty]);
 
-  // When edit modal is open, attach event listeners to detect outside clicks and Escape key
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && isEditModalOpen) {
-        setIsEditExitConfirmOpen(true);
-      }
-    };
+  // Navigate to edit page
+  const handleEdit = (property: RealEstateData) => {
+    router.push(`/dashboard/real-estate/create?id=${property.id}`);
+  };
 
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        modalRef.current &&
-        !modalRef.current.contains(event.target as Node) &&
-        isEditModalOpen
-      ) {
-        setIsEditExitConfirmOpen(true);
-      }
-    };
-
-    if (isEditModalOpen) {
-      document.addEventListener("keydown", handleKeyDown);
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isEditModalOpen]);
-
-  // Fetch cities
-  useEffect(() => {
-    const fetchCities = async () => {
-      try {
-        const response = await apiClient.get("/api/cities");
-        setCities(response.data);
-      } catch (error) {
-        console.error("Failed to fetch cities:", error);
-      }
-    };
-    fetchCities();
-  }, []);
-
-  useEffect(() => {
-    const fetchFinalType = async () => {
-      if (editingEstate?.subCategoryId) {
-        try {
-          const response = await finalTypeTypeApi.fetchFinalTypeBySubId(editingEstate.subCategoryId);
-          setFinalTypes(response);
-        } catch (error) {
-          console.error("Failed to fetch final types:", error);
-        }
-      }
-    };
-    fetchFinalType();
-  }, [editingEstate?.subCategoryId]);
-
-  // Fetch neighborhoods when editingEstate changes
-  useEffect(() => {
-    const fetchNeighborhoods = async () => {
-      if (editingEstate?.cityId) {
-        try {
-          const response = await apiClient.get(`/api/neighborhoods/${editingEstate.cityId}`);
-          setNeighborhoods(response.data);
-        } catch (error) {
-          console.error("Failed to fetch neighborhoods:", error);
-        }
-      }
-    };
-    fetchNeighborhoods();
-  }, [editingEstate?.cityId]);
-
-  useEffect(() => {
-    const fetchFinalCities = async () => {
-      if (editingEstate?.neighborhoodId) {
-        try {
-          const response = await finalCityApi.fetchFinalCityByNeighborhoodId(editingEstate.neighborhoodId);
-          setFinalCities(response);
-        } catch (error) {
-          console.error("Failed to fetch final cities:", error);
-        }
-      }
-    };
-    fetchFinalCities();
-  }, [editingEstate?.neighborhoodId]);
-
-  const handleEdit = async () => {
-    if (!editingEstate) return;
-    try {
-      await RealEstateApi.updateRealEstate(editingEstate.id, editingEstate);
-      toast.success("تم التعديل بنجاح");
-      client.invalidateQueries({ queryKey: [estateQuery] });
-      if (editingEstate.buildingItemId) {
-        client.invalidateQueries({ queryKey: ['buildings'] });
-        client.invalidateQueries({ queryKey: ['realEstate', 'building', editingEstate.buildingItemId] });
-      }
-      setIsEditModalOpen(false);
-    } catch (error) {
-      toast.error("خطأ أثناء تحديث العقار");
-      console.error(error);
-    }
+  // View property details
+  const handleView = (property: RealEstateData) => {
+    router.push(`/properties/${property.id}`);
   };
 
   const handleDelete = async () => {
@@ -300,11 +198,6 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
           </div>
           <div className="mr-4">
             <div className="text-sm font-medium text-gray-900">{row.title}</div>
-            <div className="text-sm text-gray-500">
-              {row.bedrooms ? `${row.bedrooms} غرف · ` : ''}
-              {row.bathrooms ? `${row.bathrooms} حمام · ` : ''}
-              {row.buildingArea} م²
-            </div>
           </div>
         </div>
       )
@@ -339,10 +232,29 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
           <div className="text-sm text-gray-500">{row.finalTypeName}</div>
         </>
       )
+    },
+    {
+      header: "تاريخ الإنشاء",
+      accessorKey: "createdAt",
+      cell: (row: RealEstateData) => (
+        <div className="text-sm text-gray-500">
+          {new Date(row.createdAt).toLocaleDateString('ar-SA', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+          })}
+        </div>
+      )
     }
   ];
 
   const actions = [
+    {
+      icon: <Eye className="w-4 h-4" />,
+      label: "عرض",
+      onClick: handleView,
+      color: "text-green-600"
+    },
     {
       icon: <QrCode className="w-4 h-4" />,
       label: "عرض QR",
@@ -352,10 +264,7 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
     {
       icon: <Edit2 className="w-4 h-4" />,
       label: "تعديل",
-      onClick: (row: RealEstateData) => {
-        setEditingEstate(row);
-        setIsEditModalOpen(true);
-      },
+      onClick: handleEdit,
       color: "text-blue-600"
     },
     {
@@ -387,54 +296,15 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
         actions={actions}
         isLoading={isLoading}
         rowClassName={(row) => selection.isSelected(row.id) ? "bg-blue-50" : ""}
+        emptyState={{
+          title: "لا توجد عقارات",
+          description: "لم يتم العثور على أي عقارات. ابدأ بإضافة عقار جديد.",
+          action: {
+            label: "إضافة عقار جديد",
+            onClick: () => router.push('/dashboard/real-estate/create')
+          }
+        }}
       />
-
-      {/* Edit Modal using Framer Motion */}
-      <AnimatePresence>
-        {isEditModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
-          >
-            <motion.div
-              ref={modalRef}
-              onClick={(e) => e.stopPropagation()} // Prevent clicks inside modal from triggering overlay click
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative"
-              aria-modal="true"
-              role="dialog"
-            >
-              <button
-                onClick={() => setIsEditExitConfirmOpen(true)}
-                aria-label="Close modal"
-                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 z-10 transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
-
-              <div className="m-8">
-                {editingEstate && (
-                  <EditEstateForm
-                    onSubmit={handleEdit}
-                    editingEstate={editingEstate}
-                    setEditingEstate={setEditingEstate}
-                    cities={cities}
-                    neighborhoods={neighborhoods}
-                    mainTypes={mainTypes || []}
-                    finalTypes={finalTypes}
-                    finalCities={finalCities}
-                  />
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Single Delete Confirmation Dialog */}
       <ConfirmationDialog
@@ -443,6 +313,8 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
         onConfirm={handleDelete}
         title="تأكيد الحذف"
         message="هل أنت متأكد أنك تريد حذف هذا العقار؟ لا يمكن التراجع عن هذا القرار."
+        confirmText="حذف"
+        cancelText="إلغاء"
       />
 
       {/* Bulk Delete Dialog */}
@@ -455,18 +327,7 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
         itemName={{ singular: "عقار", plural: "عقارات" }}
       />
 
-      {/* Edit Exit Confirmation Dialog */}
-      <ConfirmationDialog
-        isOpen={isEditExitConfirmOpen}
-        onClose={() => setIsEditExitConfirmOpen(false)}
-        onConfirm={() => {
-          setIsEditModalOpen(false);
-          setIsEditExitConfirmOpen(false);
-        }}
-        title="تأكيد الخروج"
-        confirmText={isEditExitConfirmOpen ? "تأكيد الخروج" : undefined}
-        message="هل أنت متأكد أنك تريد الخروج من التعديل؟ البيانات غير المحفوظة قد تفقد."
-      />
+      {/* QR Code Modal */}
       <AnimatePresence>
         {showQRModal && selectedProperty && (
           <motion.div
@@ -474,49 +335,76 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+            onClick={() => {
+              setShowQRModal(false);
+              setSelectedProperty(null);
+            }}
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative"
+              onClick={(e) => e.stopPropagation()}
             >
               <button
                 onClick={() => {
                   setShowQRModal(false);
                   setSelectedProperty(null);
                 }}
-                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors"
+                aria-label="إغلاق"
               >
                 <X className="w-6 h-6" />
               </button>
 
               <div className="text-center">
-                <h2 className="text-xl font-semibold mb-4">رمز QR للعقار</h2>
-                <p className="text-sm text-gray-600 mb-4">
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <QrCode className="w-6 h-6 text-purple-600" />
+                </div>
+
+                <h2 className="text-xl font-semibold mb-2 text-gray-900">رمز QR للعقار</h2>
+                <p className="text-sm text-gray-600 mb-6 line-clamp-2">
                   {selectedProperty.title}
                 </p>
-                <div className="flex justify-center mb-4">
-                  <canvas ref={qrCanvasRef} className="border border-gray-200 rounded-md" />
+
+                <div className="flex justify-center mb-6">
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <canvas
+                      ref={qrCanvasRef}
+                      className="border border-gray-200 rounded-md"
+                    />
+                  </div>
                 </div>
-                <p className="text-sm text-gray-600 mt-2 mb-4">
-                  امسح الرمز للوصول إلى صفحة العقار
+
+                <p className="text-xs text-gray-500 mb-6">
+                  امسح الرمز للوصول إلى صفحة العقار مباشرة
                 </p>
-                <button
-                  onClick={handleDownloadQR}
-                  className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
-                >
-                  <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  تحميل رمز QR
-                </button>
+
+                <div className="flex gap-3 justify-center">
+                  <button
+                    onClick={handleDownloadQR}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    تحميل الرمز
+                  </button>
+
+                  <button
+                    onClick={() => handleView(selectedProperty)}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+                  >
+                    <Eye className="w-4 h-4" />
+                    عرض العقار
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-
     </div>
   );
 }

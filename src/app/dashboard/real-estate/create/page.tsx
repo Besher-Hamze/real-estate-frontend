@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,8 +11,9 @@ import { Badge } from '@/components/ui/badge';
 import { TypeSelector, DynamicForm } from '@/components/dynamic-form';
 import { useDynamicForm } from '@/hooks/useDynamicProperties';
 import { useLocationData } from '@/hooks/useLocationData';
-import { CreateRealEstateData, MainType, SubType, FinalType } from '@/lib/types';
+import { CreateRealEstateData, MainType, SubType, FinalType, RealEstateData, Building } from '@/lib/types';
 import { RealEstateApi } from '@/api/realEstateApi';
+import { buildingApi } from '@/api/buidlingApi';
 import {
     Save,
     ArrowLeft,
@@ -23,9 +24,23 @@ import {
     FileText,
     Home,
     DollarSign,
-    Clock
+    Clock,
+    Loader2,
+    Edit,
+    Plus,
+    Building2,
+    AlertCircle,
+    CheckSquare
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Select, SelectItem } from '@/components/ui/select';
+import { SelectTrigger } from '@/components/ui/select';
+import { SelectValue } from '@/components/ui/select';
+import { SelectContent } from '@/components/ui/select';
+import { PAYMENT_OPTIONS } from '@/components/ui/constants/formOptions';
+import LocationPicker from '@/components/map/LocationPicker';
+import ViewingTimeSelector from '@/components/forms/ViewingTimeSelector';
+import ImageUploadModal from '@/components/dashboard/forms/EnhancedImageUpload';
 
 interface FormStep {
     id: number;
@@ -35,8 +50,14 @@ interface FormStep {
     isCompleted: boolean;
 }
 
-export default function CreateRealEstatePage() {
+export default function RealEstatePage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const propertyId = searchParams.get('id');
+    const buildingId = searchParams.get('buildingId'); // New: Get building ID from query params
+    const isEditMode = !!propertyId;
+    const isBuildingMode = !!buildingId; // New: Check if creating for building
+
     const [currentStep, setCurrentStep] = useState(1);
     const [selectedFinalTypeId, setSelectedFinalTypeId] = useState<number | null>(null);
     const [selectedTypePath, setSelectedTypePath] = useState<{
@@ -44,6 +65,14 @@ export default function CreateRealEstatePage() {
         subType: SubType;
         finalType: FinalType;
     } | null>(null);
+
+    // New: Building-related state
+    const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
+    const [isLoadingBuilding, setIsLoadingBuilding] = useState(isBuildingMode);
+
+    // حالة تحميل البيانات الأولية (للتعديل فقط)
+    const [isLoading, setIsLoading] = useState(isEditMode);
+    const [property, setProperty] = useState<RealEstateData | null>(null);
 
     // استخدام hook للخصائص الديناميكية
     const {
@@ -53,7 +82,8 @@ export default function CreateRealEstatePage() {
         loading: dynamicLoading,
         updateField: updateDynamicField,
         validate: validateDynamic,
-        isValid: isDynamicValid
+        isValid: isDynamicValid,
+        setFormData: setDynamicFormData
     } = useDynamicForm(selectedFinalTypeId);
 
     // استخدام hook لبيانات الموقع
@@ -75,20 +105,166 @@ export default function CreateRealEstatePage() {
         price: '',
         finalCityId: '',
         location: '',
-        viewTime: '',
+        viewTime: [] as any[],
+        paymentMethod: "",
         coverImage: null as File | null,
-        files: [] as File[]
+        files: [] as File[],
+        // للتعديل فقط - للاحتفاظ بالبيانات الموجودة
+        existingCoverImage: '',
+        existingFiles: [] as string[]
     });
+
+    // Image upload states
+    const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
+    const [additionalImagePreviews, setAdditionalImagePreviews] = useState<string[]>([]);
+    const [additionalFileTypes, setAdditionalFileTypes] = useState<string[]>([]);
+    const [isUploading, setIsUploading] = useState(false);
+    const [isCoverImageUploading, setIsCoverImageUploading] = useState(false);
+    const [uploadingImageIndexes, setUploadingImageIndexes] = useState<number[]>([]);
+    const [coverImageProgress, setCoverImageProgress] = useState<number>(0);
+    const [additionalImageProgress, setAdditionalImageProgress] = useState<Record<number, number>>({});
 
     const [errors, setErrors] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // New: Load building data if buildingId is provided
+    useEffect(() => {
+        const loadBuilding = async () => {
+            if (!buildingId) {
+                setIsLoadingBuilding(false);
+                return;
+            }
+
+            try {
+                setIsLoadingBuilding(true);
+                const buildingData = await buildingApi.fetchBuildingById(buildingId);
+                setSelectedBuilding(buildingData);
+
+                // Auto-fill location data from building
+                if (buildingData.location) {
+                    updateBasicField('location', buildingData.location);
+                }
+
+                // Auto-fill location hierarchy from building if available
+                if (buildingData.cityId) {
+                    setSelectedCityId(buildingData.cityId);
+                }
+                if (buildingData.neighborhoodId) {
+                    setSelectedNeighborhoodId(buildingData.neighborhoodId);
+                }
+                if (buildingData.finalCityId) {
+                    updateBasicField('finalCityId', buildingData.finalCityId.toString());
+                }
+
+                // You can also pre-fill title with building context
+                if (!basicFormData.title) {
+                    updateBasicField('title', `عقار في ${buildingData.title}`);
+                }
+
+            } catch (error) {
+                console.error('Error loading building:', error);
+                toast.error('حدث خطأ في تحميل بيانات المبنى');
+                router.push('/dashboard/buildings');
+            } finally {
+                setIsLoadingBuilding(false);
+            }
+        };
+
+        loadBuilding();
+    }, [buildingId, router, setSelectedCityId, setSelectedNeighborhoodId]);
+
+    // تحميل بيانات العقار الموجود (في حالة التعديل)
+    useEffect(() => {
+        const loadProperty = async () => {
+            if (!isEditMode || !propertyId) {
+                setIsLoading(false);
+                return;
+            }
+
+            try {
+                setIsLoading(true);
+                const propertyData = await RealEstateApi.fetchRealEstateById(Number(propertyId));
+                setProperty(propertyData);
+
+                // تعبئة البيانات الأساسية
+                setBasicFormData({
+                    title: propertyData.title || '',
+                    description: propertyData.description || '',
+                    price: propertyData.price?.toString() || '',
+                    finalCityId: propertyData.finalCityId?.toString() || '',
+                    location: propertyData.location || '',
+                    viewTime: propertyData.viewTime ? JSON.parse(propertyData.viewTime) : [],
+                    paymentMethod: propertyData.paymentMethod || '',
+                    coverImage: null,
+                    files: [],
+                    existingCoverImage: propertyData.coverImage || '',
+                    existingFiles: propertyData.files || []
+                });
+
+                // Set cover image preview for edit mode
+                if (propertyData.coverImage) {
+                    setCoverImagePreview(`${process.env.NEXT_PUBLIC_API_URL}/${propertyData.coverImage}`);
+                }
+
+                // Set additional image previews for edit mode
+                if (propertyData.files && propertyData.files.length > 0) {
+                    const imagePreviews = propertyData.files.map((file: string) =>
+                        `${process.env.NEXT_PUBLIC_API_URL}/${file}`
+                    );
+                    setAdditionalImagePreviews(imagePreviews);
+
+                    const fileTypes = propertyData.files.map(() => 'image/jpeg');
+                    setAdditionalFileTypes(fileTypes);
+                }
+
+                // تعيين بيانات الموقع
+                if (propertyData.cityId) setSelectedCityId(propertyData.cityId);
+                if (propertyData.neighborhoodId) setSelectedNeighborhoodId(propertyData.neighborhoodId);
+
+                // تعيين نوع العقار
+                if (propertyData.finalTypeId) {
+                    setSelectedFinalTypeId(propertyData.finalTypeId);
+                }
+
+                // تعبئة الخصائص الديناميكية
+                if (propertyData.properties) {
+                    const dynamicData: { [key: string]: any } = {};
+                    Object.entries(propertyData.properties).forEach(([key, propValue]) => {
+                        if (propValue && typeof propValue === 'object' && 'value' in propValue) {
+                            dynamicData[key] = propValue.value;
+                        }
+                    });
+                    setDynamicFormData(dynamicData);
+                }
+
+                // New: Load building data if property belongs to a building
+                if (propertyData.buildingItemId) {
+                    try {
+                        const buildingData = await buildingApi.fetchBuildingById(propertyData.buildingItemId);
+                        setSelectedBuilding(buildingData);
+                    } catch (error) {
+                        console.warn('Could not load building data for property');
+                    }
+                }
+
+            } catch (error) {
+                console.error('Error loading property:', error);
+                toast.error('حدث خطأ في تحميل بيانات العقار');
+                router.push('/dashboard/real-estate');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadProperty();
+    }, [isEditMode, propertyId, router, setSelectedCityId, setSelectedNeighborhoodId, setDynamicFormData]);
 
     // تعريف خطوات النموذج
     const steps: FormStep[] = [
         {
             id: 1,
             title: 'نوع العقار',
-            description: 'اختر نوع العقار المناسب',
+            description: isEditMode ? 'تعديل نوع العقار' : 'اختر نوع العقار المناسب',
             icon: <Home className="w-5 h-5" />,
             isCompleted: selectedFinalTypeId !== null
         },
@@ -104,7 +280,7 @@ export default function CreateRealEstatePage() {
             title: 'الموقع',
             description: 'تفاصيل موقع العقار',
             icon: <MapPin className="w-5 h-5" />,
-            isCompleted: !!(selectedCityId && selectedNeighborhoodId && basicFormData.finalCityId)
+            isCompleted: !!(selectedCityId && selectedNeighborhoodId && basicFormData.finalCityId && basicFormData.location)
         },
         {
             id: 4,
@@ -118,7 +294,7 @@ export default function CreateRealEstatePage() {
             title: 'الصور والملفات',
             description: 'صور العقار والمستندات',
             icon: <Camera className="w-5 h-5" />,
-            isCompleted: basicFormData.coverImage !== null
+            isCompleted: !!(basicFormData.coverImage || basicFormData.existingCoverImage || coverImagePreview)
         }
     ];
 
@@ -126,10 +302,63 @@ export default function CreateRealEstatePage() {
     const handleFinalTypeSelect = (finalTypeId: number, path: { mainType: MainType; subType: SubType; finalType: FinalType }) => {
         setSelectedFinalTypeId(finalTypeId);
         setSelectedTypePath(path);
-        setCurrentStep(2);
+        if (!isEditMode) {
+            setCurrentStep(2);
+        }
     };
 
-    // التحديث للبيانات الأساسية
+    // Image upload handlers
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                if (e.target?.result) {
+                    setCoverImagePreview(e.target.result as string);
+                }
+            };
+            reader.readAsDataURL(file);
+            updateBasicField('coverImage', file);
+        }
+    };
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                if (e.target?.result) {
+                    const newPreviews = [...additionalImagePreviews];
+                    newPreviews[index] = e.target.result as string;
+                    setAdditionalImagePreviews(newPreviews);
+                }
+            };
+            reader.readAsDataURL(file);
+
+            const files = Array.isArray(basicFormData.files) ? [...basicFormData.files] : [];
+            files[index] = file;
+            const newFileTypes = [...additionalFileTypes];
+            newFileTypes[index] = file.type;
+            setAdditionalFileTypes(newFileTypes);
+
+            updateBasicField('files', files);
+        }
+    };
+
+    const handleDeleteAdditionalImage = (index: number) => {
+        const newPreviews = [...additionalImagePreviews];
+        const newUrls = [...basicFormData.files];
+        const newTypes = [...additionalFileTypes];
+
+        newPreviews.splice(index, 1);
+        newUrls.splice(index, 1);
+        newTypes.splice(index, 1);
+
+        setAdditionalImagePreviews(newPreviews);
+        setAdditionalFileTypes(newTypes);
+        updateBasicField('files', newUrls);
+    };
+
     const updateBasicField = (field: keyof typeof basicFormData, value: any) => {
         setBasicFormData(prev => ({
             ...prev,
@@ -153,9 +382,11 @@ export default function CreateRealEstatePage() {
                 if (!basicFormData.title.trim()) newErrors.push('عنوان العقار مطلوب');
                 if (!basicFormData.description.trim()) newErrors.push('وصف العقار مطلوب');
                 if (!basicFormData.price || isNaN(Number(basicFormData.price))) newErrors.push('سعر صحيح مطلوب');
+                if (!basicFormData.paymentMethod.trim()) newErrors.push('طريقة الدفع مطلوبة');
                 break;
 
             case 3:
+                // Always require location hierarchy (city, neighborhood, finalCity)
                 if (!selectedCityId) newErrors.push('المدينة مطلوبة');
                 if (!selectedNeighborhoodId) newErrors.push('الحي مطلوب');
                 if (!basicFormData.finalCityId) newErrors.push('المنطقة مطلوبة');
@@ -169,8 +400,12 @@ export default function CreateRealEstatePage() {
                 break;
 
             case 5:
-                if (!basicFormData.coverImage) newErrors.push('صورة الغلاف مطلوبة');
-                if (!basicFormData.viewTime) newErrors.push('وقت المعاينة مطلوب');
+                if (!basicFormData.coverImage && !basicFormData.existingCoverImage && !coverImagePreview) {
+                    newErrors.push('صورة الغلاف مطلوبة');
+                }
+                if (!basicFormData.viewTime || basicFormData.viewTime.length === 0) {
+                    newErrors.push('وقت المعاينة مطلوب');
+                }
                 break;
         }
 
@@ -194,52 +429,170 @@ export default function CreateRealEstatePage() {
 
     // إرسال النموذج
     const handleSubmit = async () => {
-        if (!validateCurrentStep() || !selectedTypePath || !selectedCityId || !selectedNeighborhoodId) {
+        if (!validateCurrentStep() || !selectedTypePath) {
+            return;
+        }
+
+        // Additional validation - always require location hierarchy
+        if (!selectedCityId || !selectedNeighborhoodId) {
+            toast.error('يرجى اختيار المدينة والحي');
             return;
         }
 
         setIsSubmitting(true);
 
         try {
-            const createData: CreateRealEstateData = {
-                title: basicFormData.title,
-                description: basicFormData.description,
-                price: Number(basicFormData.price),
-                mainCategoryId: selectedTypePath.mainType.id,
-                subCategoryId: selectedTypePath.subType.id,
-                finalTypeId: selectedTypePath.finalType.id,
-                cityId: selectedCityId,
-                neighborhoodId: selectedNeighborhoodId,
-                finalCityId: Number(basicFormData.finalCityId),
-                location: basicFormData.location,
-                viewTime: basicFormData.viewTime,
-                coverImage: basicFormData.coverImage,
-                files: basicFormData.files,
-                dynamicProperties: dynamicFormData
-            };
+            if (isEditMode && property) {
+                // تحديث العقار الموجود
+                const updateData: Partial<any> = {
+                    title: basicFormData.title,
+                    description: basicFormData.description,
+                    price: Number(basicFormData.price),
+                    paymentMethod: basicFormData.paymentMethod,
+                    location: basicFormData.location,
+                    viewTime: JSON.stringify(basicFormData.viewTime),
+                    dynamicProperties: dynamicFormData
+                };
 
-            await RealEstateApi.create(createData);
+                // Add location fields for both building and normal mode
+                updateData.cityId = selectedCityId;
+                updateData.neighborhoodId = selectedNeighborhoodId;
+                updateData.finalCityId = Number(basicFormData.finalCityId);
 
-            toast.success('تم إنشاء العقار بنجاح!');
-            router.push('/dashboard/real-estate');
+                // Add building info if in building mode
+                if (selectedBuilding) {
+                    updateData.buildingItemId = selectedBuilding.id;
+                }
+
+                // إضافة الصور الجديدة إذا تم اختيارها
+                if (basicFormData.coverImage) {
+                    updateData.coverImage = basicFormData.coverImage;
+                }
+                if (basicFormData.files.length > 0) {
+                    updateData.files = basicFormData.files;
+                }
+
+                // إضافة معرفات الأنواع إذا تغيرت
+                if (selectedTypePath) {
+                    updateData.mainCategoryId = selectedTypePath.mainType.id;
+                    updateData.subCategoryId = selectedTypePath.subType.id;
+                    updateData.finalTypeId = selectedTypePath.finalType.id;
+                }
+
+                await RealEstateApi.update(property.id, updateData);
+                toast.success('تم تحديث العقار بنجاح!');
+            } else {
+                // إنشاء عقار جديد
+                const createData: CreateRealEstateData = {
+                    title: basicFormData.title,
+                    description: basicFormData.description,
+                    price: Number(basicFormData.price),
+                    mainCategoryId: selectedTypePath.mainType.id,
+                    subCategoryId: selectedTypePath.subType.id,
+                    finalTypeId: selectedTypePath.finalType.id,
+                    paymentMethod: basicFormData.paymentMethod,
+                    location: basicFormData.location,
+                    viewTime: JSON.stringify(basicFormData.viewTime),
+                    coverImage: basicFormData.coverImage,
+                    files: basicFormData.files,
+                    dynamicProperties: dynamicFormData,
+                    // Always include location hierarchy
+                    cityId: selectedCityId!,
+                    neighborhoodId: selectedNeighborhoodId!,
+                    finalCityId: Number(basicFormData.finalCityId),
+                    // Add building-specific fields if applicable
+                    ...(selectedBuilding && {
+                        buildingItemId: selectedBuilding.id,
+                    })
+                };
+
+                await RealEstateApi.create(createData);
+                toast.success('تم إنشاء العقار بنجاح!');
+            }
+
+            // Navigate back appropriately
+            if (selectedBuilding) {
+                router.push(`/dashboard/buildings?showRealEstates=${selectedBuilding.id}`);
+            } else {
+                router.push('/dashboard/real-estate');
+            }
 
         } catch (error) {
-            console.error('Error creating real estate:', error);
-            toast.error('حدث خطأ في إنشاء العقار');
+            console.error('Error saving real estate:', error);
+            toast.error(isEditMode ? 'حدث خطأ في تحديث العقار' : 'حدث خطأ في إنشاء العقار');
         } finally {
             setIsSubmitting(false);
         }
     };
+
+    // عرض شاشة التحميل
+    if (isLoading || isLoadingBuilding) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                        {isLoadingBuilding ? 'جاري تحميل بيانات المبنى' : 'جاري تحميل بيانات العقار'}
+                    </h2>
+                    <p className="text-gray-600">يرجى الانتظار...</p>
+                </div>
+            </div>
+        );
+    }
 
     // رندر محتوى الخطوة
     const renderStepContent = () => {
         switch (currentStep) {
             case 1:
                 return (
-                    <TypeSelector
-                        onFinalTypeSelect={handleFinalTypeSelect}
-                        className="min-h-[400px]"
-                    />
+                    <div className="space-y-6">
+                        {/* Building Context Display */}
+                        {selectedBuilding && (
+                            <Card className="bg-green-50 border-green-200">
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                                            <Building2 className="w-5 h-5 text-green-600" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-semibold text-green-900">
+                                                إضافة عقار إلى: {selectedBuilding.title}
+                                            </h3>
+                                            <p className="text-sm text-green-700">
+                                                الحالة: {selectedBuilding.status} • الموقع: {selectedBuilding.location}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {isEditMode && property && (
+                            <Card className="bg-blue-50 border-blue-200">
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                                            <Edit className="w-5 h-5 text-blue-600" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-semibold text-blue-900">
+                                                النوع الحالي: {property.finalTypeName}
+                                            </h3>
+                                            <p className="text-sm text-blue-700">
+                                                يمكنك تغيير نوع العقار أو الاحتفاظ بالنوع الحالي
+                                            </p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        <TypeSelector
+                            onFinalTypeSelect={handleFinalTypeSelect}
+                            initialFinalTypeId={selectedFinalTypeId}
+                            className="min-h-[400px]"
+                        />
+                    </div>
                 );
 
             case 2:
@@ -250,6 +603,11 @@ export default function CreateRealEstatePage() {
                                 <CardTitle className="flex items-center gap-2">
                                     <FileText className="w-5 h-5 text-blue-500" />
                                     المعلومات الأساسية
+                                    {selectedBuilding && (
+                                        <Badge variant="secondary" className="mr-auto">
+                                            مبنى: {selectedBuilding.title}
+                                        </Badge>
+                                    )}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
@@ -259,9 +617,19 @@ export default function CreateRealEstatePage() {
                                         id="title"
                                         value={basicFormData.title}
                                         onChange={(e) => updateBasicField('title', e.target.value)}
-                                        placeholder="أدخل عنوان مميز للعقار"
+                                        placeholder={selectedBuilding ?
+                                            `أدخل عنوان العقار في ${selectedBuilding.title}` :
+                                            "أدخل عنوان مميز للعقار"
+                                        }
                                         className="mt-1"
+                                        maxLength={100}
                                     />
+                                    <div className="flex justify-between text-xs mt-1">
+                                        <span className="text-gray-500">الحد الأقصى 100 حرف</span>
+                                        <span className={`${basicFormData.title.length > 90 ? 'text-amber-600' : ''} ${basicFormData.title.length >= 100 ? 'text-red-500' : ''}`}>
+                                            {basicFormData.title.length}/100
+                                        </span>
+                                    </div>
                                 </div>
 
                                 <div>
@@ -270,13 +638,23 @@ export default function CreateRealEstatePage() {
                                         id="description"
                                         value={basicFormData.description}
                                         onChange={(e) => updateBasicField('description', e.target.value)}
-                                        placeholder="اكتب وصفاً تفصيلياً للعقار"
+                                        placeholder={selectedBuilding ?
+                                            `اكتب وصفاً تفصيلياً للعقار في مبنى ${selectedBuilding.title}` :
+                                            "اكتب وصفاً تفصيلياً للعقار"
+                                        }
                                         className="mt-1 min-h-[100px]"
+                                        maxLength={1000}
                                     />
+                                    <div className="flex justify-between text-xs mt-1">
+                                        <span className="text-gray-500">الحد الأقصى 1000 حرف</span>
+                                        <span className={`${basicFormData.description.length > 900 ? 'text-amber-600' : ''} ${basicFormData.description.length >= 1000 ? 'text-red-500' : ''}`}>
+                                            {basicFormData.description.length}/1000
+                                        </span>
+                                    </div>
                                 </div>
 
                                 <div>
-                                    <Label htmlFor="price">السعر (ريال سعودي) *</Label>
+                                    <Label htmlFor="price">السعر (ريال عماني) *</Label>
                                     <Input
                                         id="price"
                                         type="number"
@@ -285,6 +663,25 @@ export default function CreateRealEstatePage() {
                                         placeholder="0"
                                         className="mt-1"
                                     />
+                                </div>
+
+                                <div>
+                                    <Label htmlFor="paymentMethod">طريقة الدفع *</Label>
+                                    <Select
+                                        value={basicFormData.paymentMethod}
+                                        onValueChange={(value) => updateBasicField('paymentMethod', value)}
+                                    >
+                                        <SelectTrigger className="mt-1">
+                                            <SelectValue placeholder="اختر طريقة الدفع" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {PAYMENT_OPTIONS.map((option) => (
+                                                <SelectItem key={option} value={option}>
+                                                    {option}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                             </CardContent>
                         </Card>
@@ -299,78 +696,233 @@ export default function CreateRealEstatePage() {
                                 <CardTitle className="flex items-center gap-2">
                                     <MapPin className="w-5 h-5 text-green-500" />
                                     تفاصيل الموقع
+                                    {selectedBuilding && (
+                                        <Badge variant="secondary" className="mr-auto">
+                                            مرتبط بمبنى: {selectedBuilding.title}
+                                        </Badge>
+                                    )}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <Label htmlFor="city">المدينة *</Label>
-                                        <select
-                                            id="city"
-                                            value={selectedCityId || ''}
-                                            onChange={(e) => setSelectedCityId(Number(e.target.value) || null)}
-                                            className="w-full mt-1 p-2 border rounded-md"
-                                            disabled={locationLoading}
-                                        >
-                                            <option value="">اختر المدينة</option>
-                                            {cities.map(city => (
-                                                <option key={city.id} value={city.id}>
-                                                    {city.name}
-                                                </option>
-                                            ))}
-                                        </select>
+                                {selectedBuilding ? (
+                                    // Building mode - simplified location
+                                    <div className="space-y-4">
+                                        <Card className="bg-green-50 border-green-200">
+                                            <CardContent className="pt-4">
+                                                <div className="flex items-start gap-3">
+                                                    <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+                                                        <CheckSquare className="w-4 h-4 text-green-600" />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <h4 className="font-medium text-green-900 mb-1">
+                                                            معلومات المبنى
+                                                        </h4>
+                                                        <div className="text-sm text-green-700 space-y-1">
+                                                            <p><strong>اسم المبنى:</strong> {selectedBuilding.title}</p>
+                                                            <p><strong>الحالة:</strong> {selectedBuilding.status}</p>
+                                                            <p><strong>عدد العقارات الحالية:</strong> {selectedBuilding.realEstateCount || 0}</p>
+                                                            {selectedBuilding.location && (
+                                                                <p><strong>الموقع الحالي:</strong> {selectedBuilding.location}</p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                        <div>
+                                            <Label htmlFor="location">تحديد الموقع على الخريطة *</Label>
+                                            <div className="mt-1">
+                                                <LocationPicker
+                                                    key={`location-picker-${basicFormData.finalCityId || 'default'}`}
+                                                    initialLatitude={
+                                                        basicFormData.location
+                                                            ? parseFloat(basicFormData.location.split(',')[0])
+                                                            : finalCities.find(c => c.id === Number(basicFormData.finalCityId))?.location
+                                                                ? parseFloat(finalCities.find(c => c.id === Number(basicFormData.finalCityId))?.location?.split(',')[0] || '0')
+                                                                : 23.5880
+                                                    }
+                                                    initialLongitude={
+                                                        basicFormData.location
+                                                            ? parseFloat(basicFormData.location.split(',')[1])
+                                                            : finalCities.find(c => c.id === Number(basicFormData.finalCityId))?.location
+                                                                ? parseFloat(finalCities.find(c => c.id === Number(basicFormData.finalCityId))?.location?.split(',')[1] || '0')
+                                                                : 58.3829
+                                                    }
+                                                    onLocationSelect={(latitude, longitude) => {
+                                                        updateBasicField('location', `${latitude},${longitude}`);
+                                                    }}
+                                                />
+                                            </div>
+                                            <p className="text-xs text-gray-500 mt-2">
+                                                انقر على الخريطة لتحديد الموقع أو اسحب العلامة لتغيير الموقع
+                                            </p>
+                                        </div>
+
+                                        {/* Optional: Add building unit/floor info */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="space-y-4">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div>
+                                                        <Label htmlFor="city">المدينة *</Label>
+                                                        <select
+                                                            id="city"
+                                                            value={selectedCityId || ''}
+                                                            onChange={(e) => setSelectedCityId(Number(e.target.value) || null)}
+                                                            className="w-full mt-1 p-2 border rounded-md"
+                                                            disabled={locationLoading}
+                                                        >
+                                                            <option value="">اختر المدينة</option>
+                                                            {cities.map(city => (
+                                                                <option key={city.id} value={city.id}>
+                                                                    {city.name}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+
+                                                    <div>
+                                                        <Label htmlFor="neighborhood">الحي *</Label>
+                                                        <select
+                                                            id="neighborhood"
+                                                            value={selectedNeighborhoodId || ''}
+                                                            onChange={(e) => setSelectedNeighborhoodId(Number(e.target.value) || null)}
+                                                            className="w-full mt-1 p-2 border rounded-md"
+                                                            disabled={!selectedCityId || locationLoading}
+                                                        >
+                                                            <option value="">اختر الحي</option>
+                                                            {neighborhoods.map(neighborhood => (
+                                                                <option key={neighborhood.id} value={neighborhood.id}>
+                                                                    {neighborhood.name}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <Label htmlFor="finalCity">المنطقة *</Label>
+                                                    <select
+                                                        id="finalCity"
+                                                        value={basicFormData.finalCityId}
+                                                        onChange={(e) => updateBasicField('finalCityId', e.target.value)}
+                                                        className="w-full mt-1 p-2 border rounded-md"
+                                                        disabled={!selectedNeighborhoodId || locationLoading}
+                                                    >
+                                                        <option value="">اختر المنطقة</option>
+                                                        {finalCities.map(finalCity => (
+                                                            <option key={finalCity.id} value={finalCity.id}>
+                                                                {finalCity.name}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+
+
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="buildingFloor">الطابق (اختياري)</Label>
+                                                <Input
+                                                    id="buildingFloor"
+                                                    type="number"
+                                                    placeholder="رقم الطابق"
+                                                    className="mt-1"
+                                                    onChange={(e) => {
+                                                        // You can add this to dynamic properties or extend the form
+                                                        updateDynamicField('building_floor', e.target.value);
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
+                                ) : (
+                                    // Normal mode - full location selection
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <Label htmlFor="city">المدينة *</Label>
+                                                <select
+                                                    id="city"
+                                                    value={selectedCityId || ''}
+                                                    onChange={(e) => setSelectedCityId(Number(e.target.value) || null)}
+                                                    className="w-full mt-1 p-2 border rounded-md"
+                                                    disabled={locationLoading}
+                                                >
+                                                    <option value="">اختر المدينة</option>
+                                                    {cities.map(city => (
+                                                        <option key={city.id} value={city.id}>
+                                                            {city.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
 
-                                    <div>
-                                        <Label htmlFor="neighborhood">الحي *</Label>
-                                        <select
-                                            id="neighborhood"
-                                            value={selectedNeighborhoodId || ''}
-                                            onChange={(e) => setSelectedNeighborhoodId(Number(e.target.value) || null)}
-                                            className="w-full mt-1 p-2 border rounded-md"
-                                            disabled={!selectedCityId || locationLoading}
-                                        >
-                                            <option value="">اختر الحي</option>
-                                            {neighborhoods.map(neighborhood => (
-                                                <option key={neighborhood.id} value={neighborhood.id}>
-                                                    {neighborhood.name}
-                                                </option>
-                                            ))}
-                                        </select>
+                                            <div>
+                                                <Label htmlFor="neighborhood">الحي *</Label>
+                                                <select
+                                                    id="neighborhood"
+                                                    value={selectedNeighborhoodId || ''}
+                                                    onChange={(e) => setSelectedNeighborhoodId(Number(e.target.value) || null)}
+                                                    className="w-full mt-1 p-2 border rounded-md"
+                                                    disabled={!selectedCityId || locationLoading}
+                                                >
+                                                    <option value="">اختر الحي</option>
+                                                    {neighborhoods.map(neighborhood => (
+                                                        <option key={neighborhood.id} value={neighborhood.id}>
+                                                            {neighborhood.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <Label htmlFor="finalCity">المنطقة *</Label>
+                                            <select
+                                                id="finalCity"
+                                                value={basicFormData.finalCityId}
+                                                onChange={(e) => updateBasicField('finalCityId', e.target.value)}
+                                                className="w-full mt-1 p-2 border rounded-md"
+                                                disabled={!selectedNeighborhoodId || locationLoading}
+                                            >
+                                                <option value="">اختر المنطقة</option>
+                                                {finalCities.map(finalCity => (
+                                                    <option key={finalCity.id} value={finalCity.id}>
+                                                        {finalCity.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <Label htmlFor="location">تحديد الموقع على الخريطة *</Label>
+                                            <div className="mt-1">
+                                                <LocationPicker
+                                                    key={`location-picker-${basicFormData.finalCityId || 'default'}`}
+                                                    initialLatitude={
+                                                        basicFormData.location
+                                                            ? parseFloat(basicFormData.location.split(',')[0])
+                                                            : finalCities.find(c => c.id === Number(basicFormData.finalCityId))?.location
+                                                                ? parseFloat(finalCities.find(c => c.id === Number(basicFormData.finalCityId))?.location?.split(',')[0] || '0')
+                                                                : 23.5880
+                                                    }
+                                                    initialLongitude={
+                                                        basicFormData.location
+                                                            ? parseFloat(basicFormData.location.split(',')[1])
+                                                            : finalCities.find(c => c.id === Number(basicFormData.finalCityId))?.location
+                                                                ? parseFloat(finalCities.find(c => c.id === Number(basicFormData.finalCityId))?.location?.split(',')[1] || '0')
+                                                                : 58.3829
+                                                    }
+                                                    onLocationSelect={(latitude, longitude) => {
+                                                        updateBasicField('location', `${latitude},${longitude}`);
+                                                    }}
+                                                />
+                                            </div>
+                                            <p className="text-xs text-gray-500 mt-2">
+                                                انقر على الخريطة لتحديد الموقع أو اسحب العلامة لتغيير الموقع
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
-
-                                <div>
-                                    <Label htmlFor="finalCity">المنطقة *</Label>
-                                    <select
-                                        id="finalCity"
-                                        value={basicFormData.finalCityId}
-                                        onChange={(e) => updateBasicField('finalCityId', e.target.value)}
-                                        className="w-full mt-1 p-2 border rounded-md"
-                                        disabled={!selectedNeighborhoodId || locationLoading}
-                                    >
-                                        <option value="">اختر المنطقة</option>
-                                        {finalCities.map(finalCity => (
-                                            <option key={finalCity.id} value={finalCity.id}>
-                                                {finalCity.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <Label htmlFor="location">الموقع على الخريطة *</Label>
-                                    <Input
-                                        id="location"
-                                        value={basicFormData.location}
-                                        onChange={(e) => updateBasicField('location', e.target.value)}
-                                        placeholder="lat,lng (مثال: 24.7136,46.6753)"
-                                        className="mt-1"
-                                    />
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        يمكنك الحصول على الإحداثيات من خرائط جوجل
-                                    </p>
-                                </div>
+                                )}
                             </CardContent>
                         </Card>
                     </div>
@@ -395,14 +947,20 @@ export default function CreateRealEstatePage() {
                                         <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
                                             <Home className="w-5 h-5 text-blue-600" />
                                         </div>
-                                        <div>
+                                        <div className="flex-1">
                                             <h3 className="font-semibold text-blue-900">
                                                 {selectedTypePath.mainType.name} - {selectedTypePath.subType.name} - {selectedTypePath.finalType.name}
                                             </h3>
                                             <p className="text-sm text-blue-700">
                                                 املأ الخصائص المطلوبة لهذا النوع من العقارات
+                                                {selectedBuilding && ` في مبنى ${selectedBuilding.title}`}
                                             </p>
                                         </div>
+                                        {selectedBuilding && (
+                                            <Badge variant="outline" className="border-blue-300 text-blue-700">
+                                                مبنى
+                                            </Badge>
+                                        )}
                                     </div>
                                 </CardContent>
                             </Card>
@@ -425,57 +983,41 @@ export default function CreateRealEstatePage() {
                                 <CardTitle className="flex items-center gap-2">
                                     <Camera className="w-5 h-5 text-purple-500" />
                                     الصور والملفات
+                                    {selectedBuilding && (
+                                        <Badge variant="secondary" className="mr-auto">
+                                            {selectedBuilding.title}
+                                        </Badge>
+                                    )}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-6">
-                                <div>
-                                    <Label htmlFor="coverImage">صورة الغلاف *</Label>
-                                    <Input
-                                        id="coverImage"
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={(e) => updateBasicField('coverImage', e.target.files?.[0] || null)}
-                                        className="mt-1"
-                                    />
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        هذه الصورة ستظهر كصورة رئيسية للعقار
-                                    </p>
-                                    {basicFormData.coverImage && (
-                                        <p className="text-xs text-green-600 mt-1">
-                                            ✓ تم اختيار: {basicFormData.coverImage.name}
+                                <ImageUploadModal
+                                    additionalImagePreviews={additionalImagePreviews}
+                                    additionalFileTypes={additionalFileTypes}
+                                    handleFileUpload={handleFileUpload}
+                                    coverImagePreview={coverImagePreview}
+                                    handleImageUpload={handleImageUpload}
+                                    isUploading={isUploading}
+                                    handleDeleteImage={handleDeleteAdditionalImage}
+                                    isCoverImageUploading={isCoverImageUploading}
+                                    isAdditionalImageUploading={uploadingImageIndexes}
+                                    coverImageProgress={coverImageProgress}
+                                    additionalImageProgress={additionalImageProgress}
+                                />
+
+                                <div className="mt-6">
+                                    <Label htmlFor="viewTime">أوقات المعاينة *</Label>
+                                    <div className="mt-2">
+                                        <ViewingTimeSelector
+                                            value={basicFormData.viewTime}
+                                            onChange={(viewingTimes) => updateBasicField('viewTime', viewingTimes)}
+                                        />
+                                    </div>
+                                    {selectedBuilding && (
+                                        <p className="text-xs text-gray-500 mt-2">
+                                            تأكد من تنسيق أوقات المعاينة مع إدارة المبنى
                                         </p>
                                     )}
-                                </div>
-
-                                <div>
-                                    <Label htmlFor="files">صور إضافية</Label>
-                                    <Input
-                                        id="files"
-                                        type="file"
-                                        accept="image/*"
-                                        multiple
-                                        onChange={(e) => updateBasicField('files', Array.from(e.target.files || []))}
-                                        className="mt-1"
-                                    />
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        يمكنك اختيار عدة صور للعقار
-                                    </p>
-                                    {basicFormData.files.length > 0 && (
-                                        <p className="text-xs text-green-600 mt-1">
-                                            ✓ تم اختيار {basicFormData.files.length} صور
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <Label htmlFor="viewTime">وقت المعاينة *</Label>
-                                    <Input
-                                        id="viewTime"
-                                        type="datetime-local"
-                                        value={basicFormData.viewTime}
-                                        onChange={(e) => updateBasicField('viewTime', e.target.value)}
-                                        className="mt-1"
-                                    />
                                 </div>
                             </CardContent>
                         </Card>
@@ -495,15 +1037,32 @@ export default function CreateRealEstatePage() {
                     <div className="flex items-center gap-4 mb-6">
                         <Button
                             variant="outline"
-                            onClick={() => router.back()}
+                            onClick={() => {
+                                if (selectedBuilding) {
+                                    router.push(`/dashboard/buildings?showRealEstates=${selectedBuilding.id}`);
+                                } else {
+                                    router.back();
+                                }
+                            }}
                             className="flex items-center gap-2"
                         >
                             <ArrowRight className="w-4 h-4" />
                             العودة
                         </Button>
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900">إضافة عقار جديد</h1>
-                            <p className="text-gray-600">أدخل تفاصيل العقار لإضافته للمنصة</p>
+                            <h1 className="text-2xl font-bold text-gray-900">
+                                {isEditMode ? 'تعديل العقار' :
+                                    selectedBuilding ? `إضافة عقار إلى ${selectedBuilding.title}` :
+                                        'إضافة عقار جديد'}
+                            </h1>
+                            <p className="text-gray-600">
+                                {isEditMode
+                                    ? 'قم بتعديل تفاصيل العقار'
+                                    : selectedBuilding
+                                        ? `أدخل تفاصيل العقار لإضافته إلى مبنى ${selectedBuilding.title}`
+                                        : 'أدخل تفاصيل العقار لإضافته للمنصة'
+                                }
+                            </p>
                         </div>
                     </div>
 
@@ -515,7 +1074,7 @@ export default function CreateRealEstatePage() {
                                     <div className="flex flex-col items-center">
                                         <div
                                             className={`
-                                                w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all
+                                                w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all cursor-pointer
                                                 ${currentStep === step.id
                                                     ? 'border-blue-500 bg-blue-500 text-white'
                                                     : step.isCompleted
@@ -523,6 +1082,11 @@ export default function CreateRealEstatePage() {
                                                         : 'border-gray-300 bg-white text-gray-500'
                                                 }
                                             `}
+                                            onClick={() => {
+                                                if (step.isCompleted || step.id <= currentStep) {
+                                                    setCurrentStep(step.id);
+                                                }
+                                            }}
                                         >
                                             {step.isCompleted ? (
                                                 <CheckCircle className="w-5 h-5" />
@@ -558,6 +1122,10 @@ export default function CreateRealEstatePage() {
                     <Card className="mb-6 border-red-200 bg-red-50">
                         <CardContent className="pt-6">
                             <div className="space-y-2">
+                                <h4 className="font-medium text-red-800 mb-2 flex items-center gap-2">
+                                    <AlertCircle className="w-4 h-4" />
+                                    يرجى تصحيح الأخطاء التالية:
+                                </h4>
                                 {errors.map((error, index) => (
                                     <p key={index} className="text-sm text-red-600 flex items-center gap-2">
                                         <span className="w-1 h-1 bg-red-600 rounded-full"></span>
@@ -585,12 +1153,23 @@ export default function CreateRealEstatePage() {
                         <span className="text-sm text-gray-500">
                             الخطوة {currentStep} من {steps.length}
                         </span>
+                        {isEditMode && (
+                            <Badge variant="secondary" className="text-xs">
+                                وضع التعديل
+                            </Badge>
+                        )}
+                        {selectedBuilding && (
+                            <Badge variant="outline" className="text-xs border-green-300 text-green-700">
+                                مرتبط بمبنى
+                            </Badge>
+                        )}
                     </div>
 
                     {currentStep < steps.length ? (
                         <Button
                             onClick={nextStep}
                             className="flex items-center gap-2"
+                            disabled={dynamicLoading}
                         >
                             التالي
                             <ArrowLeft className="w-4 h-4" />
@@ -598,23 +1177,42 @@ export default function CreateRealEstatePage() {
                     ) : (
                         <Button
                             onClick={handleSubmit}
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || dynamicLoading}
                             className="flex items-center gap-2"
                         >
                             {isSubmitting ? (
                                 <>
                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                    جاري الحفظ...
+                                    {isEditMode ? 'جاري التحديث...' : 'جاري الحفظ...'}
                                 </>
                             ) : (
                                 <>
-                                    <Save className="w-4 h-4" />
-                                    حفظ العقار
+                                    {isEditMode ? (
+                                        <>
+                                            <Save className="w-4 h-4" />
+                                            حفظ التغييرات
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Plus className="w-4 h-4" />
+                                            {selectedBuilding ? `حفظ العقار في ${selectedBuilding.title}` : 'حفظ العقار'}
+                                        </>
+                                    )}
                                 </>
                             )}
                         </Button>
                     )}
                 </div>
+
+                {/* Loading Overlay for Dynamic Content */}
+                {dynamicLoading && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-lg p-6 flex items-center gap-3">
+                            <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                            <span className="text-gray-700">جاري تحميل الخصائص...</span>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

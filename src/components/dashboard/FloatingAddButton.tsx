@@ -12,6 +12,8 @@ import EstateForm from "./forms/EstateForm";
 import BuildingForm from "./forms/BuildingForm";
 import FinalCityForm from "./forms/FinalCityForm";
 import { ExitConfirmationDialog } from "../forms/ExitConfirmationDialog";
+import { useRouter } from "next/navigation";
+import Spinner from "../ui/Spinner";
 
 // Define the available dashboard tabs
 type DashboardTab =
@@ -34,7 +36,7 @@ export default function FloatingAddButton({ activeTab }: Props) {
     const [isModalOpen, setModalOpen] = useState(false);
     const [isExitConfirmOpen, setExitConfirmOpen] = useState(false);
     const modalRef = useRef<HTMLDivElement>(null);
-
+    const router = useRouter();
     // Keyboard handling (Escape key closes modal)
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -65,7 +67,8 @@ export default function FloatingAddButton({ activeTab }: Props) {
             case "neighborhood":
                 return <NeighborhoodForm />;
             case "estate":
-                return <EstateForm />;
+                router.push("dashboard/real-estate/create")
+                return <Spinner />;
             case "map":
                 return <BuildingForm />;
             case "finalCity":

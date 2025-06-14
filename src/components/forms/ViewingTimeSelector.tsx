@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 interface ViewingTimeProps {
-  value: string;
+  value: any;
   onChange: (value: string) => void;
   error?: string;
   label?: string;
@@ -61,24 +61,24 @@ const ViewingTimeSelector: React.FC<ViewingTimeProps> = ({
   // Generate the formatted view time string
   const updateViewTimeString = () => {
     const { selectedDays, morningTimeFrom, morningTimeTo, eveningTimeFrom, eveningTimeTo } = formState;
-    
+
     let viewTimeString = '';
-    
+
     // Add days
     if (selectedDays && selectedDays.length > 0) {
       viewTimeString += `أيام المشاهدة: ${selectedDays.join('، ')}. `;
     }
-    
+
     // Add morning slot
     if (morningTimeFrom && morningTimeTo) {
       viewTimeString += `الفترة الصباحية: من الساعة ${morningTimeFrom} إلى ${morningTimeTo}. `;
     }
-    
+
     // Add evening slot
     if (eveningTimeFrom && eveningTimeTo) {
       viewTimeString += `الفترة المسائية: من الساعة ${eveningTimeFrom} إلى ${eveningTimeTo}.`;
     }
-    
+
     // Update the main form data
     onChange(viewTimeString);
   };
@@ -97,7 +97,7 @@ const ViewingTimeSelector: React.FC<ViewingTimeProps> = ({
       const newSelectedDays = prev.selectedDays.includes(day)
         ? prev.selectedDays.filter(d => d !== day)
         : [...prev.selectedDays, day];
-      
+
       return {
         ...prev,
         selectedDays: newSelectedDays
@@ -109,31 +109,30 @@ const ViewingTimeSelector: React.FC<ViewingTimeProps> = ({
 
   // Time options for both morning and evening
   const morningHours = Array.from({ length: 13 }, (_, i) => i + 7).map((hour) => ({
-    value: hour <= 12 ? `${hour}:00 صباحًا` : `${hour-12}:00 مساءً`,
-    label: hour <= 12 ? `${hour}:00 صباحًا` : `${hour-12}:00 مساءً`
+    value: hour <= 12 ? `${hour}:00 صباحًا` : `${hour - 12}:00 مساءً`,
+    label: hour <= 12 ? `${hour}:00 صباحًا` : `${hour - 12}:00 مساءً`
   }));
 
   const eveningHours = Array.from({ length: 12 }, (_, i) => i + 12).map((hour) => ({
-    value: hour === 12 ? `${hour}:00 مساءً` : `${hour-12}:00 مساءً`,
-    label: hour === 12 ? `${hour}:00 مساءً` : `${hour-12}:00 مساءً`
+    value: hour === 12 ? `${hour}:00 مساءً` : `${hour - 12}:00 مساءً`,
+    label: hour === 12 ? `${hour}:00 مساءً` : `${hour - 12}:00 مساءً`
   }));
 
   return (
     <div className="mb-4">
-      
+
       {/* Days Selection */}
       <div className="p-3 border border-gray-200 rounded-md mb-3">
         <label className="block text-sm text-gray-600 mb-2">أيام المشاهدة المتاحة</label>
         <div className="flex flex-wrap gap-1">
           {weekdays.map((day) => (
-            <button 
+            <button
               key={day}
               type="button"
-              className={`px-2 py-1 rounded text-sm cursor-pointer border ${
-                formState.selectedDays.includes(day) 
-                  ? 'bg-blue-500 text-white border-blue-500' 
+              className={`px-2 py-1 rounded text-sm cursor-pointer border ${formState.selectedDays.includes(day)
+                  ? 'bg-blue-500 text-white border-blue-500'
                   : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              }`}
+                }`}
               onClick={() => toggleDay(day)}
             >
               {day}
@@ -172,16 +171,16 @@ const ViewingTimeSelector: React.FC<ViewingTimeProps> = ({
                 {morningHours
                   .filter(time => {
                     if (!formState.morningTimeFrom) return true;
-                    
+
                     // Extract hour from the time string
                     const fromHourMatch = formState.morningTimeFrom.match(/^(\d+):/);
                     const timeHourMatch = time.value.match(/^(\d+):/);
-                    
+
                     if (!fromHourMatch || !timeHourMatch) return true;
-                    
+
                     const fromHour = parseInt(fromHourMatch[1]);
                     const timeHour = parseInt(timeHourMatch[1]);
-                    
+
                     // Check if current time is after the "from" time
                     if (formState.morningTimeFrom.includes('صباحًا') && time.value.includes('مساءً')) {
                       return true; // Morning to evening is always valid
@@ -230,16 +229,16 @@ const ViewingTimeSelector: React.FC<ViewingTimeProps> = ({
                 {eveningHours
                   .filter(time => {
                     if (!formState.eveningTimeFrom) return true;
-                    
+
                     // Extract hour from the time string
                     const fromHourMatch = formState.eveningTimeFrom.match(/^(\d+):/);
                     const timeHourMatch = time.value.match(/^(\d+):/);
-                    
+
                     if (!fromHourMatch || !timeHourMatch) return true;
-                    
+
                     const fromHour = parseInt(fromHourMatch[1]);
                     const timeHour = parseInt(timeHourMatch[1]);
-                    
+
                     // Check if current time is after the "from" time
                     return timeHour > fromHour;
                   })
@@ -253,14 +252,14 @@ const ViewingTimeSelector: React.FC<ViewingTimeProps> = ({
           </div>
         </div>
       </div>
-      
+
       {/* Preview */}
       {value && (
         <div className="mt-3 text-sm text-gray-600 p-2 bg-gray-50 rounded-md">
           <p className="leading-relaxed">{value}</p>
         </div>
       )}
-      
+
       {error && (
         <div className="text-red-500 text-sm mt-2">{error}</div>
       )}

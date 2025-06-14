@@ -32,53 +32,85 @@ export interface FinalType {
   name: string;
   subId: number;
 }
+
+// واجهة قيمة الخاصية الديناميكية
+export interface PropertyValue {
+  value: string | number | boolean;
+  property: {
+    propertyName: string;
+    unit?: string;
+    dataType?: 'TEXT' | 'NUMBER' | 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'BOOLEAN' | 'DATE' | 'FILE';
+    allowedValues?: string[] | null;
+    isFilter?: boolean;
+    displayOrder?: number;
+    isRequired?: boolean;
+    placeholder?: string | null;
+    groupName?: string;
+    propertyKey?: string;
+    id?: number;
+  };
+}
+
+// واجهة الخصائص الديناميكية
+export interface DynamicProperties {
+  [propertyKey: string]: PropertyValue;
+}
+
 export interface RealEstateData {
   id: number;
-  cityId: number;
-  neighborhoodId: number;
-  finalCityId: number;
   title: string;
-  description: string;
   price: number;
+  description: string;
+  coverImage: string;
+  location: string; // ex: "23.5880,58.3829"
   cityName: string;
   neighborhoodName: string;
-  finalCityName: string;
-  buildingAge: string;
-  bedrooms: number;
-  bathrooms: number;
-  furnished: string;
-  buildingArea: string;
-  floorNumber: number;
-  facade: string;
-  paymentMethod: string;
-  mainCategoryId: number;
-  subCategoryId: number;
-  finalTypeId: number;
+  finalTypeName: string;
+  buildingName?: string;
+  files: string[];
+  createdAt: string;
+  // الخصائص الديناميكية
+  properties: DynamicProperties;
+
+  // خصائص اختيارية للتوافق مع النظام القديم
+  cityId?: number;
+  neighborhoodId?: number;
+  finalCityId?: number;
+  finalCityName?: string;
+  buildingAge?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  furnished?: string;
+  buildingArea?: string;
+  floorNumber?: number;
+  facade?: string;
+  paymentMethod?: string;
+  mainCategoryId?: number;
+  subCategoryId?: number;
+  finalTypeId?: number;
   mainCategoryName?: string;
   subCategoryName?: string;
-  finalTypeName?: string;
-  mainFeatures: string;
-  additionalFeatures: string;
-  nearbyLocations: string;
-  coverImage: string;
-  files: string[];
-  rentalDuration: string;
-  ceilingHeight: number;
-  totalFloors: number;
+  mainFeatures?: string;
+  additionalFeatures?: string;
+  nearbyLocations?: string;
+  rentalDuration?: string;
+  ceilingHeight?: number;
+  totalFloors?: number;
   buildingItemId?: string;
-  viewTime: string;
-  location: string; // ex: "1.43,1.44"
-  createdAt: string;
+  viewTime?: string;
 }
+
 export interface CityType {
   id: number;
   name: string;
 }
+
 export interface NeighborhoodType {
   id: number;
   name: string;
   cityId: number
 }
+
 export interface FinalCityType {
   id: number;
   name: string;
@@ -304,7 +336,7 @@ export interface CreateRealEstateData {
   coverImage: File | null;
   files: File[];
   buildingItemId?: string;
-  
+  paymentMethod: string;
   // الخصائص الديناميكية
   dynamicProperties: DynamicFormData;
 }

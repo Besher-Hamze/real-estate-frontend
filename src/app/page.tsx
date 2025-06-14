@@ -10,13 +10,9 @@ import Footer from "@/components/home/Footer";
 import FilterSection from "@/components/home/FilterSection";
 import CategorySelector from "@/components/widgets/CategorySelector";
 import SubTypeSelector from "@/components/widgets/SubTypeSelector";
-import ActiveFilters from "@/components/widgets/ActiveFilters";
-import PropertyGrid from "@/components/widgets/PropertyGrid";
 import ScrollToTop from "@/components/widgets/ScrollToTop";
 import { filterRealEstateData, initialFilterState, initialSortOption } from "@/utils/filterUtils";
-import SortComponent from "@/components/home/SortComponent";
 import PropertyMapGrid from "@/components/widgets/PropertyGrid/PropertyMapGrid";
-import CityGrid from "@/components/widgets/PropertyGrid/CityGrid";
 
 export default function PremiumLanding(): JSX.Element {
   const [selectedMainTypeId, setSelectedMainTypeId] = useState<number | null>(null);
@@ -154,7 +150,7 @@ export default function PremiumLanding(): JSX.Element {
             selectedSubTypeId={selectedSubTypeId}
             setSelectedSubTypeId={setSelectedSubTypeId}
             sortOption={sortOption}
-            setSortOption={setSortOption} 
+            setSortOption={setSortOption}
           />
           <PropertyMapGrid
             filteredData={filteredRealEstateData}
