@@ -1,6 +1,5 @@
 'use client';
-
-import React, { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,7 +23,6 @@ import {
     FileText,
     Home,
     DollarSign,
-    Clock,
     Loader2,
     Edit,
     Plus,
@@ -50,13 +48,14 @@ interface FormStep {
     isCompleted: boolean;
 }
 
-export default function RealEstatePage() {
+// Create a separate component that uses useSearchParams
+function RealEstatePageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const propertyId = searchParams.get('id');
-    const buildingId = searchParams.get('buildingId'); // New: Get building ID from query params
+    const buildingId = searchParams.get('buildingId');
     const isEditMode = !!propertyId;
-    const isBuildingMode = !!buildingId; // New: Check if creating for building
+    const isBuildingMode = !!buildingId;
 
     const [currentStep, setCurrentStep] = useState(1);
     const [selectedFinalTypeId, setSelectedFinalTypeId] = useState<number | null>(null);
@@ -66,15 +65,15 @@ export default function RealEstatePage() {
         finalType: FinalType;
     } | null>(null);
 
-    // New: Building-related state
+    // Building-related state
     const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
     const [isLoadingBuilding, setIsLoadingBuilding] = useState(isBuildingMode);
 
-    // حالة تحميل البيانات الأولية (للتعديل فقط)
+    // Initial data loading state (for edit mode only)
     const [isLoading, setIsLoading] = useState(isEditMode);
     const [property, setProperty] = useState<RealEstateData | null>(null);
 
-    // استخدام hook للخصائص الديناميكية
+    // Dynamic properties hook
     const {
         formData: dynamicFormData,
         groupedProperties,
@@ -86,7 +85,7 @@ export default function RealEstatePage() {
         setFormData: setDynamicFormData
     } = useDynamicForm(selectedFinalTypeId);
 
-    // استخدام hook لبيانات الموقع
+    // Location data hook
     const {
         cities,
         neighborhoods,
@@ -98,7 +97,7 @@ export default function RealEstatePage() {
         loading: locationLoading
     } = useLocationData();
 
-    // بيانات النموذج الأساسية
+    // Basic form data
     const [basicFormData, setBasicFormData] = useState({
         title: '',
         description: '',
@@ -109,7 +108,6 @@ export default function RealEstatePage() {
         paymentMethod: "",
         coverImage: null as File | null,
         files: [] as File[],
-        // للتعديل فقط - للاحتفاظ بالبيانات الموجودة
         existingCoverImage: '',
         existingFiles: [] as string[]
     });
@@ -127,7 +125,7 @@ export default function RealEstatePage() {
     const [errors, setErrors] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // New: Load building data if buildingId is provided
+    // Load building data if buildingId is provided
     useEffect(() => {
         const loadBuilding = async () => {
             if (!buildingId) {
@@ -156,7 +154,7 @@ export default function RealEstatePage() {
                     updateBasicField('finalCityId', buildingData.finalCityId.toString());
                 }
 
-                // You can also pre-fill title with building context
+                // Pre-fill title with building context
                 if (!basicFormData.title) {
                     updateBasicField('title', `عقار في ${buildingData.title}`);
                 }
@@ -173,7 +171,7 @@ export default function RealEstatePage() {
         loadBuilding();
     }, [buildingId, router, setSelectedCityId, setSelectedNeighborhoodId]);
 
-    // تحميل بيانات العقار الموجود (في حالة التعديل)
+    // Load existing property data (for edit mode)
     useEffect(() => {
         const loadProperty = async () => {
             if (!isEditMode || !propertyId) {
@@ -186,7 +184,7 @@ export default function RealEstatePage() {
                 const propertyData = await RealEstateApi.fetchRealEstateById(Number(propertyId));
                 setProperty(propertyData);
 
-                // تعبئة البيانات الأساسية
+                // Fill basic data
                 setBasicFormData({
                     title: propertyData.title || '',
                     description: propertyData.description || '',
@@ -217,16 +215,16 @@ export default function RealEstatePage() {
                     setAdditionalFileTypes(fileTypes);
                 }
 
-                // تعيين بيانات الموقع
+                // Set location data
                 if (propertyData.cityId) setSelectedCityId(propertyData.cityId);
                 if (propertyData.neighborhoodId) setSelectedNeighborhoodId(propertyData.neighborhoodId);
 
-                // تعيين نوع العقار
+                // Set property type
                 if (propertyData.finalTypeId) {
                     setSelectedFinalTypeId(propertyData.finalTypeId);
                 }
 
-                // تعبئة الخصائص الديناميكية
+                // Fill dynamic properties
                 if (propertyData.properties) {
                     const dynamicData: { [key: string]: any } = {};
                     Object.entries(propertyData.properties).forEach(([key, propValue]) => {
@@ -237,7 +235,7 @@ export default function RealEstatePage() {
                     setDynamicFormData(dynamicData);
                 }
 
-                // New: Load building data if property belongs to a building
+                // Load building data if property belongs to a building
                 if (propertyData.buildingItemId) {
                     try {
                         const buildingData = await buildingApi.fetchBuildingById(propertyData.buildingItemId);
@@ -259,7 +257,7 @@ export default function RealEstatePage() {
         loadProperty();
     }, [isEditMode, propertyId, router, setSelectedCityId, setSelectedNeighborhoodId, setDynamicFormData]);
 
-    // تعريف خطوات النموذج
+    // Form steps definition
     const steps: FormStep[] = [
         {
             id: 1,
@@ -298,7 +296,7 @@ export default function RealEstatePage() {
         }
     ];
 
-    // التعامل مع اختيار نوع العقار
+    // Handle property type selection
     const handleFinalTypeSelect = (finalTypeId: number, path: { mainType: MainType; subType: SubType; finalType: FinalType }) => {
         setSelectedFinalTypeId(finalTypeId);
         setSelectedTypePath(path);
@@ -367,7 +365,7 @@ export default function RealEstatePage() {
         setErrors([]);
     };
 
-    // التحقق من صحة الخطوة الحالية
+    // Validate current step
     const validateCurrentStep = (): boolean => {
         const newErrors: string[] = [];
 
@@ -386,7 +384,6 @@ export default function RealEstatePage() {
                 break;
 
             case 3:
-                // Always require location hierarchy (city, neighborhood, finalCity)
                 if (!selectedCityId) newErrors.push('المدينة مطلوبة');
                 if (!selectedNeighborhoodId) newErrors.push('الحي مطلوب');
                 if (!basicFormData.finalCityId) newErrors.push('المنطقة مطلوبة');
@@ -413,21 +410,21 @@ export default function RealEstatePage() {
         return newErrors.length === 0;
     };
 
-    // الانتقال للخطوة التالية
+    // Move to next step
     const nextStep = () => {
         if (validateCurrentStep() && currentStep < steps.length) {
             setCurrentStep(currentStep + 1);
         }
     };
 
-    // العودة للخطوة السابقة
+    // Move to previous step
     const prevStep = () => {
         if (currentStep > 1) {
             setCurrentStep(currentStep - 1);
         }
     };
 
-    // إرسال النموذج
+    // Submit form
     const handleSubmit = async () => {
         if (!validateCurrentStep() || !selectedTypePath) {
             return;
@@ -443,7 +440,7 @@ export default function RealEstatePage() {
 
         try {
             if (isEditMode && property) {
-                // تحديث العقار الموجود
+                // Update existing property
                 const updateData: Partial<any> = {
                     title: basicFormData.title,
                     description: basicFormData.description,
@@ -464,7 +461,7 @@ export default function RealEstatePage() {
                     updateData.buildingItemId = selectedBuilding.id;
                 }
 
-                // إضافة الصور الجديدة إذا تم اختيارها
+                // Add new images if selected
                 if (basicFormData.coverImage) {
                     updateData.coverImage = basicFormData.coverImage;
                 }
@@ -472,7 +469,7 @@ export default function RealEstatePage() {
                     updateData.files = basicFormData.files;
                 }
 
-                // إضافة معرفات الأنواع إذا تغيرت
+                // Add type IDs if changed
                 if (selectedTypePath) {
                     updateData.mainCategoryId = selectedTypePath.mainType.id;
                     updateData.subCategoryId = selectedTypePath.subType.id;
@@ -482,7 +479,7 @@ export default function RealEstatePage() {
                 await RealEstateApi.update(property.id, updateData);
                 toast.success('تم تحديث العقار بنجاح!');
             } else {
-                // إنشاء عقار جديد
+                // Create new property
                 const createData: CreateRealEstateData = {
                     title: basicFormData.title,
                     description: basicFormData.description,
@@ -525,7 +522,7 @@ export default function RealEstatePage() {
         }
     };
 
-    // عرض شاشة التحميل
+    // Show loading screen
     if (isLoading || isLoadingBuilding) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -540,7 +537,7 @@ export default function RealEstatePage() {
         );
     }
 
-    // رندر محتوى الخطوة
+    // Render step content
     const renderStepContent = () => {
         switch (currentStep) {
             case 1:
@@ -1215,5 +1212,24 @@ export default function RealEstatePage() {
                 )}
             </div>
         </div>
+    );
+}
+
+// Main component with Suspense wrapper
+export default function RealEstatePage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                        جاري تحميل الصفحة...
+                    </h2>
+                    <p className="text-gray-600">يرجى الانتظار...</p>
+                </div>
+            </div>
+        }>
+            <RealEstatePageContent />
+        </Suspense>
     );
 }

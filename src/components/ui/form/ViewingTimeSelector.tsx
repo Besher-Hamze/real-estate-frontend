@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, ChevronDown, X, Plus, Check } from 'lucide-react';
+import React, { useState } from 'react';
+import { Calendar, Clock, X, Plus, Check } from 'lucide-react';
 
 interface ViewingTime {
     date: string;
@@ -71,7 +71,7 @@ const ViewingTimeSelector: React.FC<ViewingTimeSelectorProps> = ({
         if (!selectedDate || !selectedTime) return;
 
         const existingDateIndex = viewingTimes.findIndex(vt => vt.date === selectedDate);
-        let newViewingTimes = [...viewingTimes];
+        const newViewingTimes = [...viewingTimes];
 
         if (existingDateIndex >= 0) {
             // Add time to existing date
@@ -212,10 +212,10 @@ const ViewingTimeSelector: React.FC<ViewingTimeSelectorProps> = ({
                                         onClick={() => setSelectedTime(time)}
                                         disabled={isDisabled}
                                         className={`p-2 text-sm rounded-md border transition-colors ${selectedTime === time
-                                                ? 'bg-blue-600 text-white border-blue-600'
-                                                : isDisabled
-                                                    ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                                                    : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                                            ? 'bg-blue-600 text-white border-blue-600'
+                                            : isDisabled
+                                                ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                                                : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400 hover:bg-blue-50'
                                             }`}
                                     >
                                         {formatTimeDisplay(time)}

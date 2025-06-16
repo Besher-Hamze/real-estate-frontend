@@ -17,6 +17,8 @@ import {
 import Spinner from '@/components/ui/Spinner';
 import SearchBar from '@/components/home/SearchBar';
 import PropertyCard from '@/components/widgets/PropertyGrid/PropertyCard';
+import { EmptyState } from '@/components/EmptyState';
+import { Pagination } from '@/components/Pagination';
 
 type ViewMode = 'grid' | 'list';
 type SortOption = 'newest' | 'oldest' | 'price_low' | 'price_high' | 'area_large' | 'area_small';

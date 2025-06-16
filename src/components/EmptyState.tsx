@@ -1,1 +1,50 @@
-import React from 'react';\nimport { Button } from '@/components/ui/button';\nimport { AlertCircle } from 'lucide-react';\n\ninterface EmptyStateProps {\n  title: string;\n  description: string;\n  actionLabel?: string;\n  onAction?: () => void;\n  icon?: React.ReactNode;\n  className?: string;\n}\n\nexport const EmptyState: React.FC<EmptyStateProps> = ({\n  title,\n  description,\n  actionLabel,\n  onAction,\n  icon,\n  className = ''\n}) => {\n  return (\n    <div className={`text-center py-12 ${className}`}>\n      <div className=\"w-16 h-16 mx-auto mb-6 text-gray-300\">\n        {icon || <AlertCircle className=\"w-full h-full\" />}\n      </div>\n      <h3 className=\"text-lg font-semibold text-gray-900 mb-2\">{title}</h3>\n      <p className=\"text-gray-600 mb-6 max-w-md mx-auto\">{description}</p>\n      {actionLabel && onAction && (\n        <Button onClick={onAction} variant=\"outline\">\n          {actionLabel}\n        </Button>\n      )}\n    </div>\n  );\n};\n"
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { AlertCircle } from 'lucide-react';
+
+interface EmptyStateProps {
+    title: string;
+    description: string;
+    actionLabel?: string;
+    onAction?: () => void;
+    icon?: React.ReactNode;
+    className?: string;
+}
+
+export const EmptyState: React.FC<EmptyStateProps> = ({
+    title,
+    description,
+    actionLabel,
+    onAction,
+    icon,
+    className = '',
+}) => {
+    return (
+        <div
+            className={`text-center py-12 px-4 ${className}`}
+            dir="rtl"
+            role="alert"
+            aria-live="polite"
+        >
+            <div className="w-16 h-16 mx-auto mb-6 text-gray-300">
+                {icon || (
+                    <AlertCircle className="w-full h-full" aria-hidden="true" />
+                )}
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+            <p className="text-gray-600 text-sm sm:text-base mb-6 max-w-md mx-auto">
+                {description}
+            </p>
+            {actionLabel && onAction && (
+                <Button
+                    onClick={onAction}
+                    variant="outline"
+                    className="min-w-[120px]"
+                    aria-label={actionLabel}
+                >
+                    {actionLabel}
+                </Button>
+            )}
+        </div>
+    );
+};

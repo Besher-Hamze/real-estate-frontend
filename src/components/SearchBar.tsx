@@ -1,1 +1,35 @@
-import React from 'react';\nimport { Input } from '@/components/ui/input';\nimport { Search } from 'lucide-react';\n\ninterface SearchBarProps {\n  value: string;\n  onChange: (value: string) => void;\n  placeholder?: string;\n  className?: string;\n}\n\nexport const SearchBar: React.FC<SearchBarProps> = ({\n  value,\n  onChange,\n  placeholder = 'ابحث...',\n  className = ''\n}) => {\n  return (\n    <div className={`relative ${className}`}>\n      <Search className=\"absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5\" />\n      <Input\n        type=\"text\"\n        placeholder={placeholder}\n        value={value}\n        onChange={(e) => onChange(e.target.value)}\n        className=\"pl-10 text-lg py-3\"\n      />\n    </div>\n  );\n};\n"
+import React from 'react';
+import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
+
+interface SearchBarProps {
+    value: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+    className?: string;
+}
+
+export const SearchBar: React.FC<SearchBarProps> = ({
+    value,
+    onChange,
+    placeholder = 'ابحث...',
+    className = '',
+}) => {
+    return (
+        <div className={`relative ${className}`}>
+            <Search
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"
+                aria-hidden="true"
+            />
+            <Input
+                type="text"
+                placeholder={placeholder}
+                value={value}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
+                className="pr-10 pl-4 py-3 text-lg rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-label="Search input"
+                dir="rtl"
+            />
+        </div>
+    );
+};

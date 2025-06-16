@@ -1,1 +1,188 @@
-import React from 'react';\nimport Link from 'next/link';\nimport { Card, CardContent } from '@/components/ui/card';\nimport { Badge } from '@/components/ui/badge';\nimport { Button } from '@/components/ui/button';\nimport { RealEstateData } from '@/lib/types';\nimport { MapPin, Bed, Bath, Square, Eye, Heart } from 'lucide-react';\n\ninterface PropertyCardProps {\n  property: RealEstateData;\n  viewMode?: 'grid' | 'list';\n  onFavoriteToggle?: (id: number) => void;\n  isFavorite?: boolean;\n}\n\nexport const PropertyCard: React.FC<PropertyCardProps> = ({\n  property,\n  viewMode = 'grid',\n  onFavoriteToggle,\n  isFavorite = false\n}) => {\n  const formatPrice = (price: number) => {\n    return new Intl.NumberFormat('ar-SA', {\n      style: 'currency',\n      currency: 'SAR',\n      minimumFractionDigits: 0\n    }).format(price);\n  };\n\n  const handleFavoriteClick = (e: React.MouseEvent) => {\n    e.preventDefault();\n    e.stopPropagation();\n    if (onFavoriteToggle) {\n      onFavoriteToggle(property.id);\n    }\n  };\n\n  if (viewMode === 'list') {\n    return (\n      <Card className=\"overflow-hidden hover:shadow-lg transition-shadow\">\n        <div className=\"flex\">\n          {/* Image */}\n          <div className=\"w-64 h-48 flex-shrink-0 relative\">\n            {property.coverImage ? (\n              <img\n                src={property.coverImage}\n                alt={property.title}\n                className=\"w-full h-full object-cover\"\n              />\n            ) : (\n              <div className=\"w-full h-full bg-gray-200 flex items-center justify-center\">\n                <Square className=\"w-12 h-12 text-gray-400\" />\n              </div>\n            )}\n            \n            {/* Type Badge */}\n            <div className=\"absolute top-3 left-3\">\n              <Badge variant={property.mainCategoryName === 'بيع' ? 'default' : 'secondary'}>\n                {property.mainCategoryName}\n              </Badge>\n            </div>\n\n            {/* Favorite Button */}\n            {onFavoriteToggle && (\n              <button\n                onClick={handleFavoriteClick}\n                className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${\n                  isFavorite \n                    ? 'bg-red-500 text-white' \n                    : 'bg-white/80 text-gray-600 hover:bg-red-500 hover:text-white'\n                }`}\n              >\n                <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />\n              </button>\n            )}\n          </div>\n\n          {/* Content */}\n          <CardContent className=\"flex-1 p-6\">\n            <div className=\"flex justify-between h-full\">\n              <div className=\"flex-1\">\n                <Link href={`/properties/${property.id}`}>\n                  <h3 className=\"font-semibold text-lg text-gray-900 mb-2 hover:text-blue-600 transition-colors line-clamp-2\">\n                    {property.title}\n                  </h3>\n                </Link>\n                \n                <p className=\"text-gray-600 mb-3 line-clamp-2\">\n                  {property.description}\n                </p>\n\n                <div className=\"flex items-center gap-2 text-sm text-gray-600 mb-4\">\n                  <MapPin className=\"w-4 h-4\" />\n                  <span>{property.cityName} - {property.neighborhoodName}</span>\n                </div>\n\n                <div className=\"flex items-center gap-6 text-sm text-gray-600\">\n                  {property.bedrooms && (\n                    <div className=\"flex items-center gap-1\">\n                      <Bed className=\"w-4 h-4\" />\n                      <span>{property.bedrooms} غرف</span>\n                    </div>\n                  )}\n                  {property.bathrooms && (\n                    <div className=\"flex items-center gap-1\">\n                      <Bath className=\"w-4 h-4\" />\n                      <span>{property.bathrooms} حمام</span>\n                    </div>\n                  )}\n                  {property.buildingArea && (\n                    <div className=\"flex items-center gap-1\">\n                      <Square className=\"w-4 h-4\" />\n                      <span>{property.buildingArea} م²</span>\n                    </div>\n                  )}\n                </div>\n              </div>\n\n              <div className=\"flex flex-col justify-between items-end\">\n                <div className=\"text-2xl font-bold text-blue-600 mb-4\">\n                  {formatPrice(property.price)}\n                </div>\n                \n                <Link href={`/properties/${property.id}`}>\n                  <Button className=\"flex items-center gap-2\">\n                    <Eye className=\"w-4 h-4\" />\n                    عرض التفاصيل\n                  </Button>\n                </Link>\n              </div>\n            </div>\n          </CardContent>\n        </div>\n      </Card>\n    );\n  }\n\n  // Grid view\n  return (\n    <Card className=\"overflow-hidden hover:shadow-lg transition-shadow\">\n      <div className=\"relative\">\n        {property.coverImage ? (\n          <img\n            src={property.coverImage}\n            alt={property.title}\n            className=\"w-full h-48 object-cover\"\n          />\n        ) : (\n          <div className=\"w-full h-48 bg-gray-200 flex items-center justify-center\">\n            <Square className=\"w-12 h-12 text-gray-400\" />\n          </div>\n        )}\n        \n        {/* Type Badge */}\n        <div className=\"absolute top-3 left-3\">\n          <Badge variant={property.mainCategoryName === 'بيع' ? 'default' : 'secondary'}>\n            {property.mainCategoryName}\n          </Badge>\n        </div>\n\n        {/* Favorite Button */}\n        {onFavoriteToggle && (\n          <button\n            onClick={handleFavoriteClick}\n            className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${\n              isFavorite \n                ? 'bg-red-500 text-white' \n                : 'bg-white/80 text-gray-600 hover:bg-red-500 hover:text-white'\n            }`}\n          >\n            <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />\n          </button>\n        )}\n      </div>\n\n      <CardContent className=\"p-6\">\n        <div className=\"space-y-3\">\n          <Link href={`/properties/${property.id}`}>\n            <h3 className=\"font-semibold text-lg text-gray-900 hover:text-blue-600 transition-colors line-clamp-2\">\n              {property.title}\n            </h3>\n          </Link>\n          \n          <p className=\"text-gray-600 text-sm line-clamp-2\">\n            {property.description}\n          </p>\n\n          <div className=\"flex items-center gap-2 text-sm text-gray-600\">\n            <MapPin className=\"w-4 h-4\" />\n            <span>{property.cityName} - {property.neighborhoodName}</span>\n          </div>\n\n          <div className=\"flex items-center justify-between\">\n            <div className=\"text-2xl font-bold text-blue-600\">\n              {formatPrice(property.price)}\n            </div>\n          </div>\n\n          {/* Property Details */}\n          <div className=\"flex items-center gap-4 text-sm text-gray-600 pt-2 border-t\">\n            {property.bedrooms && (\n              <div className=\"flex items-center gap-1\">\n                <Bed className=\"w-4 h-4\" />\n                <span>{property.bedrooms}</span>\n              </div>\n            )}\n            {property.bathrooms && (\n              <div className=\"flex items-center gap-1\">\n                <Bath className=\"w-4 h-4\" />\n                <span>{property.bathrooms}</span>\n              </div>\n            )}\n            {property.buildingArea && (\n              <div className=\"flex items-center gap-1\">\n                <Square className=\"w-4 h-4\" />\n                <span>{property.buildingArea} م²</span>\n              </div>\n            )}\n          </div>\n\n          {/* Final Type */}\n          {property.finalTypeName && (\n            <div className=\"pt-2\">\n              <Badge variant=\"outline\" className=\"text-xs\">\n                {property.finalTypeName}\n              </Badge>\n            </div>\n          )}\n\n          <div className=\"pt-4\">\n            <Link href={`/properties/${property.id}`} className=\"w-full\">\n              <Button className=\"w-full flex items-center gap-2\">\n                <Eye className=\"w-4 h-4\" />\n                عرض التفاصيل\n              </Button>\n            </Link>\n          </div>\n        </div>\n      </CardContent>\n    </Card>\n  );\n};\n"
+import React from 'react';
+import Link from 'next/link';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { RealEstateData } from '@/lib/types';
+import { MapPin, Bed, Bath, Square, Eye, Heart } from 'lucide-react';
+
+interface PropertyCardProps {
+    property: RealEstateData;
+    viewMode?: 'grid' | 'list';
+    onFavoriteToggle?: (id: number) => void;
+    isFavorite?: boolean;
+}
+
+export const PropertyCard: React.FC<PropertyCardProps> = ({
+    property,
+    viewMode = 'grid',
+    onFavoriteToggle,
+    isFavorite = false,
+}) => {
+    const formatPrice = (price: number): string => {
+        return new Intl.NumberFormat('ar-SA', {
+            style: 'currency',
+            currency: 'SAR',
+            minimumFractionDigits: 0,
+        }).format(price);
+    };
+
+    const handleFavoriteClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onFavoriteToggle?.(property.id);
+    };
+
+    const imageContent = (
+        <>
+            {property.coverImage ? (
+                <img
+                    src={property.coverImage}
+                    alt={property.title}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                />
+            ) : (
+                <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                    <Square className="w-12 h-12 text-gray-400" aria-hidden="true" />
+                </div>
+            )}
+            <div className="absolute top-3 right-3">
+                <Badge variant={property.mainCategoryName === 'بيع' ? 'default' : 'secondary'}>
+                    {property.mainCategoryName}
+                </Badge>
+            </div>
+            {onFavoriteToggle && (
+                <button
+                    onClick={handleFavoriteClick}
+                    className={`absolute top-3 left-3 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isFavorite
+                            ? 'bg-red-500 text-white'
+                            : 'bg-white/80 text-gray-600 hover:bg-red-500 hover:text-white'
+                        }`}
+                    aria-label={isFavorite ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة'}
+                >
+                    <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} aria-hidden="true" />
+                </button>
+            )}
+        </>
+    );
+
+    if (viewMode === 'list') {
+        return (
+            <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                <div className="flex flex-col sm:flex-row" dir="rtl">
+                    <div className="w-full sm:w-64 h-48 flex-shrink-0 relative">{imageContent}</div>
+                    <CardContent className="flex-1 p-4 sm:p-6">
+                        <div className="flex flex-col sm:flex-row justify-between h-full gap-4">
+                            <div className="flex-1 space-y-3">
+                                <Link href={`/properties/${property.id}`} className="block">
+                                    <h3 className="font-semibold text-lg text-gray-900 hover:text-blue-600 transition-colors line-clamp-2">
+                                        {property.title}
+                                    </h3>
+                                </Link>
+                                <p className="text-gray-600 text-sm line-clamp-2">{property.description}</p>
+                                <div className="flex items-center gap-2 text-sm text-gray-600">
+                                    <MapPin className="w-4 h-4" aria-hidden="true" />
+                                    <span>
+                                        {property.cityName} - {property.neighborhoodName}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-4 text-sm text-gray-600">
+                                    {property.bedrooms && (
+                                        <div className="flex items-center gap-1">
+                                            <Bed className="w-4 h-4" aria-hidden="true" />
+                                            <span>{property.bedrooms} غرف</span>
+                                        </div>
+                                    )}
+                                    {property.bathrooms && (
+                                        <div className="flex items-center gap-1">
+                                            <Bath className="w-4 h-4" aria-hidden="true" />
+                                            <span>{property.bathrooms} حمام</span>
+                                        </div>
+                                    )}
+                                    {property.buildingArea && (
+                                        <div className="flex items-center gap-1">
+                                            <Square className="w-4 h-4" aria-hidden="true" />
+                                            <span>{property.buildingArea} م²</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="flex flex-col justify-between items-end">
+                                <div className="text-xl sm:text-2xl font-bold text-blue-600">
+                                    {formatPrice(property.price)}
+                                </div>
+                                <Link href={`/properties/${property.id}`}>
+                                    <Button className="flex items-center gap-2 mt-4" aria-label="عرض تفاصيل العقار">
+                                        <Eye className="w-4 h-4" aria-hidden="true" />
+                                        عرض التفاصيل
+                                    </Button>
+                                </Link>
+                            </div>
+                        </div>
+                    </CardContent>
+                </div>
+            </Card>
+        );
+    }
+
+    return (
+        <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+            <div className="relative h-48" dir="rtl">
+                {imageContent}
+            </div>
+            <CardContent className="p-4 sm:p-6 space-y-3">
+                <Link href={`/properties/${property.id}`} className="block">
+                    <h3 className="font-semibold text-lg text-gray-900 hover:text-blue-600 transition-colors line-clamp-2">
+                        {property.title}
+                    </h3>
+                </Link>
+                <p className="text-gray-600 text-sm line-clamp-2">{property.description}</p>
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <MapPin className="w-4 h-4" aria-hidden="true" />
+                    <span>
+                        {property.cityName} - {property.neighborhoodName}
+                    </span>
+                </div>
+                <div className="flex items-center justify-between">
+                    <div className="text-xl sm:text-2xl font-bold text-blue-600">
+                        {formatPrice(property.price)}
+                    </div>
+                </div>
+                <div className="flex items-center gap-4 text-sm text-gray-600 pt-2 border-t">
+                    {property.bedrooms && (
+                        <div className="flex items-center gap-1">
+                            <Bed className="w-4 h-4" aria-hidden="true" />
+                            <span>{property.bedrooms}</span>
+                        </div>
+                    )}
+                    {property.bathrooms && (
+                        <div className="flex items-center gap-1">
+                            <Bath className="w-4 h-4" aria-hidden="true" />
+                            <span>{property.bathrooms}</span>
+                        </div>
+                    )}
+                    {property.buildingArea && (
+                        <div className="flex items-center gap-1">
+                            <Square className="w-4 h-4" aria-hidden="true" />
+                            <span>{property.buildingArea} م²</span>
+                        </div>
+                    )}
+                </div>
+                {property.finalTypeName && (
+                    <div className="pt-2">
+                        <Badge variant="outline" className="text-xs">
+                            {property.finalTypeName}
+                        </Badge>
+                    </div>
+                )}
+                <Link href={`/properties/${property.id}`} className="block pt-4">
+                    <Button className="w-full flex items-center gap-2 justify-center" aria-label="عرض تفاصيل العقار">
+                        <Eye className="w-4 h-4" aria-hidden="true" />
+                        عرض التفاصيل
+                    </Button>
+                </Link>
+            </CardContent>
+        </Card>
+    );
+};

@@ -1,1 +1,125 @@
-import React from 'react';\nimport { Button } from '@/components/ui/button';\nimport { ChevronLeft, ChevronRight } from 'lucide-react';\n\ninterface PaginationProps {\n  currentPage: number;\n  totalPages: number;\n  onPageChange: (page: number) => void;\n  totalItems: number;\n  itemsPerPage: number;\n  className?: string;\n}\n\nexport const Pagination: React.FC<PaginationProps> = ({\n  currentPage,\n  totalPages,\n  onPageChange,\n  totalItems,\n  itemsPerPage,\n  className = ''\n}) => {\n  const startItem = (currentPage - 1) * itemsPerPage + 1;\n  const endItem = Math.min(currentPage * itemsPerPage, totalItems);\n\n  const getVisiblePages = () => {\n    const delta = 2;\n    const range = [];\n    const rangeWithDots = [];\n\n    for (let i = Math.max(2, currentPage - delta); \n         i <= Math.min(totalPages - 1, currentPage + delta); \n         i++) {\n      range.push(i);\n    }\n\n    if (currentPage - delta > 2) {\n      rangeWithDots.push(1, '...');\n    } else {\n      rangeWithDots.push(1);\n    }\n\n    rangeWithDots.push(...range);\n\n    if (currentPage + delta < totalPages - 1) {\n      rangeWithDots.push('...', totalPages);\n    } else {\n      rangeWithDots.push(totalPages);\n    }\n\n    return rangeWithDots;\n  };\n\n  if (totalPages <= 1) return null;\n\n  return (\n    <div className={`flex flex-col items-center space-y-4 ${className}`}>\n      {/* Page Info */}\n      <div className=\"text-sm text-gray-600\">\n        عرض {startItem} إلى {endItem} من إجمالي {totalItems} عنصر\n      </div>\n\n      {/* Pagination Controls */}\n      <div className=\"flex items-center space-x-2\">\n        {/* Previous Button */}\n        <Button\n          variant=\"outline\"\n          size=\"sm\"\n          onClick={() => onPageChange(currentPage - 1)}\n          disabled={currentPage === 1}\n          className=\"flex items-center gap-1\"\n        >\n          <ChevronRight className=\"w-4 h-4\" />\n          السابق\n        </Button>\n\n        {/* Page Numbers */}\n        <div className=\"flex items-center space-x-1\">\n          {getVisiblePages().map((page, index) => {\n            if (page === '...') {\n              return (\n                <span key={index} className=\"px-2 py-1 text-gray-500\">\n                  ...\n                </span>\n              );\n            }\n\n            const pageNumber = page as number;\n            return (\n              <Button\n                key={pageNumber}\n                variant={currentPage === pageNumber ? 'default' : 'outline'}\n                size=\"sm\"\n                onClick={() => onPageChange(pageNumber)}\n                className=\"w-10 h-10\"\n              >\n                {pageNumber}\n              </Button>\n            );\n          })}\n        </div>\n\n        {/* Next Button */}\n        <Button\n          variant=\"outline\"\n          size=\"sm\"\n          onClick={() => onPageChange(currentPage + 1)}\n          disabled={currentPage === totalPages}\n          className=\"flex items-center gap-1\"\n        >\n          التالي\n          <ChevronLeft className=\"w-4 h-4\" />\n        </Button>\n      </div>\n    </div>\n  );\n};\n"
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
+interface PaginationProps {
+    currentPage: number;
+    totalPages: number;
+    onPageChange: (page: number) => void;
+    totalItems: number;
+    itemsPerPage: number;
+    className?: string;
+}
+
+export const Pagination: React.FC<PaginationProps> = ({
+    currentPage,
+    totalPages,
+    onPageChange,
+    totalItems,
+    itemsPerPage,
+    className = '',
+}) => {
+    const startItem = Math.max((currentPage - 1) * itemsPerPage + 1, 1);
+    const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+
+    const getVisiblePages = (): (number | string)[] => {
+        const delta = 2;
+        const range: number[] = [];
+        const rangeWithDots: (number | string)[] = [];
+
+        const start = Math.max(2, currentPage - delta);
+        const end = Math.min(totalPages - 1, currentPage + delta);
+
+        for (let i = start; i <= end; i++) {
+            range.push(i);
+        }
+
+        rangeWithDots.push(1);
+        if (start > 2) {
+            rangeWithDots.push('...');
+        }
+
+        rangeWithDots.push(...range);
+
+        if (end < totalPages - 1) {
+            rangeWithDots.push('...');
+        }
+        if (totalPages > 1) {
+            rangeWithDots.push(totalPages);
+        }
+
+        return rangeWithDots;
+    };
+
+    if (totalPages <= 1 || totalItems === 0) return null;
+
+    return (
+        <div className={`flex flex-col items-center space-y-4 ${className}`} dir="rtl">
+            {/* Page Info */}
+            <div className="text-sm text-gray-600">
+                عرض {startItem} إلى {endItem} من إجمالي {totalItems} عنصر
+            </div>
+
+            {/* Pagination Controls */}
+            <div className="flex items-center space-x-2 space-x-reverse">
+                {/* Next Button (appears first in RTL) */}
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onPageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="flex items-center gap-2"
+                    aria-label="الصفحة التالية"
+                >
+                    التالي
+                    <ChevronRight className="w-4 h-4" aria-hidden="true" />
+                </Button>
+
+                {/* Page Numbers */}
+                <div className="flex items-center space-x-1 space-x-reverse">
+                    {getVisiblePages().map((page, index) => {
+                        if (page === '...') {
+                            return (
+                                <span
+                                    key={`ellipsis-${index}`}
+                                    className="px-2 py-1 text-gray-500 select-none"
+                                    aria-hidden="true"
+                                >
+                                    ...
+                                </span>
+                            );
+                        }
+
+                        const pageNumber = page as number;
+                        return (
+                            <Button
+                                key={pageNumber}
+                                variant={currentPage === pageNumber ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => onPageChange(pageNumber)}
+                                className="w-10 h-10"
+                                aria-label={`الصفحة ${pageNumber}`}
+                                aria-current={currentPage === pageNumber ? 'page' : undefined}
+                            >
+                                {pageNumber}
+                            </Button>
+                        );
+                    })}
+                </div>
+
+                {/* Previous Button (appears last in RTL) */}
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onPageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="flex items-center gap-2"
+                    aria-label="الصفحة السابقة"
+                >
+                    <ChevronLeft className="w-4 h-4" aria-hidden="true" />
+                    السابق
+                </Button>
+            </div>
+        </div>
+    );
+};
