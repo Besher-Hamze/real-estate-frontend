@@ -8,13 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { RealEstateData } from '@/lib/types';
 import { RealEstateApi } from '@/api/realEstateApi';
-import { 
-    Plus, 
-    Search, 
-    Eye, 
-    Edit, 
-    Trash2, 
-    MapPin, 
+import {
+    Plus,
+    Search,
+    Eye,
+    Edit,
+    Trash2,
+    MapPin,
     Calendar,
     DollarSign,
     Home,
@@ -219,7 +219,7 @@ export default function RealEstateListPage() {
                                 {searchTerm ? 'لا توجد عقارات مطابقة للبحث' : 'لا توجد عقارات'}
                             </h3>
                             <p className="text-gray-500 mb-6">
-                                {searchTerm 
+                                {searchTerm
                                     ? 'جرب البحث بكلمات مفتاحية أخرى'
                                     : 'ابدأ بإضافة أول عقار لك'
                                 }
@@ -250,7 +250,7 @@ export default function RealEstateListPage() {
                                             <Home className="w-12 h-12 text-gray-400" />
                                         </div>
                                     )}
-                                    
+
                                     {/* Actions Menu */}
                                     <div className="absolute top-3 right-3">
                                         <DropdownMenu>

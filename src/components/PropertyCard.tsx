@@ -56,8 +56,8 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
                 <button
                     onClick={handleFavoriteClick}
                     className={`absolute top-3 left-3 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isFavorite
-                            ? 'bg-red-500 text-white'
-                            : 'bg-white/80 text-gray-600 hover:bg-red-500 hover:text-white'
+                        ? 'bg-red-500 text-white'
+                        : 'bg-white/80 text-gray-600 hover:bg-red-500 hover:text-white'
                         }`}
                     aria-label={isFavorite ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة'}
                 >
