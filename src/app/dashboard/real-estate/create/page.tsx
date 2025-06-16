@@ -38,7 +38,7 @@ import { PAYMENT_OPTIONS } from '@/components/ui/constants/formOptions';
 import LocationPicker from '@/components/map/LocationPicker';
 import ViewingTimeSelector from '@/components/forms/ViewingTimeSelector';
 import ImageUploadModal from '@/components/dashboard/forms/EnhancedImageUpload';
-import { Button } from '@/components/ui';
+import { Button } from '@/components/ui/button';
 
 interface FormStep {
     id: number;
