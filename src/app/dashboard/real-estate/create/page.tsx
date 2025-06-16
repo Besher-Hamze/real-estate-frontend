@@ -2,7 +2,6 @@
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -39,6 +38,7 @@ import { PAYMENT_OPTIONS } from '@/components/ui/constants/formOptions';
 import LocationPicker from '@/components/map/LocationPicker';
 import ViewingTimeSelector from '@/components/forms/ViewingTimeSelector';
 import ImageUploadModal from '@/components/dashboard/forms/EnhancedImageUpload';
+import { Button } from '@/components/ui';
 
 interface FormStep {
     id: number;
