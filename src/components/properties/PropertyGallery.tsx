@@ -56,7 +56,7 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
   };
 
   const handleDownload = async () => {
-    const imageUrl = `${process.env.NEXT_PUBLIC_API_URL}/${property.files[activeImage]}`;
+    const imageUrl = `${property.files[activeImage]}`;
     const imageName = property.files[activeImage].split('/').pop() || 'image';
 
     try {
@@ -89,7 +89,7 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
         {isVideoFile(property.files[activeImage]) ? (
           <>
             <video
-              src={`${process.env.NEXT_PUBLIC_API_URL}/${property.files[activeImage]}`}
+              src={`${property.files[activeImage]}`}
               autoPlay
               loop
               muted
@@ -97,7 +97,7 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
               className="w-full h-full object-cover"
             >
               <source
-                src={`${process.env.NEXT_PUBLIC_API_URL}/${property.files[activeImage]}`}
+                src={`${property.files[activeImage]}`}
                 type="video/mp4"
               />
               Your browser does not support the video tag.
@@ -105,7 +105,7 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
             <div
               className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors"
               onClick={() =>
-                window.open(`${process.env.NEXT_PUBLIC_API_URL}/${property.files[activeImage]}`, '_blank')
+                window.open(`${property.files[activeImage]}`, '_blank')
               }
             >
               <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
@@ -116,7 +116,7 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
         ) : (
           <>
             <Image
-              src={`${process.env.NEXT_PUBLIC_API_URL}/${property.files[activeImage]}`}
+              src={`${property.files[activeImage]}`}
               alt={property.title}
               fill
               className="object-cover"
@@ -145,13 +145,13 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
             >
               {isVideoFile(file) ? (
                 <video
-                  src={`${process.env.NEXT_PUBLIC_API_URL}/${file}`}
+                  src={`${file}`}
                   muted
                   className="w-full h-full object-cover"
                 />
               ) : (
                 <Image
-                  src={`${process.env.NEXT_PUBLIC_API_URL}/${file}`}
+                  src={`${file}`}
                   alt=""
                   width={80}
                   height={80}
@@ -198,7 +198,7 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
                 <div className="relative w-full h-full flex items-center justify-center p-8">
                   {isVideoFile(property.files[activeImage]) ? (
                     <video
-                      src={`${process.env.NEXT_PUBLIC_API_URL}/${property.files[activeImage]}`}
+                      src={`${property.files[activeImage]}`}
                       autoPlay
                       controls
                       className="max-w-full max-h-full object-contain"
@@ -213,7 +213,7 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
                       }}
                     >
                       <img
-                        src={`${process.env.NEXT_PUBLIC_API_URL}/${property.files[activeImage]}`}
+                        src={`${property.files[activeImage]}`}
                         alt={property.title}
                         height={800}
                         className={`max-w-full max-h-full object-contain ${isZoomed ? 'cursor-zoom-out scale-150 transition-transform duration-300' : 'cursor-zoom-in'}`}

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { TypeSelector, DynamicForm } from '@/components/dynamic-form';
 import { useDynamicForm } from '@/hooks/useDynamicProperties';
 import { useLocationData } from '@/hooks/useLocationData';
@@ -30,25 +31,26 @@ import {
     CheckSquare
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Select, SelectItem } from '@/components/ui/select';
-import { SelectTrigger } from '@/components/ui/select';
-import { SelectValue } from '@/components/ui/select';
-import { SelectContent } from '@/components/ui/select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from '@/components/ui/select';
 import { PAYMENT_OPTIONS } from '@/components/ui/constants/formOptions';
 import LocationPicker from '@/components/map/LocationPicker';
 import ViewingTimeSelector from '@/components/forms/ViewingTimeSelector';
 import ImageUploadModal from '@/components/dashboard/forms/EnhancedImageUpload';
-import { Button } from '@/components/ui/button';
 
 interface FormStep {
     id: number;
     title: string;
     description: string;
     icon: React.ReactNode;
-    isCompleted: boolean;
 }
 
-// Create a separate component that uses useSearchParams
+// Main component content
 function RealEstatePageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -57,7 +59,11 @@ function RealEstatePageContent() {
     const isEditMode = !!propertyId;
     const isBuildingMode = !!buildingId;
 
+    // Step management
     const [currentStep, setCurrentStep] = useState(1);
+    const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+
+    // Property type selection
     const [selectedFinalTypeId, setSelectedFinalTypeId] = useState<number | null>(null);
     const [selectedTypePath, setSelectedTypePath] = useState<{
         mainType: MainType;
@@ -65,15 +71,15 @@ function RealEstatePageContent() {
         finalType: FinalType;
     } | null>(null);
 
-    // Building-related state
+    // Building data
     const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
     const [isLoadingBuilding, setIsLoadingBuilding] = useState(isBuildingMode);
 
-    // Initial data loading state (for edit mode only)
+    // Property data for edit mode
     const [isLoading, setIsLoading] = useState(isEditMode);
     const [property, setProperty] = useState<RealEstateData | null>(null);
 
-    // Dynamic properties hook
+    // Dynamic properties
     const {
         formData: dynamicFormData,
         groupedProperties,
@@ -85,7 +91,7 @@ function RealEstatePageContent() {
         setFormData: setDynamicFormData
     } = useDynamicForm(selectedFinalTypeId);
 
-    // Location data hook
+    // Location data
     const {
         cities,
         neighborhoods,
@@ -105,7 +111,7 @@ function RealEstatePageContent() {
         finalCityId: '',
         location: '',
         viewTime: [] as any[],
-        paymentMethod: "",
+        paymentMethod: '',
         coverImage: null as File | null,
         files: [] as File[],
         existingCoverImage: '',
@@ -122,8 +128,84 @@ function RealEstatePageContent() {
     const [coverImageProgress, setCoverImageProgress] = useState<number>(0);
     const [additionalImageProgress, setAdditionalImageProgress] = useState<Record<number, number>>({});
 
+    // Form validation
     const [errors, setErrors] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Define form steps
+    const steps: FormStep[] = [
+        {
+            id: 1,
+            title: 'نوع العقار',
+            description: isEditMode ? 'تعديل نوع العقار' : 'اختر نوع العقار المناسب',
+            icon: <Home className="w-5 h-5" />
+        },
+        {
+            id: 2,
+            title: 'المعلومات الأساسية',
+            description: 'العنوان والوصف والسعر',
+            icon: <FileText className="w-5 h-5" />
+        },
+        {
+            id: 3,
+            title: 'الموقع',
+            description: 'تفاصيل موقع العقار',
+            icon: <MapPin className="w-5 h-5" />
+        },
+        {
+            id: 4,
+            title: 'الخصائص التفصيلية',
+            description: 'خصائص العقار المحددة',
+            icon: <DollarSign className="w-5 h-5" />
+        },
+        {
+            id: 5,
+            title: 'الصور والملفات',
+            description: 'صور العقار والمستندات',
+            icon: <Camera className="w-5 h-5" />
+        }
+    ];
+
+    // Check if step is completed
+    const isStepCompleted = (stepId: number): boolean => {
+        if (completedSteps.has(stepId)) return true;
+
+        switch (stepId) {
+            case 1:
+                return selectedFinalTypeId !== null;
+            case 2:
+                return !!(
+                    basicFormData.title.trim() &&
+                    basicFormData.description.trim() &&
+                    basicFormData.price &&
+                    !isNaN(Number(basicFormData.price)) &&
+                    basicFormData.paymentMethod.trim()
+                );
+            case 3:
+                return !!(
+                    selectedCityId &&
+                    selectedNeighborhoodId &&
+                    basicFormData.finalCityId &&
+                    basicFormData.location.trim()
+                );
+            case 4:
+                return isDynamicValid && currentStep === 4;
+            case 5:
+                return !!(
+                    (basicFormData.coverImage || basicFormData.existingCoverImage || coverImagePreview) &&
+                    basicFormData.viewTime.length > 0
+                );
+            default:
+                return false;
+        }
+    };
+
+    // Mark step as completed
+    const markStepCompleted = (stepId: number) => {
+        if (isStepCompleted(stepId)) {
+            setCompletedSteps(prev => new Set([...prev, stepId]));
+        }
+    };
 
     // Load building data if buildingId is provided
     useEffect(() => {
@@ -143,7 +225,6 @@ function RealEstatePageContent() {
                     updateBasicField('location', buildingData.location);
                 }
 
-                // Auto-fill location hierarchy from building if available
                 if (buildingData.cityId) {
                     setSelectedCityId(buildingData.cityId);
                 }
@@ -162,7 +243,7 @@ function RealEstatePageContent() {
             } catch (error) {
                 console.error('Error loading building:', error);
                 toast.error('حدث خطأ في تحميل بيانات المبنى');
-                router.push('/dashboard/buildings');
+                router.push('/dashboar')
             } finally {
                 setIsLoadingBuilding(false);
             }
@@ -171,7 +252,7 @@ function RealEstatePageContent() {
         loadBuilding();
     }, [buildingId, router, setSelectedCityId, setSelectedNeighborhoodId]);
 
-    // Load existing property data (for edit mode)
+    // Load existing property data for edit mode
     useEffect(() => {
         const loadProperty = async () => {
             if (!isEditMode || !propertyId) {
@@ -199,18 +280,14 @@ function RealEstatePageContent() {
                     existingFiles: propertyData.files || []
                 });
 
-                // Set cover image preview for edit mode
+                // Set image previews
                 if (propertyData.coverImage) {
-                    setCoverImagePreview(`${process.env.NEXT_PUBLIC_API_URL}/${propertyData.coverImage}`);
+                    setCoverImagePreview(`${propertyData.coverImage}`);
                 }
 
-                // Set additional image previews for edit mode
                 if (propertyData.files && propertyData.files.length > 0) {
-                    const imagePreviews = propertyData.files.map((file: string) =>
-                        `${process.env.NEXT_PUBLIC_API_URL}/${file}`
-                    );
+                    const imagePreviews = propertyData.files.map((file: string) => `${file}`);
                     setAdditionalImagePreviews(imagePreviews);
-
                     const fileTypes = propertyData.files.map(() => 'image/jpeg');
                     setAdditionalFileTypes(fileTypes);
                 }
@@ -245,10 +322,13 @@ function RealEstatePageContent() {
                     }
                 }
 
+                // Mark all steps as completed for edit mode
+                setCompletedSteps(new Set([1, 2, 3, 4, 5]));
+
             } catch (error) {
                 console.error('Error loading property:', error);
                 toast.error('حدث خطأ في تحميل بيانات العقار');
-                router.push('/dashboard/real-estate');
+                router.push('/dashboard');
             } finally {
                 setIsLoading(false);
             }
@@ -257,52 +337,24 @@ function RealEstatePageContent() {
         loadProperty();
     }, [isEditMode, propertyId, router, setSelectedCityId, setSelectedNeighborhoodId, setDynamicFormData]);
 
-    // Form steps definition
-    const steps: FormStep[] = [
-        {
-            id: 1,
-            title: 'نوع العقار',
-            description: isEditMode ? 'تعديل نوع العقار' : 'اختر نوع العقار المناسب',
-            icon: <Home className="w-5 h-5" />,
-            isCompleted: selectedFinalTypeId !== null
-        },
-        {
-            id: 2,
-            title: 'المعلومات الأساسية',
-            description: 'العنوان والوصف والسعر',
-            icon: <FileText className="w-5 h-5" />,
-            isCompleted: !!(basicFormData.title && basicFormData.description && basicFormData.price)
-        },
-        {
-            id: 3,
-            title: 'الموقع',
-            description: 'تفاصيل موقع العقار',
-            icon: <MapPin className="w-5 h-5" />,
-            isCompleted: !!(selectedCityId && selectedNeighborhoodId && basicFormData.finalCityId && basicFormData.location)
-        },
-        {
-            id: 4,
-            title: 'الخصائص التفصيلية',
-            description: 'خصائص العقار المحددة',
-            icon: <DollarSign className="w-5 h-5" />,
-            isCompleted: isDynamicValid && Object.keys(dynamicFormData).length > 0
-        },
-        {
-            id: 5,
-            title: 'الصور والملفات',
-            description: 'صور العقار والمستندات',
-            icon: <Camera className="w-5 h-5" />,
-            isCompleted: !!(basicFormData.coverImage || basicFormData.existingCoverImage || coverImagePreview)
-        }
-    ];
-
     // Handle property type selection
     const handleFinalTypeSelect = (finalTypeId: number, path: { mainType: MainType; subType: SubType; finalType: FinalType }) => {
         setSelectedFinalTypeId(finalTypeId);
         setSelectedTypePath(path);
+        markStepCompleted(1);
+
         if (!isEditMode) {
             setCurrentStep(2);
         }
+    };
+
+    // Update basic form field
+    const updateBasicField = (field: keyof typeof basicFormData, value: any) => {
+        setBasicFormData(prev => ({
+            ...prev,
+            [field]: value
+        }));
+        setErrors([]);
     };
 
     // Image upload handlers
@@ -357,14 +409,6 @@ function RealEstatePageContent() {
         updateBasicField('files', newUrls);
     };
 
-    const updateBasicField = (field: keyof typeof basicFormData, value: any) => {
-        setBasicFormData(prev => ({
-            ...prev,
-            [field]: value
-        }));
-        setErrors([]);
-    };
-
     // Validate current step
     const validateCurrentStep = (): boolean => {
         const newErrors: string[] = [];
@@ -410,17 +454,23 @@ function RealEstatePageContent() {
         return newErrors.length === 0;
     };
 
-    // Move to next step
+    // Navigation functions
     const nextStep = () => {
         if (validateCurrentStep() && currentStep < steps.length) {
+            markStepCompleted(currentStep);
             setCurrentStep(currentStep + 1);
         }
     };
 
-    // Move to previous step
     const prevStep = () => {
         if (currentStep > 1) {
             setCurrentStep(currentStep - 1);
+        }
+    };
+
+    const navigateToStep = (stepId: number) => {
+        if (completedSteps.has(stepId) || stepId <= currentStep || stepId === currentStep + 1) {
+            setCurrentStep(stepId);
         }
     };
 
@@ -430,7 +480,6 @@ function RealEstatePageContent() {
             return;
         }
 
-        // Additional validation - always require location hierarchy
         if (!selectedCityId || !selectedNeighborhoodId) {
             toast.error('يرجى اختيار المدينة والحي');
             return;
@@ -448,20 +497,16 @@ function RealEstatePageContent() {
                     paymentMethod: basicFormData.paymentMethod,
                     location: basicFormData.location,
                     viewTime: JSON.stringify(basicFormData.viewTime),
-                    dynamicProperties: dynamicFormData
+                    dynamicProperties: dynamicFormData,
+                    cityId: selectedCityId,
+                    neighborhoodId: selectedNeighborhoodId,
+                    finalCityId: Number(basicFormData.finalCityId)
                 };
 
-                // Add location fields for both building and normal mode
-                updateData.cityId = selectedCityId;
-                updateData.neighborhoodId = selectedNeighborhoodId;
-                updateData.finalCityId = Number(basicFormData.finalCityId);
-
-                // Add building info if in building mode
                 if (selectedBuilding) {
                     updateData.buildingItemId = selectedBuilding.id;
                 }
 
-                // Add new images if selected
                 if (basicFormData.coverImage) {
                     updateData.coverImage = basicFormData.coverImage;
                 }
@@ -469,7 +514,6 @@ function RealEstatePageContent() {
                     updateData.files = basicFormData.files;
                 }
 
-                // Add type IDs if changed
                 if (selectedTypePath) {
                     updateData.mainCategoryId = selectedTypePath.mainType.id;
                     updateData.subCategoryId = selectedTypePath.subType.id;
@@ -493,11 +537,9 @@ function RealEstatePageContent() {
                     coverImage: basicFormData.coverImage,
                     files: basicFormData.files,
                     dynamicProperties: dynamicFormData,
-                    // Always include location hierarchy
                     cityId: selectedCityId!,
                     neighborhoodId: selectedNeighborhoodId!,
                     finalCityId: Number(basicFormData.finalCityId),
-                    // Add building-specific fields if applicable
                     ...(selectedBuilding && {
                         buildingItemId: selectedBuilding.id,
                     })
@@ -509,9 +551,9 @@ function RealEstatePageContent() {
 
             // Navigate back appropriately
             if (selectedBuilding) {
-                router.push(`/dashboard/buildings?showRealEstates=${selectedBuilding.id}`);
+                router.push(`/dashboard`);
             } else {
-                router.push('/dashboard/real-estate');
+                router.push('/dashboard');
             }
 
         } catch (error) {
@@ -543,7 +585,6 @@ function RealEstatePageContent() {
             case 1:
                 return (
                     <div className="space-y-6">
-                        {/* Building Context Display */}
                         {selectedBuilding && (
                             <Card className="bg-green-50 border-green-200">
                                 <CardContent className="pt-6">
@@ -702,7 +743,6 @@ function RealEstatePageContent() {
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 {selectedBuilding ? (
-                                    // Building mode - simplified location
                                     <div className="space-y-4">
                                         <Card className="bg-green-50 border-green-200">
                                             <CardContent className="pt-4">
@@ -726,6 +766,63 @@ function RealEstatePageContent() {
                                                 </div>
                                             </CardContent>
                                         </Card>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <Label htmlFor="city">المدينة *</Label>
+                                                <select
+                                                    id="city"
+                                                    value={selectedCityId || ''}
+                                                    onChange={(e) => setSelectedCityId(Number(e.target.value) || null)}
+                                                    className="w-full mt-1 p-2 border rounded-md"
+                                                    disabled={locationLoading}
+                                                >
+                                                    <option value="">اختر المدينة</option>
+                                                    {cities.map(city => (
+                                                        <option key={city.id} value={city.id}>
+                                                            {city.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <Label htmlFor="neighborhood">الحي *</Label>
+                                                <select
+                                                    id="neighborhood"
+                                                    value={selectedNeighborhoodId || ''}
+                                                    onChange={(e) => setSelectedNeighborhoodId(Number(e.target.value) || null)}
+                                                    className="w-full mt-1 p-2 border rounded-md"
+                                                    disabled={!selectedCityId || locationLoading}
+                                                >
+                                                    <option value="">اختر الحي</option>
+                                                    {neighborhoods.map(neighborhood => (
+                                                        <option key={neighborhood.id} value={neighborhood.id}>
+                                                            {neighborhood.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <Label htmlFor="finalCity">المنطقة *</Label>
+                                            <select
+                                                id="finalCity"
+                                                value={basicFormData.finalCityId}
+                                                onChange={(e) => updateBasicField('finalCityId', e.target.value)}
+                                                className="w-full mt-1 p-2 border rounded-md"
+                                                disabled={!selectedNeighborhoodId || locationLoading}
+                                            >
+                                                <option value="">اختر المنطقة</option>
+                                                {finalCities.map(finalCity => (
+                                                    <option key={finalCity.id} value={finalCity.id}>
+                                                        {finalCity.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
                                         <div>
                                             <Label htmlFor="location">تحديد الموقع على الخريطة *</Label>
                                             <div className="mt-1">
@@ -755,84 +852,20 @@ function RealEstatePageContent() {
                                             </p>
                                         </div>
 
-                                        {/* Optional: Add building unit/floor info */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div className="space-y-4">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <div>
-                                                        <Label htmlFor="city">المدينة *</Label>
-                                                        <select
-                                                            id="city"
-                                                            value={selectedCityId || ''}
-                                                            onChange={(e) => setSelectedCityId(Number(e.target.value) || null)}
-                                                            className="w-full mt-1 p-2 border rounded-md"
-                                                            disabled={locationLoading}
-                                                        >
-                                                            <option value="">اختر المدينة</option>
-                                                            {cities.map(city => (
-                                                                <option key={city.id} value={city.id}>
-                                                                    {city.name}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-
-                                                    <div>
-                                                        <Label htmlFor="neighborhood">الحي *</Label>
-                                                        <select
-                                                            id="neighborhood"
-                                                            value={selectedNeighborhoodId || ''}
-                                                            onChange={(e) => setSelectedNeighborhoodId(Number(e.target.value) || null)}
-                                                            className="w-full mt-1 p-2 border rounded-md"
-                                                            disabled={!selectedCityId || locationLoading}
-                                                        >
-                                                            <option value="">اختر الحي</option>
-                                                            {neighborhoods.map(neighborhood => (
-                                                                <option key={neighborhood.id} value={neighborhood.id}>
-                                                                    {neighborhood.name}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                </div>
-
-                                                <div>
-                                                    <Label htmlFor="finalCity">المنطقة *</Label>
-                                                    <select
-                                                        id="finalCity"
-                                                        value={basicFormData.finalCityId}
-                                                        onChange={(e) => updateBasicField('finalCityId', e.target.value)}
-                                                        className="w-full mt-1 p-2 border rounded-md"
-                                                        disabled={!selectedNeighborhoodId || locationLoading}
-                                                    >
-                                                        <option value="">اختر المنطقة</option>
-                                                        {finalCities.map(finalCity => (
-                                                            <option key={finalCity.id} value={finalCity.id}>
-                                                                {finalCity.name}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                </div>
-
-
-                                            </div>
-                                            <div>
-                                                <Label htmlFor="buildingFloor">الطابق (اختياري)</Label>
-                                                <Input
-                                                    id="buildingFloor"
-                                                    type="number"
-                                                    placeholder="رقم الطابق"
-                                                    className="mt-1"
-                                                    onChange={(e) => {
-                                                        // You can add this to dynamic properties or extend the form
-                                                        updateDynamicField('building_floor', e.target.value);
-                                                    }}
-                                                />
-                                            </div>
+                                        <div>
+                                            <Label htmlFor="buildingFloor">الطابق (اختياري)</Label>
+                                            <Input
+                                                id="buildingFloor"
+                                                type="number"
+                                                placeholder="رقم الطابق"
+                                                className="mt-1"
+                                                onChange={(e) => {
+                                                    updateDynamicField('building_floor', e.target.value);
+                                                }}
+                                            />
                                         </div>
                                     </div>
                                 ) : (
-                                    // Normal mode - full location selection
                                     <div className="space-y-4">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
@@ -1036,7 +1069,7 @@ function RealEstatePageContent() {
                             variant="outline"
                             onClick={() => {
                                 if (selectedBuilding) {
-                                    router.push(`/dashboard/buildings?showRealEstates=${selectedBuilding.id}`);
+                                    router.push(`/dashboard`);
                                 } else {
                                     router.back();
                                 }
@@ -1074,18 +1107,14 @@ function RealEstatePageContent() {
                                                 w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all cursor-pointer
                                                 ${currentStep === step.id
                                                     ? 'border-blue-500 bg-blue-500 text-white'
-                                                    : step.isCompleted
+                                                    : isStepCompleted(step.id)
                                                         ? 'border-green-500 bg-green-500 text-white'
                                                         : 'border-gray-300 bg-white text-gray-500'
                                                 }
                                             `}
-                                            onClick={() => {
-                                                if (step.isCompleted || step.id <= currentStep) {
-                                                    setCurrentStep(step.id);
-                                                }
-                                            }}
+                                            onClick={() => navigateToStep(step.id)}
                                         >
-                                            {step.isCompleted ? (
+                                            {isStepCompleted(step.id) ? (
                                                 <CheckCircle className="w-5 h-5" />
                                             ) : (
                                                 step.icon
@@ -1101,7 +1130,8 @@ function RealEstatePageContent() {
                                         </div>
                                     </div>
                                     {index < steps.length - 1 && (
-                                        <div className="w-16 h-0.5 bg-gray-300 mx-4 mb-8" />
+                                        <div className={`w-16 h-0.5 mx-4 mb-8 ${isStepCompleted(step.id) ? 'bg-green-500' : 'bg-gray-300'
+                                            }`} />
                                     )}
                                 </div>
                             ))}

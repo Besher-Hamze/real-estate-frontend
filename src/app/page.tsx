@@ -1,9 +1,10 @@
 "use client";
 import { useState, useEffect, useMemo, JSX } from "react";
 import { motion } from "framer-motion";
-import { Filters, SortOption } from "@/lib/types";
+import { Filters, SortOption, FinalType } from "@/lib/types";
 import { useMainType } from "@/lib/hooks/useMainType";
 import { useRealEstate } from "@/lib/hooks/useRealEstate";
+import { finalTypeTypeApi } from "@/api/finalTypeApi";
 import Navbar from "@/components/home/Navbar";
 import HeroSection from "@/components/home/HeroSection";
 import Footer from "@/components/home/Footer";
@@ -13,10 +14,14 @@ import SubTypeSelector from "@/components/widgets/SubTypeSelector";
 import ScrollToTop from "@/components/widgets/ScrollToTop";
 import { filterRealEstateData, initialFilterState, initialSortOption } from "@/utils/filterUtils";
 import PropertyMapGrid from "@/components/widgets/PropertyGrid/PropertyMapGrid";
+import FinalTypeSelector from "@/components/widgets/FinalTypeButton";
 
 export default function PremiumLanding(): JSX.Element {
   const [selectedMainTypeId, setSelectedMainTypeId] = useState<number | null>(null);
   const [selectedSubTypeId, setSelectedSubTypeId] = useState<number | null>(null);
+  const [selectedFinalTypeId, setSelectedFinalTypeId] = useState<number | null>(null); // New state
+  const [finalTypes, setFinalTypes] = useState<FinalType[]>([]); // New state
+  const [isLoadingFinalTypes, setIsLoadingFinalTypes] = useState(false); // New state
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000000]);
   const [filters, setFilters] = useState<Filters>(initialFilterState);
   const [sortOption, setSortOption] = useState<SortOption>(initialSortOption);
@@ -40,8 +45,10 @@ export default function PremiumLanding(): JSX.Element {
     setFilters(initialFilterState);
     setPriceRange([0, 1000000]);
     setSortOption(initialSortOption);
+    setSelectedFinalTypeId(null); // Reset final type selection
   };
 
+  // Auto-select first main type and sub type
   useEffect(() => {
     if (mainTypes?.length > 0 && !selectedMainTypeId) {
       setSelectedMainTypeId(mainTypes[0].id);
@@ -52,6 +59,45 @@ export default function PremiumLanding(): JSX.Element {
       }
     }
   }, [mainTypes, selectedMainTypeId]);
+
+  // Fetch final types when sub type changes
+  useEffect(() => {
+    const fetchFinalTypes = async () => {
+      if (selectedSubTypeId) {
+        setIsLoadingFinalTypes(true);
+        setSelectedFinalTypeId(null); // Reset final type selection
+        try {
+          const types = await finalTypeTypeApi.fetchFinalTypeBySubId(selectedSubTypeId);
+          setFinalTypes(types || []);
+        } catch (error) {
+          console.error('Failed to fetch final types:', error);
+          setFinalTypes([]);
+        } finally {
+          setIsLoadingFinalTypes(false);
+        }
+      } else {
+        setFinalTypes([]);
+        setSelectedFinalTypeId(null);
+      }
+    };
+
+    fetchFinalTypes();
+  }, [selectedSubTypeId]);
+
+  // Update filters when final type changes
+  useEffect(() => {
+    if (selectedFinalTypeId) {
+      setFilters(prev => ({
+        ...prev,
+        finalType: selectedFinalTypeId.toString()
+      }));
+    } else {
+      setFilters(prev => ({
+        ...prev,
+        finalType: ''
+      }));
+    }
+  }, [selectedFinalTypeId]);
 
   const currentMainType = mainTypes.find(
     (type) => type.id === selectedMainTypeId
@@ -66,8 +112,8 @@ export default function PremiumLanding(): JSX.Element {
       selectedSubTypeId,
       priceRange,
       filters
-    }, sortOption); // تمرير خيار الترتيب إلى دالة الفلترة
-  }, [realEstateData, selectedMainTypeId, selectedSubTypeId, priceRange, filters, sortOption]); // إضافة sortOption للتبعيات
+    }, sortOption);
+  }, [realEstateData, selectedMainTypeId, selectedSubTypeId, priceRange, filters, sortOption]);
 
   const isRentalType = useMemo(() => {
     return currentMainType?.name?.includes("إيجار") || false;
@@ -118,6 +164,7 @@ export default function PremiumLanding(): JSX.Element {
             </p>
           </motion.div>
 
+          {/* Category Selector */}
           <CategorySelector
             mainTypes={mainTypes}
             selectedMainTypeId={selectedMainTypeId}
@@ -129,6 +176,7 @@ export default function PremiumLanding(): JSX.Element {
             isLoading={isLoadingMainTypes}
           />
 
+          {/* SubType Selector */}
           <SubTypeSelector
             currentMainType={currentMainType}
             selectedSubTypeId={selectedSubTypeId}
@@ -136,6 +184,16 @@ export default function PremiumLanding(): JSX.Element {
             isLoading={isLoadingMainTypes}
           />
 
+          {/* Final Type Selector - New Component */}
+          <FinalTypeSelector
+            currentSubType={currentSubType}
+            finalTypes={finalTypes}
+            selectedFinalTypeId={selectedFinalTypeId}
+            setSelectedFinalTypeId={setSelectedFinalTypeId}
+            isLoading={isLoadingFinalTypes}
+          />
+
+          {/* Filter Section */}
           <FilterSection
             filters={filters}
             setFilters={setFilters}
@@ -152,6 +210,8 @@ export default function PremiumLanding(): JSX.Element {
             sortOption={sortOption}
             setSortOption={setSortOption}
           />
+
+          {/* Property Grid */}
           <PropertyMapGrid
             filteredData={filteredRealEstateData}
             isLoading={isLoadingRealEstate}
@@ -163,7 +223,6 @@ export default function PremiumLanding(): JSX.Element {
       </section>
 
       <Footer />
-
       <ScrollToTop />
     </div>
   );

@@ -184,7 +184,7 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
           <div className="h-10 w-10 flex-shrink-0">
             {row.coverImage ? (
               <Image
-                src={`${process.env.NEXT_PUBLIC_API_URL}/${row.coverImage}`}
+                src={`${row.coverImage}`}
                 alt={row.title}
                 width={40}
                 height={40}

@@ -77,25 +77,12 @@ export interface RealEstateData {
   neighborhoodId?: number;
   finalCityId?: number;
   finalCityName?: string;
-  buildingAge?: string;
-  bedrooms?: number;
-  bathrooms?: number;
-  furnished?: string;
-  buildingArea?: string;
-  floorNumber?: number;
-  facade?: string;
   paymentMethod?: string;
   mainCategoryId?: number;
   subCategoryId?: number;
   finalTypeId?: number;
   mainCategoryName?: string;
   subCategoryName?: string;
-  mainFeatures?: string;
-  additionalFeatures?: string;
-  nearbyLocations?: string;
-  rentalDuration?: string;
-  ceilingHeight?: number;
-  totalFloors?: number;
   buildingItemId?: string;
   viewTime?: string;
 }

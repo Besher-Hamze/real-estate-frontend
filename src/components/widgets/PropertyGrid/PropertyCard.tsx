@@ -259,7 +259,7 @@ const RealEstateCard: React.FC<EnhancedRealEstateCardProps> = ({
         {isCurrentMediaVideo ? (
           <video
             ref={videoRef}
-            src={`${process.env.NEXT_PUBLIC_API_URL}/${images[currentImageIndex]}`}
+            src={`${images[currentImageIndex]}`}
             muted
             playsInline
             loop
@@ -269,7 +269,7 @@ const RealEstateCard: React.FC<EnhancedRealEstateCardProps> = ({
           <Image
             src={
               images[currentImageIndex]
-                ? `${process.env.NEXT_PUBLIC_API_URL}/${images[currentImageIndex]}`
+                ? `${images[currentImageIndex]}`
                 : "/images/bg-real.jpg"
             }
             alt={`${item.title} - صورة ${currentImageIndex + 1}`}

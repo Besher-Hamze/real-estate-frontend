@@ -132,13 +132,13 @@ export const EditEstateForm: React.FC<EditEstateFormProps> = ({
 
     const [coverImagePreview, setCoverImagePreview] = useState<string | null>(
         editingEstate.coverImage && typeof editingEstate.coverImage === 'string'
-            ? `${process.env.NEXT_PUBLIC_API_URL}/${editingEstate.coverImage}`
+            ? `${editingEstate.coverImage}`
             : null
     );
 
     const [additionalImagePreviews, setAdditionalImagePreviews] = useState<string[]>(
         editingEstate.files && editingEstate.files.length > 0 && typeof editingEstate.files[0] === 'string'
-            ? editingEstate.files.map((file: string) => `${process.env.NEXT_PUBLIC_API_URL}/${file}`)
+            ? editingEstate.files.map((file: string) => `${file}`)
             : []
     );
 
@@ -326,7 +326,7 @@ export const EditEstateForm: React.FC<EditEstateFormProps> = ({
 
             // Use axios to post the FormData
             const response = await axios.post(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/upload/uploadFile`,
+                `api/upload/uploadFile`,
                 formData,
                 {
                     headers: {
@@ -525,7 +525,7 @@ export const EditEstateForm: React.FC<EditEstateFormProps> = ({
 
         try {
             const deletePromises = fileUrls.map(fileUrl =>
-                axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/realestate/deleteFile/${fileUrl}`)
+                axios.delete(`api/realestate/deleteFile/${fileUrl}`)
             );
 
             await Promise.all(deletePromises);

@@ -5,7 +5,15 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { CalendarIcon, FileIcon, Hash, Type, List, CheckSquare, X } from 'lucide-react';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from '@/components/ui/select';
+import { CalendarIcon, FileIcon, Hash, Type, List, CheckSquare, X, ChevronDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface DynamicFieldProps {
     property: ApiDynamicProperty;
@@ -68,37 +76,25 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
                             {property.propertyName}
                             {property.isRequired && <span className="text-red-500">*</span>}
                         </Label>
-                        <div className="grid grid-cols-2 gap-2">
-                            {property.allowedValues?.map((option) => (
-                                <label
-                                    key={option}
-                                    className={`
-                                        flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-all
-                                        ${value === option 
-                                            ? 'border-blue-500 bg-blue-50 text-blue-700' 
-                                            : 'border-gray-200 hover:border-gray-300'
-                                        }
-                                        ${error ? 'border-red-500' : ''}
-                                    `}
-                                >
-                                    <input
-                                        type="radio"
-                                        name={property.propertyKey}
-                                        value={option}
-                                        checked={value === option}
-                                        onChange={(e) => onChange(e.target.value)}
-                                        className="text-blue-600"
-                                    />
-                                    <span className="text-sm">{option}</span>
-                                </label>
-                            ))}
-                        </div>
+                        <Select value={value || ''} onValueChange={onChange}>
+                            <SelectTrigger className={cn("w-full", error && "border-red-500")}>
+                                <SelectValue placeholder={property.placeholder || `اختر ${property.propertyName}`} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {property.allowedValues?.map((option) => (
+                                    <SelectItem key={option} value={option}>
+                                        {option}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
                 );
 
             case 'multiple_choice':
                 const selectedValues = Array.isArray(value) ? value : [];
-                
+                const [open, setOpen] = React.useState(false);
+
                 return (
                     <div className="space-y-2">
                         <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
@@ -106,7 +102,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
                             {property.propertyName}
                             {property.isRequired && <span className="text-red-500">*</span>}
                         </Label>
-                        
+
                         {/* عرض القيم المختارة */}
                         {selectedValues.length > 0 && (
                             <div className="flex flex-wrap gap-2 mb-3">
@@ -127,38 +123,75 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
                                 ))}
                             </div>
                         )}
-                        
-                        {/* خيارات الاختيار */}
-                        <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-                            {property.allowedValues?.map((option) => {
-                                const isSelected = selectedValues.includes(option);
-                                return (
-                                    <label
-                                        key={option}
-                                        className={`
-                                            flex items-center gap-2 p-2 border rounded-lg cursor-pointer transition-all
-                                            ${isSelected 
-                                                ? 'border-blue-500 bg-blue-50 text-blue-700' 
-                                                : 'border-gray-200 hover:border-gray-300'
-                                            }
-                                        `}
-                                    >
-                                        <Checkbox
-                                            checked={isSelected}
-                                            onCheckedChange={(checked) => {
-                                                let newValues;
-                                                if (checked) {
-                                                    newValues = [...selectedValues, option];
-                                                } else {
-                                                    newValues = selectedValues.filter(v => v !== option);
-                                                }
-                                                onChange(newValues);
-                                            }}
-                                        />
-                                        <span className="text-sm">{option}</span>
-                                    </label>
-                                );
-                            })}
+
+                        {/* Multi-select dropdown using native select with custom styling */}
+                        <div className="relative">
+                            <button
+                                type="button"
+                                onClick={() => setOpen(!open)}
+                                className={cn(
+                                    "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+                                    error && "border-red-500"
+                                )}
+                            >
+                                <span className="text-muted-foreground">
+                                    {selectedValues.length === 0
+                                        ? (property.placeholder || `اختر ${property.propertyName}`)
+                                        : `تم اختيار ${selectedValues.length} عنصر`
+                                    }
+                                </span>
+                                <ChevronDown className="h-4 w-4 opacity-50" />
+                            </button>
+
+                            {open && (
+                                <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95">
+                                    <div className="max-h-64 overflow-auto p-1">
+                                        {property.allowedValues?.map((option) => {
+                                            const isSelected = selectedValues.includes(option);
+                                            return (
+                                                <div
+                                                    key={option}
+                                                    onClick={() => {
+                                                        let newValues;
+                                                        if (isSelected) {
+                                                            newValues = selectedValues.filter(v => v !== option);
+                                                        } else {
+                                                            newValues = [...selectedValues, option];
+                                                        }
+                                                        onChange(newValues);
+                                                    }}
+                                                    className={cn(
+                                                        "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                        isSelected && "bg-accent text-accent-foreground"
+                                                    )}
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        <div className={cn(
+                                                            "w-4 h-4 border rounded flex items-center justify-center",
+                                                            isSelected ? "bg-primary border-primary" : "border-input"
+                                                        )}>
+                                                            {isSelected && (
+                                                                <svg className="w-3 h-3 text-primary-foreground" fill="currentColor" viewBox="0 0 20 20">
+                                                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                                </svg>
+                                                            )}
+                                                        </div>
+                                                        <span>{option}</span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Overlay to close dropdown when clicking outside */}
+                            {open && (
+                                <div
+                                    className="fixed inset-0 z-40"
+                                    onClick={() => setOpen(false)}
+                                />
+                            )}
                         </div>
                     </div>
                 );

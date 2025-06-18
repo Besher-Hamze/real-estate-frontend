@@ -150,7 +150,7 @@ export default function MainTypeTable({
                   />
                 ) : row.icon ? (
                   <img
-                    src={`${process.env.NEXT_PUBLIC_API_URL}/${row.icon}`}
+                    src={`${row.icon}`}
                     alt={row.name}
                     className="w-full h-full object-contain rounded-md"
                   />
@@ -171,7 +171,7 @@ export default function MainTypeTable({
             row.icon ? (
               <div className="w-12 h-12 relative">
                 <img
-                  src={`${process.env.NEXT_PUBLIC_API_URL}/${row.icon}`}
+                  src={`${row.icon}`}
                   alt={row.name}
                   className="w-full h-full object-contain rounded-md"
                 />

@@ -1,30 +1,74 @@
-"use client"
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { MapPin, BedDouble, Bath, Maximize2, ArrowRight, Home, Info, Star, LocateIcon, Clock, CheckCircle, X } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
-import { RealEstateApi } from '@/api/realEstateApi';
-import Image from 'next/image';
-import { RealEstateData } from '@/lib/types';
-import PropertyGallery from '@/components/properties/PropertyGallery';
-import RealEstateCard from '@/components/widgets/PropertyGrid/PropertyCard';
-import MapboxViewer from '@/components/map/MapboxViewer';
-import { BUILDING_AGE_OPTION, FLOOR_OPTIONS, FURNISHED_OPTIONS, RENTAL_DURATION_OPTIONS } from '@/components/ui/constants/formOptions';
-import PropertyActionButtons from '@/components/properties/PropertyActionButtons';
-import { PropertyReservationModal } from '@/components/properties/PropertyReservation';
-import { PropertyFeedbackModal } from '@/components/properties/PropertyFeedbackForm';
-import { Badge } from '@/components/ui/badge';
+"use client";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+    MapPin,
+    BedDouble,
+    Bath,
+    Maximize2,
+    ArrowRight,
+    Home,
+    Info,
+    Star,
+    Clock,
+    CheckCircle,
+    X,
+    Share2,
+    Heart,
+    Phone,
+    MessageCircle,
+    Eye,
+    Calendar,
+    Camera,
+    Shield,
+    Award,
+    Bookmark,
+    Download,
+    ExternalLink,
+    ChevronRight,
+    Building2,
+    Car,
+    Wifi,
+    Zap,
+    Droplets,
+    TreePine,
+    Bed,
+    Users,
+    Calculator,
+    Navigation,
+    Filter,
+    FileText,
+    Image as ImageIcon,
+    Video,
+    File,
+    ChevronDown,
+    ChevronUp,
+} from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { RealEstateApi } from "@/api/realEstateApi";
+import Image from "next/image";
+import { RealEstateData } from "@/lib/types";
+import PropertyGallery from "@/components/properties/PropertyGallery";
+import RealEstateCard from "@/components/widgets/PropertyGrid/PropertyCard";
+import MapboxViewer from "@/components/map/MapboxViewer";
+import PropertyActionButtons from "@/components/properties/PropertyActionButtons";
+import { PropertyReservationModal } from "@/components/properties/PropertyReservation";
+import { PropertyFeedbackModal } from "@/components/properties/PropertyFeedbackForm";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function PropertyDetails() {
     const [property, setProperty] = useState<RealEstateData | null>(null);
     const [similarProperties, setSimilarProperties] = useState<RealEstateData[]>([]);
-    const [activeImage, setActiveImage] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
-    // حالة النوافذ المنبثقة
+    const [isSaved, setIsSaved] = useState(false);
+    const [activeTab, setActiveTab] = useState("overview");
     const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
     const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+    const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
     const params = useParams();
     const router = useRouter();
@@ -35,37 +79,32 @@ export default function PropertyDetails() {
                 setIsLoading(true);
                 const propertyId = params?.id;
                 if (!propertyId) {
-                    throw new Error('Property ID not found');
+                    throw new Error("Property ID not found");
                 }
 
-                const data = await RealEstateApi.fetchRealEstateById(Number(propertyId));
-                console.log(data);
-
+                const data = await RealEstateApi.fetchById(Number(propertyId));
                 const propertyWithFiles = {
                     ...data,
-                    files: data.files || [`${process.env.NEXT_PUBLIC_API_URL}/${data.coverImage}`]
+                    files: data.files || [`${data.coverImage}`],
                 };
                 setProperty(propertyWithFiles);
 
                 try {
                     const similarData = await RealEstateApi.fetchSimilarRealEstate(Number(propertyId));
-
-                    // Check if similarData is an array, if not, wrap it in an array
                     const similarPropertiesArray = Array.isArray(similarData)
                         ? similarData
-                        : (similarData ? [similarData] : []);
-
-                    // Filter out the current property from similar properties
+                        : similarData
+                            ? [similarData]
+                            : [];
                     const filteredSimilarProperties = similarPropertiesArray.filter(
-                        similarProp => similarProp.id !== Number(propertyId)
+                        (similarProp) => similarProp.id !== Number(propertyId)
                     );
-
                     setSimilarProperties(filteredSimilarProperties);
                 } catch (similarError) {
-                    console.error('Failed to fetch similar properties:', similarError);
+                    console.error("Failed to fetch similar properties:", similarError);
                 }
             } catch (err) {
-                setError(err instanceof Error ? err.message : 'Failed to fetch property details');
+                setError(err instanceof Error ? err.message : "Failed to fetch property details");
             } finally {
                 setIsLoading(false);
             }
@@ -74,422 +113,620 @@ export default function PropertyDetails() {
         fetchPropertyDetails();
     }, [params?.id]);
 
-    // فتح وإغلاق النوافذ المنبثقة
+    // Helper functions
+    const getPropertyValue = (key: string) => {
+        return property?.properties?.[key]?.value;
+    };
+
+    // File type detection and icon mapping
+    const getFileIcon = (fileName: string) => {
+        const extension = fileName.split('.').pop()?.toLowerCase();
+        switch (extension) {
+            case 'jpg':
+            case 'jpeg':
+            case 'png':
+            case 'gif':
+            case 'webp':
+                return ImageIcon;
+            case 'mp4':
+            case 'avi':
+            case 'mov':
+            case 'wmv':
+                return Video;
+            case 'pdf':
+                return FileText;
+            default:
+                return File;
+        }
+    };
+
+    const openFile = (fileUrl: string) => {
+        window.open(fileUrl, '_blank');
+    };
+
+    const renderPropertyValue = (key: string, propertyInfo?: any) => {
+        const value = getPropertyValue(key);
+        if (value === null || value === undefined || value === "") return null;
+
+        const dataType = propertyInfo?.property?.dataType?.toUpperCase();
+        const unit = propertyInfo?.property?.unit;
+
+        switch (dataType) {
+            case "FILE":
+                // Handle file properties - show clickable file links
+                if (typeof value === "string") {
+                    const files = value.split(",").map(f => f.trim()).filter(f => f);
+                    if (files.length === 0) return null;
+
+                    return (
+                        <div className="flex flex-wrap gap-2">
+                            {files.map((fileUrl: string, index: number) => {
+                                const fileName = fileUrl.split('/').pop() || `ملف ${index + 1}`;
+                                const FileIcon = getFileIcon(fileName);
+                                return (
+                                    <Button
+                                        key={`${key}-file-${index}`}
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => openFile(fileUrl)}
+                                        className="flex items-center gap-2 text-blue-600 hover:text-blue-800 border-blue-200 hover:border-blue-300"
+                                    >
+                                        <FileIcon className="w-4 h-4" />
+                                        {fileName}
+                                        <ExternalLink className="w-3 h-3" />
+                                    </Button>
+                                );
+                            })}
+                        </div>
+                    );
+                }
+                return null;
+
+            case "MULTIPLE_CHOICE":
+                if (typeof value === "string" && value.includes(",")) {
+                    return (
+                        <div className="flex flex-wrap gap-2">
+                            {value.split(",").map((item: string, index: number) => (
+                                <Badge
+                                    key={`${key}-choice-${index}`}
+                                    variant="secondary"
+                                    className="bg-blue-50 text-blue-700 border border-blue-200"
+                                >
+                                    {item.trim()}
+                                </Badge>
+                            ))}
+                        </div>
+                    );
+                }
+                return <Badge variant="secondary" className="bg-blue-50 text-blue-700 border border-blue-200">{value}</Badge>;
+
+            case "SINGLE_CHOICE":
+                return <Badge variant="outline" className="text-blue-700 border-blue-200">{value}</Badge>;
+
+            case "NUMBER":
+                const numValue = typeof value === "string" ? parseFloat(value) : value;
+                if (isNaN(numValue)) return value;
+                const formattedNumber = numValue.toLocaleString("ar-OM");
+                return (
+                    <span className="font-semibold text-gray-900">
+                        {formattedNumber}
+                        {unit ? ` ${unit}` : ""}
+                    </span>
+                );
+
+            case "BOOLEAN":
+                return value ? (
+                    <span className="flex items-center gap-2 text-green-600">
+                        <CheckCircle className="w-4 h-4" /> نعم
+                    </span>
+                ) : (
+                    <span className="flex items-center gap-2 text-red-600">
+                        <X className="w-4 h-4" /> لا
+                    </span>
+                );
+
+            case "DATE":
+                try {
+                    const date = new Date(value);
+                    if (isNaN(date.getTime())) return value;
+                    return date.toLocaleDateString("ar-OM");
+                } catch {
+                    return value;
+                }
+
+            default:
+                if (typeof value === "string" && value.length > 150) {
+                    return (
+                        <details className="cursor-pointer">
+                            <summary className="text-blue-600 hover:text-blue-800 font-medium">
+                                {value.substring(0, 150)}... <span className="text-sm">(انقر للمزيد)</span>
+                            </summary>
+                            <div className="mt-3 p-3 bg-gray-50 rounded-md text-gray-700 leading-relaxed">
+                                {value}
+                            </div>
+                        </details>
+                    );
+                }
+                return <span className="text-gray-900">{value}</span>;
+        }
+    };
+
+    // Get key metrics for quick overview
+    const getKeyMetrics = () => {
+        const metrics = [];
+        const roomsCount = getPropertyValue("rooms_count");
+        const bathroomsCount = getPropertyValue("bathrooms_count");
+        const totalArea = getPropertyValue("total_area");
+
+        if (roomsCount && property?.subCategoryName !== "أرض" && property?.finalTypeName !== "أرض") {
+            metrics.push({ icon: BedDouble, label: `${roomsCount} غرف`, color: "text-blue-600" });
+        }
+        if (bathroomsCount && property?.subCategoryName !== "أرض" && property?.finalTypeName !== "أرض") {
+            metrics.push({ icon: Bath, label: `${bathroomsCount} حمامات`, color: "text-green-600" });
+        }
+        if (totalArea) {
+            const area = typeof totalArea === "string" ? parseFloat(totalArea) : totalArea;
+            const unit = property?.properties?.["total_area"]?.property?.unit || "م²";
+            metrics.push({ icon: Maximize2, label: `${area.toLocaleString("ar-OM")} ${unit}`, color: "text-purple-600" });
+        }
+
+        return metrics;
+    };
+
+    const getPropertiesByGroup = () => {
+        if (!property?.properties) return {};
+        const grouped: { [key: string]: Array<{ key: string; value: any; property: any }> } = {};
+
+        // Track displayed properties to avoid duplication
+        const displayedProperties = new Set(['rooms_count', 'bathrooms_count', 'total_area']);
+
+        Object.entries(property.properties).forEach(([key, propData]) => {
+            // Skip if already displayed in key metrics
+            if (displayedProperties.has(key)) return;
+
+            const groupName = propData.property?.groupName || "خصائص إضافية";
+            if (!grouped[groupName]) {
+                grouped[groupName] = [];
+            }
+            const value = propData.value;
+            if (value !== null && value !== undefined && value !== "" && !(Array.isArray(value) && value.length === 0)) {
+                grouped[groupName].push({
+                    key,
+                    value,
+                    property: propData.property,
+                });
+            }
+        });
+
+        // Remove empty groups
+        Object.keys(grouped).forEach((groupName) => {
+            if (grouped[groupName].length === 0) {
+                delete grouped[groupName];
+            }
+        });
+
+        return grouped;
+    };
+
+    const toggleGroup = (groupName: string) => {
+        const newExpanded = new Set(expandedGroups);
+        if (newExpanded.has(groupName)) {
+            newExpanded.delete(groupName);
+        } else {
+            newExpanded.add(groupName);
+        }
+        setExpandedGroups(newExpanded);
+    };
+
     const openReservationModal = () => setIsReservationModalOpen(true);
     const closeReservationModal = () => setIsReservationModalOpen(false);
     const openFeedbackModal = () => setIsFeedbackModalOpen(true);
     const closeFeedbackModal = () => setIsFeedbackModalOpen(false);
 
-    // Helper function to get property value from new structure
-    const getPropertyValue = (key: string) => {
-        return property?.properties?.[key]?.value;
-    };
-
-    // Helper function to render dynamic property value - FIXED
-    const renderPropertyValue = (key: string, propertyInfo?: any) => {
-        const value = getPropertyValue(key);
-        if (!value) return null;
-
-        const dataType = propertyInfo?.property?.dataType;
-
-        switch (dataType) {
-            case 'MULTIPLE_CHOICE':
-                if (typeof value === 'string' && value.includes(',')) {
-                    return (
-                        <div className="flex flex-wrap gap-1">
-                            {value.split(',').map((item: string, index: number) => (
-                                <span key={`${key}-choice-${index}`} className="bg-blue-100 text-blue-600 px-2 py-1 rounded-md">
-                                    {item.trim()}
-                                </span>
-                            ))}
-                        </div>
-                    );
-                }
-                return <span className="bg-blue-100 text-blue-600 px-2 py-1 rounded-md">{value}</span>;
-            case 'NUMBER':
-                const unit = propertyInfo?.property?.unit;
-                return `${value}${unit ? ` ${unit}` : ''}`;
-            case 'BOOLEAN':
-                return value ? (
-                    <span className="flex items-center gap-1 text-green-600">
-                        <CheckCircle className="w-4 h-4" />
-                        نعم
-                    </span>
-                ) : (
-                    <span className="flex items-center gap-1 text-red-600">
-                        <X className="w-4 h-4" />
-                        لا
-                    </span>
-                );
-            default:
-                return value;
-        }
-    };
-
-    // Helper function to get features from new structure
-    const getFeatures = (key: string) => {
-        const value = getPropertyValue(key);
-        if (!value) return [];
-
-        if (typeof value === 'string') {
-            return value.split(',').map(item => item.trim());
-        }
-        return Array.isArray(value) ? value : [value];
-    };
-
-    function getRentalText(rentalDuration: string) {
-        return RENTAL_DURATION_OPTIONS.find(r => r.value == rentalDuration)?.label;
-    }
-
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-600"></div>
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full"
+                />
             </div>
         );
     }
 
     if (error || !property) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">عذراً</h2>
-                    <p className="text-gray-600 mb-8">{error || 'لم يتم العثور على العقار'}</p>
-                    <button
-                        onClick={() => router.push('/')}
-                        className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-                    >
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="text-center p-8">
+                    <X className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                    <h2 className="text-2xl font-bold text-gray-900 mb-4">خطأ</h2>
+                    <p className="text-gray-600 mb-6">{error || "لم يتم العثور على العقار"}</p>
+                    <Button onClick={() => router.push("/")} className="bg-blue-500 hover:bg-blue-600">
                         العودة للرئيسية
-                    </button>
+                    </Button>
                 </div>
             </div>
         );
     }
 
-    // Get dynamic property values
-    const roomsCount = getPropertyValue('rooms_count');
-    const bathroomsCount = getPropertyValue('bathrooms_count');
-    const totalArea = getPropertyValue('total_area');
-    const basicAmenities = getFeatures('basic_amenities');
-    const additionalAmenities = getFeatures('additional_amenities');
-    const viewType = getFeatures('view_type');
-    const nearbyPlaces = getFeatures('nearby_places');
-    const contractDuration = getPropertyValue('contract_duration');
-    const buildingAge = getPropertyValue('building_age');
-    const furnishingStatus = getPropertyValue('furnishing_status');
-    const floorType = getPropertyValue('floor_type');
-    const floorNumber = getPropertyValue('floor_number');
+    const keyMetrics = getKeyMetrics();
 
     return (
         <div className="min-h-screen bg-gray-50" dir="rtl">
-            {/* Property Header Image */}
-            <PropertyGallery
-                property={{
-                    title: property.title,
-                    files: property.files,
-                }}
-            />
-
-            <div className="max-w-7xl mx-auto px-4 py-12">
-                {/* Property Details */}
-                <div className="bg-white rounded-2xl p-8 shadow-lg mb-8">
-                    <div className="flex items-start justify-between mb-6">
-                        <div>
-                            <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                                {property.title}
-                            </h1>
-                            <div className="flex items-center gap-2 text-gray-600">
-                                <MapPin className="w-5 h-5 text-blue-600" />
-                                <span>{property.cityName} - {property.neighborhoodName} - {property.finalCityName} - {property.mainCategoryName} - {property.subCategoryName} - {property.finalTypeName}</span>
-                            </div>
-                        </div>
-                        <div className="text-left">
-                            <div className="text-sm text-gray-500">السعر</div>
-                            <div className="text-3xl font-bold text-blue-600">
-                                {property.price} ر.ع
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-6 p-4 bg-gray-50 rounded-xl mb-6">
-                        {(property.subCategoryName != "أرض" && property.finalTypeName != "أرض") && roomsCount && (
-                            <div className="flex items-center gap-3">
-                                <BedDouble className="w-6 h-6 text-blue-600" />
-                                <div>
-                                    <div className="text-sm text-gray-500">غرف النوم</div>
-                                    <div className="font-semibold">{roomsCount}</div>
-                                </div>
-                            </div>
-                        )}
-                        {(property.subCategoryName != "أرض" && property.finalTypeName != "أرض") && bathroomsCount && (
-                            <div className="flex items-center gap-3">
-                                <Bath className="w-6 h-6 text-blue-600" />
-                                <div>
-                                    <div className="text-sm text-gray-500">الحمامات</div>
-                                    <div className="font-semibold">{bathroomsCount}</div>
-                                </div>
-                            </div>
-                        )}
-                        {totalArea && (
-                            <div className="flex items-center gap-3">
-                                <Maximize2 className="w-6 h-6 text-blue-600" />
-                                <div>
-                                    <div className="text-sm text-gray-500">المساحة</div>
-                                    <div className="font-semibold">{renderPropertyValue('total_area', property.properties?.total_area)}</div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="mt-6">
-                        <h2 className="text-xl font-semibold text-gray-900 mb-3">الوصف</h2>
-                        <div className="bg-gray-50 p-4 rounded-xl">
-                            <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-                                {property.description || "لا يوجد وصف متاح لهذا العقار"}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Basic Amenities - FIXED KEYS */}
-                {basicAmenities.length > 0 && (
-                    <div className="bg-white rounded-3xl p-8 shadow-xl mb-8 hover:shadow-2xl transition-all duration-300">
-                        <h2 className="text-3xl font-bold mb-8 flex items-center gap-4 text-gray-800">
-                            <Home className="w-8 h-8 text-blue-500" />
-                            <span className="text-xl text-black">
-                                المزايا الأساسية
-                            </span>
-                        </h2>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
-                            {basicAmenities.map((feature: string, index: number) => (
-                                <div
-                                    key={`basic-amenity-${index}-${feature.slice(0, 10)}`}
-                                    className="group relative flex items-center gap-4 p-5 
-                                   bg-gradient-to-br from-blue-50 to-white 
-                                   rounded-xl shadow-sm hover:shadow-md transition-all duration-300 
-                                   hover:translate-y-[-2px] border border-blue-100/50"
-                                >
-                                    <span className="text-base font-medium text-gray-700 group-hover:text-blue-600 
-                                           transition-colors duration-300">
-                                        {feature}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* Additional Amenities - FIXED KEYS */}
-                {additionalAmenities.length > 0 && (
-                    <div className="bg-white rounded-3xl p-8 shadow-xl mb-8 hover:shadow-2xl transition-all duration-300">
-                        <h2 className="text-3xl font-bold mb-8 flex items-center gap-4 text-gray-800">
-                            <Home className="w-8 h-8 text-blue-500" />
-                            <span className="text-xl text-black">
-                                المزايا الإضافية
-                            </span>
-                        </h2>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
-                            {additionalAmenities.map((feature: string, index: number) => (
-                                <div
-                                    key={`additional-amenity-${index}-${feature.slice(0, 10)}`}
-                                    className="group relative flex items-center gap-4 p-5 
-                                   bg-gradient-to-br from-blue-50 to-white 
-                                   rounded-xl shadow-sm hover:shadow-md transition-all duration-300 
-                                   hover:translate-y-[-2px] border border-blue-100/50"
-                                >
-                                    <span className="text-base font-medium text-gray-700 group-hover:text-blue-600 
-                                           transition-colors duration-300">
-                                        {feature}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* View Type - FIXED KEYS */}
-                {viewType.length > 0 && (
-                    <div className="bg-white rounded-3xl p-8 shadow-xl mb-8 hover:shadow-2xl transition-all duration-300">
-                        <h2 className="text-3xl font-bold mb-8 flex items-center gap-4 text-gray-800">
-                            <Home className="w-8 h-8 text-blue-500" />
-                            <span className="text-xl text-black">
-                                الإطلالات المتوفرة
-                            </span>
-                        </h2>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
-                            {viewType.map((feature: string, index: number) => (
-                                <div
-                                    key={`view-type-${index}-${feature.slice(0, 10)}`}
-                                    className="group relative flex items-center gap-4 p-5 
-                                   bg-gradient-to-br from-blue-50 to-white 
-                                   rounded-xl shadow-sm hover:shadow-md transition-all duration-300 
-                                   hover:translate-y-[-2px] border border-blue-100/50"
-                                >
-                                    <span className="text-base font-medium text-gray-700 group-hover:text-blue-600 
-                                           transition-colors duration-300">
-                                        {feature}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* View Time */}
-                {property.viewTime && property.viewTime.trim() !== '' && (
-                    <div className="bg-white rounded-3xl p-8 shadow-xl my-8">
-                        <h2 className="text-3xl font-bold mb-8 flex items-center gap-4 text-gray-800">
-                            <Clock className="w-8 h-8 text-blue-500" />
-                            <span className="text-xl text-black">
-                                أوقات المشاهدة
-                            </span>
-                        </h2>
-
-                        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
-                            <div className="flex items-start gap-3">
-                                <div className="bg-blue-100 p-2 rounded-full shrink-0 mt-1">
-                                    <Clock className="w-5 h-5 text-blue-600" />
-                                </div>
-                                <div className="text-gray-700">
-                                    <p className="whitespace-pre-wrap leading-relaxed">
-                                        {property.viewTime}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Nearby Places - FIXED KEYS */}
-                {nearbyPlaces.length > 0 && (
-                    <div className="bg-white rounded-3xl p-8 shadow-xl mb-8 hover:shadow-2xl transition-all duration-300">
-                        <h2 className="text-3xl font-bold mb-8 flex items-center gap-4 text-gray-800">
-                            <MapPin className="w-6 h-6 text-blue-600" />
-                            <span className="text-xl text-black">
-                                الأماكن القريبة
-                            </span>
-                        </h2>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
-                            {nearbyPlaces.map((feature: string, index: number) => (
-                                <div
-                                    key={`nearby-place-${index}-${feature.slice(0, 10)}`}
-                                    className="group relative flex items-center gap-4 p-5 
-                                   bg-gradient-to-br from-blue-50 to-white 
-                                   rounded-xl shadow-sm hover:shadow-md transition-all duration-300 
-                                   hover:translate-y-[-2px] border border-blue-100/50"
-                                >
-                                    <span className="text-base font-medium text-gray-700 group-hover:text-blue-600 
-                                           transition-colors duration-300">
-                                        {feature}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* Property Details */}
-                <div className="bg-white rounded-2xl p-8 shadow-lg mb-8">
-                    <h2 className="text-2xl font-bold mb-6">تفاصيل إضافية</h2>
-                    <div className="grid grid-cols-2 gap-6">
-                        {floorNumber && (
-                            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                                <span className="text-gray-600">رقم الطابق</span>
-                                <span className="font-semibold">{floorNumber}</span>
-                            </div>
-                        )}
-                        {floorType && (
-                            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                                <span className="text-gray-600">نوع الطابق</span>
-                                <span className="font-semibold">{floorType}</span>
-                            </div>
-                        )}
-                        {buildingAge && (
-                            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                                <span className="text-gray-600">عمر البناء</span>
-                                <span className="font-semibold">{buildingAge}</span>
-                            </div>
-                        )}
-                        {furnishingStatus && (
-                            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                                <span className="text-gray-600">حالة الفرش</span>
-                                <span className="font-semibold">{furnishingStatus}</span>
-                            </div>
-                        )}
-                        {property.mainCategoryName === "إيجار" && contractDuration && (
-                            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                                <span className="text-gray-600">مدة العقد</span>
-                                <span className="font-semibold">{contractDuration}</span>
-                            </div>
-                        )}
-                        {property.paymentMethod && (
-                            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                                <span className="text-gray-600">طرق الدفع</span>
-                                <div className="flex gap-2">
-                                    {property.paymentMethod.split(',').map((p, index) => (
-                                        <span key={`payment-method-${index}-${p.trim()}`} className="bg-blue-100 text-blue-600 px-2 py-1 rounded-md">
-                                            {p.trim()}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Map Section */}
-                {property.location && (
-                    <div id="property-location-section" className='p-8 mt-8 mb-8'>
-                        <h2 className="text-3xl font-bold mb-8 flex items-center gap-4 text-gray-800">
-                            <MapPin className="w-8 h-8 text-blue-500" />
-                            <span className="text-xl">الموقع</span>
-                        </h2>
-
-                        <MapboxViewer
-                            latitude={property.location ? parseFloat(property.location.split(',')[0]) : undefined}
-                            longitude={property.location ? parseFloat(property.location.split(',')[1]) : undefined}
-                            cityName={property.cityName}
-                            neighborhoodName={property.neighborhoodName}
-                        />
-                    </div>
-                )}
-
-                {/* أزرار الإجراءات العائمة */}
-                <PropertyActionButtons
-                    onReservationClick={openReservationModal}
-                    onFeedbackClick={openFeedbackModal}
-                    propertyId={property.id}
-                    propertyTitle={property.title}
-                    propertyLocation={property.location}
+            {/* Header Section */}
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0 }}
+                className="relative"
+            >
+                <PropertyGallery
+                    property={{
+                        title: property.title,
+                        files: property.files,
+                    }}
                 />
+                <div className="absolute top-4 left-4 z-10">
+                    <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => setIsSaved(!isSaved)}
+                            className={`rounded-full backdrop-blur-sm ${isSaved ? "text-red-500 border-red-500 bg-white/90" : "bg-white/90"}`}
+                        >
+                            <Heart className={`w-5 h-5 ${isSaved ? "fill-red-500" : ""}`} />
+                        </Button>
+                        <Button variant="outline" size="icon" className="rounded-full backdrop-blur-sm bg-white/90">
+                            <Share2 className="w-5 h-5" />
+                        </Button>
+                    </div>
+                </div>
+            </motion.div>
 
-                {/* Similar Properties Section - FIXED KEYS */}
-                {similarProperties.length > 0 && (
-                    <div className="p-8 mt-8">
-                        <h2 className="text-3xl font-bold mb-8 flex items-center gap-4 text-gray-800">
-                            <Home className="w-8 h-8 text-blue-500" />
-                            <span className="text-xl text-black">
-                                عقارات مشابهة
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* Property Header */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.2 }}
+                    className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8"
+                >
+                    <div className="lg:col-span-2">
+                        <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4 leading-tight">
+                            {property.title}
+                        </h1>
+
+                        <div className="flex items-center gap-2 text-gray-600 mb-6">
+                            <MapPin className="w-5 h-5 text-blue-500" />
+                            <span className="font-medium">
+                                {property.cityName} • {property.neighborhoodName} • {property.finalCityName}
                             </span>
-                        </h2>
+                        </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {similarProperties.map((similarProperty) => (
-                                <RealEstateCard
-                                    key={`similar-property-${similarProperty.id}`}
-                                    item={similarProperty}
-                                    mainType={{ id: property.mainCategoryId, name: property.mainCategoryName }}
-                                />
-                            ))}
+                        {/* Key Metrics */}
+                        {keyMetrics.length > 0 && (
+                            <div className="flex flex-wrap gap-4 mb-6">
+                                {keyMetrics.map((metric, index) => (
+                                    <div key={index} className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm border">
+                                        <metric.icon className={`w-5 h-5 ${metric.color}`} />
+                                        <span className="font-medium text-gray-900">{metric.label}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="flex flex-wrap gap-2">
+                            <Badge variant="default" className="bg-blue-500 text-white">
+                                {property.mainCategoryName}
+                            </Badge>
+                            <Badge variant="secondary" className="bg-gray-100">
+                                {property.subCategoryName}
+                            </Badge>
+                            <Badge variant="outline">
+                                {property.finalTypeName}
+                            </Badge>
                         </div>
                     </div>
-                )}
 
-                {/* النوافذ المنبثقة */}
+                    <div className="flex items-center justify-end">
+                        <div className="text-right bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border border-green-200">
+                            <span className="text-sm text-green-700 font-medium block mb-2">السعر</span>
+                            <div className="text-3xl lg:text-4xl font-bold text-green-700">
+                                {property.price.toLocaleString("ar-OM")} ر.ع
+                            </div>
+                            {property.mainCategoryName === "إيجار" && (
+                                <span className="text-sm text-green-600 font-medium">شهرياً</span>
+                            )}
+                        </div>
+                    </div>
+                </motion.div>
+
+                {/* Main Content */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Left Column: Content */}
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.6, delay: 0.3 }}
+                        className="lg:col-span-2 space-y-6"
+                    >
+                        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+                            <TabsList className="grid grid-cols-4 gap-2 bg-white p-2 rounded-xl shadow-sm border">
+                                <TabsTrigger value="overview" className="rounded-lg font-medium">
+                                    نظرة عامة
+                                </TabsTrigger>
+                                <TabsTrigger value="details" className="rounded-lg font-medium">
+                                    التفاصيل
+                                </TabsTrigger>
+                                <TabsTrigger value="location" className="rounded-lg font-medium">
+                                    الموقع
+                                </TabsTrigger>
+                                <TabsTrigger value="similar" className="rounded-lg font-medium">
+                                    مشابه
+                                </TabsTrigger>
+                            </TabsList>
+
+                            {/* Overview Tab */}
+                            <TabsContent value="overview" className="space-y-6">
+                                {property.description && (
+                                    <Card className="shadow-sm border-0 shadow-md">
+                                        <CardHeader className="pb-4">
+                                            <CardTitle className="flex items-center gap-2 text-lg">
+                                                <Info className="w-5 h-5 text-blue-500" />
+                                                وصف العقار
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <p className="text-gray-700 leading-relaxed text-base">
+                                                {property.description}
+                                            </p>
+                                        </CardContent>
+                                    </Card>
+                                )}
+
+                                {property.viewTime && (
+                                    <Card className="shadow-sm border-0 shadow-md">
+                                        <CardHeader className="pb-4">
+                                            <CardTitle className="flex items-center gap-2 text-lg">
+                                                <Clock className="w-5 h-5 text-green-500" />
+                                                مواعيد المعاينة
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <p className="text-gray-700 mb-4 leading-relaxed">
+                                                {property.viewTime.replace(/"/g, '')}
+                                            </p>
+                                            <Button
+                                                onClick={openReservationModal}
+                                                className="bg-green-500 hover:bg-green-600 text-white font-medium"
+                                            >
+                                                <Calendar className="w-4 h-4 mr-2" />
+                                                احجز معاينة الآن
+                                            </Button>
+                                        </CardContent>
+                                    </Card>
+                                )}
+                            </TabsContent>
+
+                            {/* Details Tab */}
+                            <TabsContent value="details" className="space-y-4">
+                                {(() => {
+                                    const groupedProperties = getPropertiesByGroup();
+                                    return Object.entries(groupedProperties).map(([groupName, props]) => (
+                                        <Card key={groupName} className="shadow-sm border-0 shadow-md overflow-hidden">
+                                            <CardHeader
+                                                className="pb-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                                                onClick={() => toggleGroup(groupName)}
+                                            >
+                                                <CardTitle className="flex items-center justify-between text-lg">
+                                                    <div className="flex items-center gap-2">
+                                                        <Filter className="w-5 h-5 text-indigo-500" />
+                                                        {groupName}
+                                                        <Badge variant="secondary" className="text-xs">
+                                                            {props.length}
+                                                        </Badge>
+                                                    </div>
+                                                    {expandedGroups.has(groupName) ?
+                                                        <ChevronUp className="w-5 h-5 text-gray-400" /> :
+                                                        <ChevronDown className="w-5 h-5 text-gray-400" />
+                                                    }
+                                                </CardTitle>
+                                            </CardHeader>
+                                            <AnimatePresence>
+                                                {expandedGroups.has(groupName) && (
+                                                    <motion.div
+                                                        initial={{ height: 0, opacity: 0 }}
+                                                        animate={{ height: "auto", opacity: 1 }}
+                                                        exit={{ height: 0, opacity: 0 }}
+                                                        transition={{ duration: 0.3 }}
+                                                    >
+                                                        <CardContent className="pt-0" dir="rtl">
+                                                            <div className="space-y-4">
+                                                                {props.map(({ key, value, property }) => (
+                                                                    <div key={key} className="flex flex-col sm:flex-row sm:justify-between gap-2 p-4 bg-gray-50 rounded-lg">
+                                                                        <span className="text-gray-600 font-medium">
+                                                                            {property?.propertyName || key}
+                                                                        </span>
+                                                                        <div className="text-right">
+                                                                            {renderPropertyValue(key, { property })}
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </CardContent>
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+                                        </Card>
+                                    ));
+                                })()}
+                            </TabsContent>
+
+                            {/* Location Tab */}
+                            <TabsContent value="location">
+                                <Card className="shadow-sm border-0 shadow-md">
+                                    <CardHeader className="pb-4">
+                                        <CardTitle className="flex items-center gap-2 text-lg">
+                                            <MapPin className="w-5 h-5 text-red-500" />
+                                            الموقع على الخريطة
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {property.location && (
+                                            <div className="rounded-lg overflow-hidden">
+                                                <MapboxViewer
+                                                    latitude={parseFloat(property.location.split(",")[0])}
+                                                    longitude={parseFloat(property.location.split(",")[1])}
+                                                    cityName={property.cityName}
+                                                    neighborhoodName={property.neighborhoodName}
+                                                />
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+
+                            {/* Similar Properties Tab */}
+                            <TabsContent value="similar">
+                                <Card className="shadow-sm border-0 shadow-md">
+                                    <CardHeader className="pb-4">
+                                        <CardTitle className="flex items-center gap-2 text-lg">
+                                            <Home className="w-5 h-5 text-green-500" />
+                                            عقارات مشابهة
+                                            {similarProperties.length > 0 && (
+                                                <Badge variant="secondary">
+                                                    {similarProperties.length}
+                                                </Badge>
+                                            )}
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {similarProperties.length > 0 ? (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                                {similarProperties.map((similarProperty) => (
+                                                    <RealEstateCard
+                                                        key={similarProperty.id}
+                                                        item={similarProperty}
+                                                        mainType={{ id: property.mainCategoryId, name: property.mainCategoryName }}
+                                                    />
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-8">
+                                                <Home className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                                                <p className="text-gray-500 text-lg">لا توجد عقارات مشابهة حالياً</p>
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+                        </Tabs>
+                    </motion.div>
+
+                    {/* Right Column: Sidebar */}
+                    <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.6, delay: 0.4 }}
+                        className="space-y-6"
+                    >
+                        {/* Contact Card */}
+                        <Card className="shadow-md border-0 bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                            <CardContent className="p-6">
+                                <h3 className="text-xl font-bold mb-6 text-center">تواصل معنا</h3>
+                                <div className="space-y-3">
+                                    <Button
+                                        onClick={openReservationModal}
+                                        className="w-full bg-white text-blue-600 hover:bg-gray-100 font-medium shadow-sm"
+                                    >
+                                        <Calendar className="w-4 h-4 mr-2" />
+                                        احجز معاينة
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        className="w-full border-white text-blue-600 hover:bg-white hover:text-blue-800 font-medium"
+                                    >
+                                        <Phone className="w-4 h-4 mr-2" />
+                                        اتصل بنا
+                                    </Button>
+                                    <Button
+                                        onClick={openFeedbackModal}
+                                        className="w-full bg-white text-blue-600 hover:bg-gray-100 font-medium shadow-sm"
+                                    >
+                                        <MessageCircle className="w-4 h-4 mr-2" />
+                                        أرسل استفسار
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Quick Info Card */}
+                        <Card className="shadow-sm border-0 shadow-md">
+                            <CardHeader className="pb-4">
+                                <CardTitle className="flex items-center gap-2 text-lg">
+                                    <Building2 className="w-5 h-5 text-purple-500" />
+                                    معلومات سريعة
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">نوع الإعلان</span>
+                                        <Badge variant="default" className="bg-blue-500">
+                                            {property.mainCategoryName}
+                                        </Badge>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">الفئة</span>
+                                        <span className="font-medium">{property.subCategoryName}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">النوع</span>
+                                        <span className="font-medium">{property.finalTypeName}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">طريقة الدفع</span>
+                                        <span className="font-medium">{property.paymentMethod}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">تاريخ النشر</span>
+                                        <span className="font-medium">
+                                            {new Date(property.createdAt).toLocaleDateString("ar-OM")}
+                                        </span>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Safety & Trust Card */}
+                        <Card className="shadow-sm border-0 shadow-md">
+                            <CardContent className="p-6">
+                                <div className="text-center">
+                                    <Shield className="w-12 h-12 text-green-500 mx-auto mb-3" />
+                                    <h4 className="font-bold text-gray-900 mb-2">إعلان موثق</h4>
+                                    <p className="text-sm text-gray-600 leading-relaxed">
+                                        تم التحقق من صحة هذا الإعلان وفقاً لمعايير الجودة لدينا
+                                    </p>
+                                    <div className="flex justify-center gap-4 mt-4">
+                                        <div className="flex items-center gap-1 text-sm text-green-600">
+                                            <CheckCircle className="w-4 h-4" />
+                                            <span>معلومات دقيقة</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 text-sm text-green-600">
+                                            <Shield className="w-4 h-4" />
+                                            <span>إعلان آمن</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                </div>
+            </div>
+
+            {/* Modals */}
+            <AnimatePresence>
                 {property && (
                     <>
                         <PropertyReservationModal
@@ -497,7 +734,6 @@ export default function PropertyDetails() {
                             isOpen={isReservationModalOpen}
                             onClose={closeReservationModal}
                         />
-
                         <PropertyFeedbackModal
                             propertyId={property.id}
                             isOpen={isFeedbackModalOpen}
@@ -505,7 +741,7 @@ export default function PropertyDetails() {
                         />
                     </>
                 )}
-            </div>
+            </AnimatePresence>
         </div>
     );
 }

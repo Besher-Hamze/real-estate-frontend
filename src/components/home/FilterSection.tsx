@@ -481,30 +481,6 @@ const FilterSection = ({
         />
       </div>
 
-      {/* Final Type Filter */}
-      {finalTypes.length > 0 && (
-        <div className="mt-4">
-          <SelectField
-            label="التصنيف النهائي"
-            icon={Building}
-            value={filters.finalType}
-            onChange={(e) => {
-              setDynamicFilters({});
-              const newFilters = { ...filters, finalType: e.target.value };
-              Object.keys(newFilters).forEach(key => {
-                if (key.startsWith('property_')) {
-                  delete newFilters[key];
-                }
-              });
-              setFilters(newFilters);
-            }}
-            options={[
-              { value: '', label: 'الكل' },
-              ...finalTypes.map(f => ({ value: f.id, label: f.name }))
-            ]}
-          />
-        </div>
-      )}
     </div>
   );
 
