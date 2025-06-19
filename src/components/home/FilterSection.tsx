@@ -253,7 +253,7 @@ const FilterSection = ({
   setSortOption
 }: FilterSectionProps) => {
   // State management
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [finalTypes, setFinalTypes] = useState<FinalType[]>([]);
   const [neighborhoods, setNeighborhoods] = useState<NeighborhoodType[]>([]);
   const [finalCities, setFinalCities] = useState<FinalCityType[]>([]);

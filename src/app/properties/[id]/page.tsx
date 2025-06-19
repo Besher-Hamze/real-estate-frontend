@@ -451,7 +451,7 @@ export default function PropertyDetails() {
                         transition={{ duration: 0.6, delay: 0.3 }}
                         className="lg:col-span-2 space-y-6"
                     >
-                        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+                        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6" dir="rtl">
                             <TabsList className="grid grid-cols-4 gap-2 bg-white p-2 rounded-xl shadow-sm border">
                                 <TabsTrigger value="overview" className="rounded-lg font-medium">
                                     نظرة عامة
@@ -699,28 +699,6 @@ export default function PropertyDetails() {
                             </CardContent>
                         </Card>
 
-                        {/* Safety & Trust Card */}
-                        <Card className="shadow-sm border-0 shadow-md">
-                            <CardContent className="p-6">
-                                <div className="text-center">
-                                    <Shield className="w-12 h-12 text-green-500 mx-auto mb-3" />
-                                    <h4 className="font-bold text-gray-900 mb-2">إعلان موثق</h4>
-                                    <p className="text-sm text-gray-600 leading-relaxed">
-                                        تم التحقق من صحة هذا الإعلان وفقاً لمعايير الجودة لدينا
-                                    </p>
-                                    <div className="flex justify-center gap-4 mt-4">
-                                        <div className="flex items-center gap-1 text-sm text-green-600">
-                                            <CheckCircle className="w-4 h-4" />
-                                            <span>معلومات دقيقة</span>
-                                        </div>
-                                        <div className="flex items-center gap-1 text-sm text-green-600">
-                                            <Shield className="w-4 h-4" />
-                                            <span>إعلان آمن</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
                     </motion.div>
                 </div>
             </div>

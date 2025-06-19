@@ -1,5 +1,5 @@
 import { SortOption } from '@/components/home/SortComponent';
-import { RealEstateData, Filters, FilterParams, PropertySize, PropertyValue, DynamicProperties } from '@/lib/types';
+import { RealEstateData, Filters, FilterParams, PropertyValue, DynamicProperties } from '@/lib/types';
 
 // Extended filters interface to include dynamic properties
 export interface ExtendedFilters extends Filters {
@@ -11,43 +11,20 @@ export interface ExtendedFilterParams extends Omit<FilterParams, 'filters'> {
   filters: ExtendedFilters;
 }
 
-// Helper function to get dynamic property value from real estate item
+// Helper function to get dynamic property value
 const getDynamicPropertyValue = (item: RealEstateData, propertyKey: string): any => {
-  // First check if the item has dynamic properties
-  if (item.properties && typeof item.properties === 'object') {
-    const propertyValue = item.properties[propertyKey] as PropertyValue;
-    if (propertyValue) {
-      return propertyValue.value;
-    }
+  if (item.properties && item.properties[propertyKey]) {
+    return item.properties[propertyKey].value;
   }
-
-  // Fallback to legacy property mapping for backward compatibility
-  const propertyMapping: Record<string, keyof RealEstateData> = {
-    'rooms_count': 'bedrooms',
-    'bathrooms_count': 'bathrooms',
-    'total_area': 'buildingArea',
-    'floor_number': 'floorNumber',
-    'contract_duration': 'rentalDuration',
-    'furnishing_status': 'furnished',
-    'view_type': 'facade',
-    'building_age': 'buildingAge',
-  };
-
-  const mappedField = propertyMapping[propertyKey];
-  if (mappedField && item[mappedField] !== undefined) {
-    return item[mappedField];
-  }
-
-  // Try to find the property directly on the item
-  return (item as any)[propertyKey];
+  return undefined;
 };
 
 // Helper function to check if a value matches a filter
 const matchesFilter = (itemValue: any, filterValue: any, dataType: string): boolean => {
   if (!filterValue || filterValue === '') return true;
 
-  switch (dataType.toLowerCase()) {
-    case 'number':
+  switch (dataType.toUpperCase()) {
+    case 'NUMBER':
       if (typeof filterValue === 'object' && filterValue !== null) {
         const numValue = parseFloat(itemValue?.toString() || '0');
         const min = filterValue.min ? parseFloat(filterValue.min) : Number.NEGATIVE_INFINITY;
@@ -56,24 +33,20 @@ const matchesFilter = (itemValue: any, filterValue: any, dataType: string): bool
       }
       return parseFloat(itemValue?.toString() || '0') === parseFloat(filterValue);
 
-    case 'single_choice':
+    case 'SINGLE_CHOICE':
       if (itemValue === null || itemValue === undefined) return false;
       return itemValue.toString().toLowerCase() === filterValue.toString().toLowerCase();
 
-    case 'multiple_choice':
+    case 'MULTIPLE_CHOICE':
       if (Array.isArray(filterValue)) {
         if (filterValue.length === 0) return true;
-
-        // If item value is an array (multiple selected values)
         if (Array.isArray(itemValue)) {
           return filterValue.some(fValue =>
             itemValue.some(iValue =>
               iValue?.toString().toLowerCase() === fValue.toString().toLowerCase()
             )
           );
-        }
-        // If item value is a single value
-        else if (itemValue) {
+        } else if (itemValue) {
           return filterValue.some(fValue =>
             itemValue.toString().toLowerCase() === fValue.toString().toLowerCase()
           );
@@ -81,20 +54,24 @@ const matchesFilter = (itemValue: any, filterValue: any, dataType: string): bool
       }
       return true;
 
-    case 'boolean':
+    case 'BOOLEAN':
       if (typeof filterValue === 'boolean') {
         return Boolean(itemValue) === filterValue;
       }
       return true;
 
-    case 'text':
+    case 'TEXT':
       if (itemValue === null || itemValue === undefined) return false;
       const itemStr = itemValue.toString().toLowerCase();
       const filterStr = filterValue.toString().toLowerCase();
       return itemStr.includes(filterStr);
 
-    case 'date':
-      // Handle date filtering if needed
+    case 'DATE':
+      if (itemValue && filterValue) {
+        const itemDate = new Date(itemValue).getTime();
+        const filterDate = new Date(filterValue).getTime();
+        return itemDate === filterDate;
+      }
       return true;
 
     default:
@@ -108,7 +85,7 @@ export const filterRealEstateData = (
   realEstateData: RealEstateData[],
   { selectedMainTypeId, selectedSubTypeId, priceRange, filters }: ExtendedFilterParams,
   sortOption?: SortOption,
-  propertyDefinitions?: Array<{ propertyKey: string, dataType: string }> // Property definitions for better filtering
+  propertyDefinitions?: Array<{ propertyKey: string, dataType: string }>
 ): RealEstateData[] => {
   const filteredData = realEstateData.filter((item) => {
     // Main category filter
@@ -122,8 +99,7 @@ export const filterRealEstateData = (
     }
 
     // Final type filter
-    if ((filters.finalType && filters.finalType !== "") &&
-      item.finalTypeId !== parseInt(filters.finalType)) {
+    if (filters.finalType && filters.finalType !== "" && item.finalTypeId !== parseInt(filters.finalType)) {
       return false;
     }
 
@@ -132,79 +108,19 @@ export const filterRealEstateData = (
       return false;
     }
 
-    // Building area range filter
-    if (filters.minArea && filters.maxArea) {
-      const buildingArea = parseFloat(item.buildingArea || '0');
-      const minArea = parseFloat(filters.minArea);
-      const maxArea = parseFloat(filters.maxArea);
-      if (!isNaN(buildingArea) && !isNaN(minArea) && !isNaN(maxArea)) {
-        if (buildingArea < minArea || buildingArea > maxArea) {
-          return false;
-        }
-      }
+    // City filter
+    if (filters.city && filters.city !== "" && item.cityId !== parseInt(filters.city)) {
+      return false;
     }
 
-    // Legacy static filters for backward compatibility
-    if (filters.bedrooms) {
-      if (filters.bedrooms === "-1") {
-        if ((item.bedrooms || 0) <= 8) {
-          return false;
-        }
-      } else if ((item.bedrooms || 0).toString() !== filters.bedrooms) {
-        return false;
-      }
+    // Neighborhood filter
+    if (filters.neighborhood && filters.neighborhood !== "" && item.neighborhoodId !== parseInt(filters.neighborhood)) {
+      return false;
     }
 
-    if (filters.bathrooms) {
-      if (filters.bathrooms === "-1") {
-        if ((item.bathrooms || 0) <= 4) {
-          return false;
-        }
-      } else if ((item.bathrooms || 0).toString() !== filters.bathrooms) {
-        return false;
-      }
-    }
-
-    if (filters.city && filters.city !== "") {
-      if (item.cityId != parseInt(filters.city)) {
-        return false;
-      }
-    }
-
-    if (filters.neighborhood && filters.neighborhood !== "") {
-      if (item.neighborhoodId != parseInt(filters.neighborhood)) {
-        return false;
-      }
-    }
-
-    if (filters.finalCity && filters.finalCity !== "") {
-      if (item.finalCityId != parseInt(filters.finalCity)) {
-        return false;
-      }
-    }
-
-    if (filters.isFurnished && filters.isFurnished !== "") {
-      if (item.furnished?.toString().toLowerCase() !== filters.isFurnished.toLowerCase()) {
-        return false;
-      }
-    }
-
-    if (filters.rentalPeriod && filters.rentalPeriod !== "") {
-      if (item.rentalDuration !== filters.rentalPeriod) {
-        return false;
-      }
-    }
-
-    if (filters.floor && filters.floor !== "") {
-      if ((item.floorNumber || 0) !== parseInt(filters.floor)) {
-        return false;
-      }
-    }
-
-    if (filters.view && filters.view !== "") {
-      if (item.facade?.toLowerCase() !== filters.view.toLowerCase()) {
-        return false;
-      }
+    // Final city filter
+    if (filters.finalCity && filters.finalCity !== "" && item.finalCityId !== parseInt(filters.finalCity)) {
+      return false;
     }
 
     // Dynamic property filters
@@ -212,10 +128,8 @@ export const filterRealEstateData = (
       if (filterKey.startsWith('property_')) {
         const propertyKey = filterKey.replace('property_', '');
         const itemValue = getDynamicPropertyValue(item, propertyKey);
-
-        // Find property definition to get data type
         const propertyDef = propertyDefinitions?.find(p => p.propertyKey === propertyKey);
-        const dataType = propertyDef?.dataType || 'text';
+        const dataType = propertyDef?.dataType?.toUpperCase() || item.properties[propertyKey]?.property?.dataType || 'TEXT';
 
         if (!matchesFilter(itemValue, filterValue, dataType)) {
           return false;
@@ -249,41 +163,27 @@ export const sortRealEstateData = (
         valueB = b.price;
         break;
 
-      case 'buildingArea':
-        valueA = parseFloat(a.buildingArea || '0');
-        valueB = parseFloat(b.buildingArea || '0');
-        break;
-
-      case 'bedrooms':
-        valueA = a.bedrooms || 0;
-        valueB = b.bedrooms || 0;
-        break;
-
       case 'createdAt':
         valueA = new Date(a.createdAt).getTime();
         valueB = new Date(b.createdAt).getTime();
         break;
 
-      // Handle dynamic property sorting
       default:
         if (sortOption.field.startsWith('property_')) {
           const propertyKey = sortOption.field.replace('property_', '');
           valueA = getDynamicPropertyValue(a, propertyKey);
           valueB = getDynamicPropertyValue(b, propertyKey);
 
-          // Find property definition to determine data type
           const propertyDef = propertyDefinitions?.find(p => p.propertyKey === propertyKey);
-          const dataType = propertyDef?.dataType || 'text';
+          const dataType = propertyDef?.dataType?.toUpperCase() || a.properties[propertyKey]?.property?.dataType || 'TEXT';
 
-          // Convert to appropriate type for sorting
-          if (dataType.toLowerCase() === 'number') {
+          if (dataType === 'NUMBER') {
             valueA = parseFloat(valueA?.toString() || '0');
             valueB = parseFloat(valueB?.toString() || '0');
-          } else if (dataType.toLowerCase() === 'date') {
+          } else if (dataType === 'DATE') {
             valueA = new Date(valueA || 0).getTime();
             valueB = new Date(valueB || 0).getTime();
           } else {
-            // String sorting
             valueA = valueA?.toString() || '';
             valueB = valueB?.toString() || '';
           }
@@ -292,7 +192,6 @@ export const sortRealEstateData = (
         }
     }
 
-    // Handle null/undefined values
     if (valueA === null || valueA === undefined) valueA = '';
     if (valueB === null || valueB === undefined) valueB = '';
 
@@ -300,32 +199,22 @@ export const sortRealEstateData = (
       if (typeof valueA === 'string' && typeof valueB === 'string') {
         return valueA.localeCompare(valueB, 'ar');
       }
-      return valueA - valueB;
+      return valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
     } else {
       if (typeof valueA === 'string' && typeof valueB === 'string') {
         return valueB.localeCompare(valueA, 'ar');
       }
-      return valueB - valueA;
+      return valueB < valueA ? -1 : valueB > valueA ? 1 : 0;
     }
   });
 };
 
 // Updated initial filter state
 export const initialFilterState: ExtendedFilters = {
-  bedrooms: "",
-  propertySize: "",
   finalType: "",
-  bathrooms: "",
   city: "",
-  floor: "",
-  isFurnished: "",
   neighborhood: "",
-  rentalPeriod: "",
-  view: "",
-  buildingArea: "",
   finalCity: "",
-  maxArea: "",
-  minArea: ""
 };
 
 // Default sort option
@@ -335,17 +224,7 @@ export const initialSortOption: SortOption = {
   label: 'أحدث الإعلانات'
 };
 
-export const getPropertySizeLabel = (size: PropertySize): string => {
-  switch (size) {
-    case "small": return "أقل من 100م²";
-    case "medium": return "100م² - 200م²";
-    case "large": return "200م² - 300م²";
-    case "xlarge": return "أكثر من 300م²";
-    default: return "";
-  }
-};
-
-// Helper function to create filter params from form data
+// Helper function to create filter params
 export const createFilterParams = (
   filters: ExtendedFilters,
   selectedMainTypeId: number | null,
@@ -373,14 +252,12 @@ export const getActiveFilterCount = (
   if (selectedSubTypeId) count++;
   if (priceRange[0] > 0 || priceRange[1] < 1000000) count++;
 
-  // Count static filters
   Object.entries(filters).forEach(([key, value]) => {
     if (!key.startsWith('property_') && value && value !== '') {
       count++;
     }
   });
 
-  // Count dynamic property filters
   Object.entries(filters).forEach(([key, value]) => {
     if (key.startsWith('property_')) {
       if (Array.isArray(value) && value.length > 0) {
@@ -408,7 +285,6 @@ export const clearFilter = (filters: ExtendedFilters, filterKey: string): Extend
   const newFilters = { ...filters };
 
   if (filterKey === 'city') {
-    // Clear dependent filters
     newFilters.city = '';
     newFilters.neighborhood = '';
     newFilters.finalCity = '';
@@ -424,7 +300,7 @@ export const clearFilter = (filters: ExtendedFilters, filterKey: string): Extend
   return newFilters;
 };
 
-// Helper function to extract property definitions from real estate data
+// Helper function to extract property definitions
 export const extractPropertyDefinitions = (realEstateData: RealEstateData[]): Array<{ propertyKey: string, dataType: string }> => {
   const definitions: Array<{ propertyKey: string, dataType: string }> = [];
   const seen = new Set<string>();
@@ -434,7 +310,7 @@ export const extractPropertyDefinitions = (realEstateData: RealEstateData[]): Ar
       Object.entries(item.properties).forEach(([propertyKey, propertyValue]) => {
         if (!seen.has(propertyKey)) {
           seen.add(propertyKey);
-          const dataType = propertyValue.property?.dataType?.toLowerCase() || 'text';
+          const dataType = propertyValue.property?.dataType || 'TEXT';
           definitions.push({ propertyKey, dataType });
         }
       });
@@ -444,7 +320,7 @@ export const extractPropertyDefinitions = (realEstateData: RealEstateData[]): Ar
   return definitions;
 };
 
-// Helper function to get display value for dynamic property
+// Helper function to get display value
 export const getDisplayValue = (propertyValue: PropertyValue): string => {
   if (!propertyValue) return '';
 
@@ -472,12 +348,10 @@ export const searchInDynamicProperties = (item: RealEstateData, searchTerm: stri
   return Object.values(item.properties).some(propertyValue => {
     if (!propertyValue) return false;
 
-    // Search in property name
     if (propertyValue.property?.propertyName?.toLowerCase().includes(lowerSearchTerm)) {
       return true;
     }
 
-    // Search in property value
     const value = propertyValue.value;
     if (Array.isArray(value)) {
       return value.some(v => v?.toString().toLowerCase().includes(lowerSearchTerm));
@@ -494,7 +368,6 @@ export default {
   sortRealEstateData,
   initialFilterState,
   initialSortOption,
-  getPropertySizeLabel,
   createFilterParams,
   getActiveFilterCount,
   clearAllFilters,

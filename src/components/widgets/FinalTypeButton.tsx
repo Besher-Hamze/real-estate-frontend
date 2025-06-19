@@ -110,7 +110,7 @@ const FinalTypeSelector: React.FC<FinalTypeSelectorProps> = ({
                 </p>
             </div>
 
-            <div className="flex justify-center gap-4 overflow-x-auto pb-4">
+            <div className="flex  gap-4 overflow-x-auto pb-4">
                 {isLoading ? (
                     // Loading skeletons
                     Array(3).fill(0).map((_, index) => (

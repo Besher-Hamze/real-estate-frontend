@@ -7,261 +7,317 @@ interface ViewingTimeProps {
   label?: string;
 }
 
+interface TimeSlot {
+  from: string;
+  to: string;
+}
+
+interface DaySchedule {
+  [day: string]: TimeSlot[];
+}
+
 const ViewingTimeSelector: React.FC<ViewingTimeProps> = ({
   value,
   onChange,
   error,
   label = "وقت المشاهدة"
 }) => {
-  // Local state to track UI selections
-  const [formState, setFormState] = useState({
-    selectedDays: [] as string[],
-    morningTimeFrom: "",
-    morningTimeTo: "",
-    eveningTimeFrom: "",
-    eveningTimeTo: ""
-  });
+  // Local state to track UI selections - now each day can have multiple time slots
+  const [schedule, setSchedule] = useState<DaySchedule>({});
+
+  const weekdays = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
 
   // Parse existing value string when component loads or value changes
   useEffect(() => {
-    if (value) {
+    if (value && typeof value === 'string') {
       try {
-        // Try to parse days
-        const daysMatch = value.match(/أيام المشاهدة: ([^.]+)/);
-        const selectedDays = daysMatch ? daysMatch[1].split('، ') : [];
+        const newSchedule: DaySchedule = {};
 
-        // Try to parse morning time
-        const morningMatch = value.match(/الفترة الصباحية: من الساعة ([^ ]+) إلى ([^.]+)/);
-        const morningTimeFrom = morningMatch ? morningMatch[1] : "";
-        const morningTimeTo = morningMatch ? morningMatch[2] : "";
+        // Split by days and parse each day's schedule
+        weekdays.forEach(day => {
+          const dayPattern = new RegExp(`${day}:([^]*?)(?=${weekdays.join('|')}|$)`, 'g');
+          const dayMatch = dayPattern.exec(value);
 
-        // Try to parse evening time
-        const eveningMatch = value.match(/الفترة المسائية: من الساعة ([^ ]+) إلى ([^.]+)/);
-        const eveningTimeFrom = eveningMatch ? eveningMatch[1] : "";
-        const eveningTimeTo = eveningMatch ? eveningMatch[2] : "";
+          if (dayMatch) {
+            const dayContent = dayMatch[1].trim();
+            const timeSlots: TimeSlot[] = [];
 
-        setFormState({
-          selectedDays,
-          morningTimeFrom,
-          morningTimeTo,
-          eveningTimeFrom,
-          eveningTimeTo
+            // Extract all time ranges for this day
+            const timePattern = /من الساعة ([^ ]+) إلى ([^.،]+)/g;
+            let timeMatch;
+
+            while ((timeMatch = timePattern.exec(dayContent)) !== null) {
+              timeSlots.push({
+                from: timeMatch[1].trim(),
+                to: timeMatch[2].trim()
+              });
+            }
+
+            if (timeSlots.length > 0) {
+              newSchedule[day] = timeSlots;
+            }
+          }
         });
+
+        setSchedule(newSchedule);
       } catch (e) {
         console.error("Failed to parse viewing time string:", e);
       }
     }
   }, []);
 
-  // Update the viewTime string whenever form state changes
+  // Update the viewTime string whenever schedule changes
   useEffect(() => {
     updateViewTimeString();
-  }, [formState]);
+  }, [schedule]);
 
   // Generate the formatted view time string
   const updateViewTimeString = () => {
-    const { selectedDays, morningTimeFrom, morningTimeTo, eveningTimeFrom, eveningTimeTo } = formState;
-
     let viewTimeString = '';
 
-    // Add days
-    if (selectedDays && selectedDays.length > 0) {
-      viewTimeString += `أيام المشاهدة: ${selectedDays.join('، ')}. `;
-    }
+    Object.entries(schedule).forEach(([day, timeSlots]) => {
+      if (timeSlots && timeSlots.length > 0) {
+        viewTimeString += `${day}: `;
 
-    // Add morning slot
-    if (morningTimeFrom && morningTimeTo) {
-      viewTimeString += `الفترة الصباحية: من الساعة ${morningTimeFrom} إلى ${morningTimeTo}. `;
-    }
+        const validTimeSlots = timeSlots.filter(slot => slot.from && slot.to);
 
-    // Add evening slot
-    if (eveningTimeFrom && eveningTimeTo) {
-      viewTimeString += `الفترة المسائية: من الساعة ${eveningTimeFrom} إلى ${eveningTimeTo}.`;
-    }
+        if (validTimeSlots.length > 0) {
+          const timeStrings = validTimeSlots.map(slot =>
+            `من الساعة ${slot.from} إلى ${slot.to}`
+          );
 
-    // Update the main form data
-    onChange(viewTimeString);
+          viewTimeString += timeStrings.join('، ') + '. ';
+        }
+      }
+    });
+
+    onChange(viewTimeString.trim());
   };
 
-  // Handle form state changes
-  const handleFormStateChange = (field: string, value: any) => {
-    setFormState(prev => ({
+  // Add a new time slot for a specific day
+  const addTimeSlot = (day: string) => {
+    setSchedule(prev => ({
       ...prev,
-      [field]: value
+      [day]: [...(prev[day] || []), { from: '', to: '' }]
     }));
   };
 
-  // Toggle day selection
-  const toggleDay = (day: string) => {
-    setFormState(prev => {
-      const newSelectedDays = prev.selectedDays.includes(day)
-        ? prev.selectedDays.filter(d => d !== day)
-        : [...prev.selectedDays, day];
+  // Remove a time slot for a specific day
+  const removeTimeSlot = (day: string, index: number) => {
+    setSchedule(prev => {
+      const daySlots = [...(prev[day] || [])];
+      daySlots.splice(index, 1);
+
+      if (daySlots.length === 0) {
+        const newSchedule = { ...prev };
+        delete newSchedule[day];
+        return newSchedule;
+      }
 
       return {
         ...prev,
-        selectedDays: newSelectedDays
+        [day]: daySlots
       };
     });
   };
 
-  const weekdays = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
+  // Update a specific time slot
+  const updateTimeSlot = (day: string, index: number, field: 'from' | 'to', value: string) => {
+    setSchedule(prev => ({
+      ...prev,
+      [day]: (prev[day] || []).map((slot, i) =>
+        i === index ? { ...slot, [field]: value } : slot
+      )
+    }));
+  };
 
-  // Time options for both morning and evening
-  const morningHours = Array.from({ length: 13 }, (_, i) => i + 7).map((hour) => ({
-    value: hour <= 12 ? `${hour}:00 صباحًا` : `${hour - 12}:00 مساءً`,
-    label: hour <= 12 ? `${hour}:00 صباحًا` : `${hour - 12}:00 مساءً`
-  }));
+  // Generate time options (24-hour format with AM/PM in Arabic)
+  const generateTimeOptions = () => {
+    const times = [];
 
-  const eveningHours = Array.from({ length: 12 }, (_, i) => i + 12).map((hour) => ({
-    value: hour === 12 ? `${hour}:00 مساءً` : `${hour - 12}:00 مساءً`,
-    label: hour === 12 ? `${hour}:00 مساءً` : `${hour - 12}:00 مساءً`
-  }));
+    // Morning hours (7 AM to 11:59 AM)
+    for (let hour = 7; hour <= 11; hour++) {
+      times.push(`${hour}:00 صباحًا`);
+      times.push(`${hour}:30 صباحًا`);
+    }
+
+    // Noon
+    times.push('12:00 مساءً');
+    times.push('12:30 مساءً');
+
+    // Afternoon/Evening hours (1 PM to 11:59 PM)
+    for (let hour = 1; hour <= 11; hour++) {
+      times.push(`${hour}:00 مساءً`);
+      times.push(`${hour}:30 مساءً`);
+    }
+
+    return times;
+  };
+
+  const timeOptions = generateTimeOptions();
+
+  // Filter "to" options based on "from" selection
+  const getFilteredToOptions = (fromTime: string) => {
+    if (!fromTime) return timeOptions;
+
+    const fromIndex = timeOptions.indexOf(fromTime);
+    return timeOptions.slice(fromIndex + 1);
+  };
 
   return (
-    <div className="mb-4">
-
-      {/* Days Selection */}
-      <div className="p-3 border border-gray-200 rounded-md mb-3">
-        <label className="block text-sm text-gray-600 mb-2">أيام المشاهدة المتاحة</label>
-        <div className="flex flex-wrap gap-1">
-          {weekdays.map((day) => (
-            <button
-              key={day}
-              type="button"
-              className={`px-2 py-1 rounded text-sm cursor-pointer border ${formState.selectedDays.includes(day)
-                  ? 'bg-blue-500 text-white border-blue-500'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
-              onClick={() => toggleDay(day)}
-            >
-              {day}
-            </button>
-          ))}
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+          <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">{label}</h3>
+          <p className="text-sm text-gray-600">حدد الأوقات المتاحة لمعاينة العقار</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {/* Morning Time Slot */}
-        <div className="p-3 border border-gray-200 rounded-md">
-          <label className="block text-sm text-gray-600 mb-2">الفترة الصباحية</label>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <select
-                className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
-                value={formState.morningTimeFrom}
-                onChange={(e) => handleFormStateChange('morningTimeFrom', e.target.value)}
-              >
-                <option value="">من</option>
-                {morningHours.map((time) => (
-                  <option key={time.value} value={time.value}>
-                    {time.label}
-                  </option>
-                ))}
-              </select>
+      {/* Days with time slots */}
+      <div className="space-y-4">
+        {weekdays.map((day) => (
+          <div key={day} className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+            <div className="p-4 border-b border-gray-100">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
+                    <span className="text-xs font-medium text-white">{day.charAt(0)}</span>
+                  </div>
+                  <h4 className="text-base font-medium text-gray-900">{day}</h4>
+                  {schedule[day] && schedule[day].length > 0 && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      {schedule[day].length} موعد
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => addTimeSlot(day)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  إضافة موعد
+                </button>
+              </div>
             </div>
-            <div>
-              <select
-                className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
-                value={formState.morningTimeTo}
-                onChange={(e) => handleFormStateChange('morningTimeTo', e.target.value)}
-                disabled={!formState.morningTimeFrom}
-              >
-                <option value="">إلى</option>
-                {morningHours
-                  .filter(time => {
-                    if (!formState.morningTimeFrom) return true;
 
-                    // Extract hour from the time string
-                    const fromHourMatch = formState.morningTimeFrom.match(/^(\d+):/);
-                    const timeHourMatch = time.value.match(/^(\d+):/);
+            {/* Time slots for this day */}
+            <div className="p-4">
+              {schedule[day] && schedule[day].length > 0 ? (
+                <div className="space-y-3">
+                  {schedule[day].map((slot, index) => (
+                    <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-2 flex-1">
+                        <select
+                          className="flex-1 px-3 py-2 rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm transition-colors"
+                          value={slot.from}
+                          onChange={(e) => updateTimeSlot(day, index, 'from', e.target.value)}
+                        >
+                          <option value="">من الساعة</option>
+                          {timeOptions.map((time) => (
+                            <option key={time} value={time}>
+                              {time}
+                            </option>
+                          ))}
+                        </select>
 
-                    if (!fromHourMatch || !timeHourMatch) return true;
+                        <div className="flex items-center justify-center px-2">
+                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </div>
 
-                    const fromHour = parseInt(fromHourMatch[1]);
-                    const timeHour = parseInt(timeHourMatch[1]);
+                        <select
+                          className="flex-1 px-3 py-2 rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm transition-colors disabled:bg-gray-100 disabled:text-gray-400"
+                          value={slot.to}
+                          onChange={(e) => updateTimeSlot(day, index, 'to', e.target.value)}
+                          disabled={!slot.from}
+                        >
+                          <option value="">إلى الساعة</option>
+                          {getFilteredToOptions(slot.from).map((time) => (
+                            <option key={time} value={time}>
+                              {time}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
-                    // Check if current time is after the "from" time
-                    if (formState.morningTimeFrom.includes('صباحًا') && time.value.includes('مساءً')) {
-                      return true; // Morning to evening is always valid
-                    } else if (formState.morningTimeFrom.includes('مساءً') && time.value.includes('صباحًا')) {
-                      return false; // Evening to morning is invalid
-                    } else {
-                      return timeHour > fromHour;
-                    }
-                  })
-                  .map((time) => (
-                    <option key={time.value} value={time.value}>
-                      {time.label}
-                    </option>
+                      <button
+                        type="button"
+                        onClick={() => removeTimeSlot(day, index)}
+                        className="flex items-center justify-center w-8 h-8 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
                   ))}
-              </select>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-12 h-12 mx-auto rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                    <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <p className="text-sm text-gray-500">لا توجد مواعيد لهذا اليوم</p>
+                  <p className="text-xs text-gray-400 mt-1">انقر على إضافة موعد لإضافة وقت جديد</p>
+                </div>
+              )}
             </div>
           </div>
-        </div>
-
-        {/* Evening Time Slot */}
-        <div className="p-3 border border-gray-200 rounded-md">
-          <label className="block text-sm text-gray-600 mb-2">الفترة المسائية</label>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <select
-                className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
-                value={formState.eveningTimeFrom}
-                onChange={(e) => handleFormStateChange('eveningTimeFrom', e.target.value)}
-              >
-                <option value="">من</option>
-                {eveningHours.map((time) => (
-                  <option key={time.value} value={time.value}>
-                    {time.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <select
-                className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
-                value={formState.eveningTimeTo}
-                onChange={(e) => handleFormStateChange('eveningTimeTo', e.target.value)}
-                disabled={!formState.eveningTimeFrom}
-              >
-                <option value="">إلى</option>
-                {eveningHours
-                  .filter(time => {
-                    if (!formState.eveningTimeFrom) return true;
-
-                    // Extract hour from the time string
-                    const fromHourMatch = formState.eveningTimeFrom.match(/^(\d+):/);
-                    const timeHourMatch = time.value.match(/^(\d+):/);
-
-                    if (!fromHourMatch || !timeHourMatch) return true;
-
-                    const fromHour = parseInt(fromHourMatch[1]);
-                    const timeHour = parseInt(timeHourMatch[1]);
-
-                    // Check if current time is after the "from" time
-                    return timeHour > fromHour;
-                  })
-                  .map((time) => (
-                    <option key={time.value} value={time.value}>
-                      {time.label}
-                    </option>
-                  ))}
-              </select>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Preview */}
       {value && (
-        <div className="mt-3 text-sm text-gray-600 p-2 bg-gray-50 rounded-md">
-          <p className="leading-relaxed">{value}</p>
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h4 className="font-medium text-green-900 mb-2">معاينة جدول المواعيد</h4>
+              <div className="text-sm text-green-800 leading-relaxed bg-white/60 rounded-lg p-3 border border-green-200/50">
+                {value.split('. ').map((line, index) => (
+                  line.trim() && (
+                    <div key={index} className="mb-2 last:mb-0">
+                      {line.trim()}.
+                    </div>
+                  )
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
+      {/* Error Display */}
       {error && (
-        <div className="text-red-500 text-sm mt-2">{error}</div>
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h4 className="font-medium text-red-900 mb-1">خطأ في البيانات</h4>
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
