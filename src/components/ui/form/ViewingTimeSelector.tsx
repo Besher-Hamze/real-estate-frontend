@@ -59,7 +59,7 @@ const ViewingTimeSelector: React.FC<ViewingTimeSelectorProps> = ({
         } else if (date.toDateString() === tomorrow.toDateString()) {
             return 'غداً';
         } else {
-            return date.toLocaleDateString('ar-EG', {
+            return date.toLocaleDateString('en-US', {
                 month: 'long',
                 day: 'numeric',
                 weekday: 'short'
