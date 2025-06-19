@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 interface ViewingTimeProps {
   value: any;
@@ -8,314 +8,274 @@ interface ViewingTimeProps {
 }
 
 interface TimeSlot {
-  from: string;
-  to: string;
-}
-
-interface DaySchedule {
-  [day: string]: TimeSlot[];
+  day: string;
+  startTime: string;
+  endTime: string;
 }
 
 const ViewingTimeSelector: React.FC<ViewingTimeProps> = ({
   value,
   onChange,
   error,
-  label = "وقت المشاهدة"
+  label = "أوقات المعاينة"
 }) => {
-  // Local state to track UI selections - now each day can have multiple time slots
-  const [schedule, setSchedule] = useState<DaySchedule>({});
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
+  const isInitialized = useRef(false);
+  const onChangeRef = useRef(onChange);
 
-  const weekdays = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
-
-  // Parse existing value string when component loads or value changes
+  // Always keep the latest onChange reference
   useEffect(() => {
-    if (value && typeof value === 'string') {
-      try {
-        const newSchedule: DaySchedule = {};
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
-        // Split by days and parse each day's schedule
-        weekdays.forEach(day => {
-          const dayPattern = new RegExp(`${day}:([^]*?)(?=${weekdays.join('|')}|$)`, 'g');
-          const dayMatch = dayPattern.exec(value);
+  const weekdays = [
+    { value: "السبت", label: "السبت" },
+    { value: "الأحد", label: "الأحد" },
+    { value: "الاثنين", label: "الاثنين" },
+    { value: "الثلاثاء", label: "الثلاثاء" },
+    { value: "الأربعاء", label: "الأربعاء" },
+    { value: "الخميس", label: "الخميس" },
+    { value: "الجمعة", label: "الجمعة" }
+  ];
 
-          if (dayMatch) {
-            const dayContent = dayMatch[1].trim();
-            const timeSlots: TimeSlot[] = [];
-
-            // Extract all time ranges for this day
-            const timePattern = /من الساعة ([^ ]+) إلى ([^.،]+)/g;
-            let timeMatch;
-
-            while ((timeMatch = timePattern.exec(dayContent)) !== null) {
-              timeSlots.push({
-                from: timeMatch[1].trim(),
-                to: timeMatch[2].trim()
-              });
-            }
-
-            if (timeSlots.length > 0) {
-              newSchedule[day] = timeSlots;
-            }
-          }
-        });
-
-        setSchedule(newSchedule);
-      } catch (e) {
-        console.error("Failed to parse viewing time string:", e);
-      }
-    }
-  }, []);
-
-  // Update the viewTime string whenever schedule changes
-  useEffect(() => {
-    updateViewTimeString();
-  }, [schedule]);
-
-  // Generate the formatted view time string
-  const updateViewTimeString = () => {
-    let viewTimeString = '';
-
-    Object.entries(schedule).forEach(([day, timeSlots]) => {
-      if (timeSlots && timeSlots.length > 0) {
-        viewTimeString += `${day}: `;
-
-        const validTimeSlots = timeSlots.filter(slot => slot.from && slot.to);
-
-        if (validTimeSlots.length > 0) {
-          const timeStrings = validTimeSlots.map(slot =>
-            `من الساعة ${slot.from} إلى ${slot.to}`
-          );
-
-          viewTimeString += timeStrings.join('، ') + '. ';
-        }
-      }
-    });
-
-    onChange(viewTimeString.trim());
-  };
-
-  // Add a new time slot for a specific day
-  const addTimeSlot = (day: string) => {
-    setSchedule(prev => ({
-      ...prev,
-      [day]: [...(prev[day] || []), { from: '', to: '' }]
-    }));
-  };
-
-  // Remove a time slot for a specific day
-  const removeTimeSlot = (day: string, index: number) => {
-    setSchedule(prev => {
-      const daySlots = [...(prev[day] || [])];
-      daySlots.splice(index, 1);
-
-      if (daySlots.length === 0) {
-        const newSchedule = { ...prev };
-        delete newSchedule[day];
-        return newSchedule;
-      }
-
-      return {
-        ...prev,
-        [day]: daySlots
-      };
-    });
-  };
-
-  // Update a specific time slot
-  const updateTimeSlot = (day: string, index: number, field: 'from' | 'to', value: string) => {
-    setSchedule(prev => ({
-      ...prev,
-      [day]: (prev[day] || []).map((slot, i) =>
-        i === index ? { ...slot, [field]: value } : slot
-      )
-    }));
-  };
-
-  // Generate time options (24-hour format with AM/PM in Arabic)
+  // Generate time options
   const generateTimeOptions = () => {
     const times = [];
-
-    // Morning hours (7 AM to 11:59 AM)
-    for (let hour = 7; hour <= 11; hour++) {
-      times.push(`${hour}:00 صباحًا`);
-      times.push(`${hour}:30 صباحًا`);
+    for (let hour = 7; hour <= 23; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        times.push(timeString);
+      }
     }
-
-    // Noon
-    times.push('12:00 مساءً');
-    times.push('12:30 مساءً');
-
-    // Afternoon/Evening hours (1 PM to 11:59 PM)
-    for (let hour = 1; hour <= 11; hour++) {
-      times.push(`${hour}:00 مساءً`);
-      times.push(`${hour}:30 مساءً`);
-    }
-
     return times;
   };
 
   const timeOptions = generateTimeOptions();
 
-  // Filter "to" options based on "from" selection
-  const getFilteredToOptions = (fromTime: string) => {
-    if (!fromTime) return timeOptions;
+  // Convert Arabic time format to 24-hour format
+  const convertArabicTimeToFormat = (timeStr: string): string => {
+    if (timeStr.includes('صباحًا')) {
+      const time = timeStr.replace(' صباحًا', '');
+      const [hour, minute = '00'] = time.split(':');
+      let hourNum = parseInt(hour);
+      if (hourNum === 12) hourNum = 0;
+      return `${hourNum.toString().padStart(2, '0')}:${minute}`;
+    } else if (timeStr.includes('مساءً')) {
+      const time = timeStr.replace(' مساءً', '');
+      const [hour, minute = '00'] = time.split(':');
+      let hourNum = parseInt(hour);
+      if (hourNum !== 12) hourNum += 12;
+      return `${hourNum.toString().padStart(2, '0')}:${minute}`;
+    }
+    return timeStr;
+  };
 
-    const fromIndex = timeOptions.indexOf(fromTime);
-    return timeOptions.slice(fromIndex + 1);
+  // Convert 24-hour format to Arabic time format
+  const convertToArabicTime = (timeStr: string): string => {
+    const [hour, minute] = timeStr.split(':');
+    const hourNum = parseInt(hour);
+
+    if (hourNum === 0) {
+      return `12:${minute} صباحًا`;
+    } else if (hourNum < 12) {
+      return `${hourNum}:${minute} صباحًا`;
+    } else if (hourNum === 12) {
+      return `12:${minute} مساءً`;
+    } else {
+      return `${hourNum - 12}:${minute} مساءً`;
+    }
+  };
+
+  // Parse existing value only on initial load
+  useEffect(() => {
+    if (!isInitialized.current && value && typeof value === 'string' && value.trim()) {
+      try {
+        const slots: TimeSlot[] = [];
+        const dayMatches = value.match(/(\w+):\s*من الساعة ([^\s]+) إلى ([^.،]+)/g);
+
+        if (dayMatches) {
+          dayMatches.forEach(match => {
+            const parts = match.match(/(\w+):\s*من الساعة ([^\s]+) إلى ([^.،]+)/);
+            if (parts) {
+              slots.push({
+                day: parts[1].trim(),
+                startTime: convertArabicTimeToFormat(parts[2].trim()),
+                endTime: convertArabicTimeToFormat(parts[3].trim())
+              });
+            }
+          });
+        }
+
+        setTimeSlots(slots);
+      } catch (e) {
+        console.error("Failed to parse viewing time:", e);
+      }
+    }
+    isInitialized.current = true;
+  }, [value]);
+
+  // Update output string - using useCallback to prevent recreation
+  const updateOutput = useCallback(() => {
+    if (!isInitialized.current) return;
+
+    const validSlots = timeSlots.filter(slot => slot.day && slot.startTime && slot.endTime);
+
+    if (validSlots.length > 0) {
+      const outputString = validSlots.map(slot =>
+        `${slot.day}: من الساعة ${convertToArabicTime(slot.startTime)} إلى ${convertToArabicTime(slot.endTime)}`
+      ).join('. ') + '.';
+      onChangeRef.current(outputString);
+    } else {
+      onChangeRef.current('');
+    }
+  }, [timeSlots]);
+
+  // Call updateOutput when timeSlots change
+  useEffect(() => {
+    updateOutput();
+  }, [updateOutput]);
+
+  // Add new time slot
+  const addTimeSlot = () => {
+    setTimeSlots(prev => [...prev, {
+      day: '',
+      startTime: '09:00',
+      endTime: '17:00'
+    }]);
+  };
+
+  // Remove time slot
+  const removeTimeSlot = (index: number) => {
+    setTimeSlots(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Update time slot
+  const updateTimeSlot = (index: number, field: keyof TimeSlot, value: string) => {
+    setTimeSlots(prev => prev.map((slot, i) =>
+      i === index ? { ...slot, [field]: value } : slot
+    ));
+  };
+
+  // Get filtered end time options
+  const getEndTimeOptions = (startTime: string) => {
+    if (!startTime) return timeOptions;
+    const startIndex = timeOptions.indexOf(startTime);
+    return timeOptions.slice(startIndex + 1);
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
-          <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
+      <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">{label}</h3>
-          <p className="text-sm text-gray-600">حدد الأوقات المتاحة لمعاينة العقار</p>
+          <h3 className="text-sm font-medium text-gray-900">{label}</h3>
+          <p className="text-xs text-gray-500 mt-1">حدد الأيام والأوقات المتاحة للمعاينة</p>
         </div>
+        <button
+          type="button"
+          onClick={addTimeSlot}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+        >
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          إضافة وقت
+        </button>
       </div>
 
-      {/* Days with time slots */}
-      <div className="space-y-4">
-        {weekdays.map((day) => (
-          <div key={day} className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-            <div className="p-4 border-b border-gray-100">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
-                    <span className="text-xs font-medium text-white">{day.charAt(0)}</span>
-                  </div>
-                  <h4 className="text-base font-medium text-gray-900">{day}</h4>
-                  {schedule[day] && schedule[day].length > 0 && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      {schedule[day].length} موعد
-                    </span>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => addTimeSlot(day)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  إضافة موعد
-                </button>
-              </div>
-            </div>
+      {/* Time Slots */}
+      <div className="space-y-3">
+        {timeSlots.map((slot, index) => (
+          <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border">
+            {/* Day Selector */}
+            <select
+              value={slot.day}
+              onChange={(e) => updateTimeSlot(index, 'day', e.target.value)}
+              className="flex-1 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">اختر اليوم</option>
+              {weekdays.map(day => (
+                <option key={day.value} value={day.value}>
+                  {day.label}
+                </option>
+              ))}
+            </select>
 
-            {/* Time slots for this day */}
-            <div className="p-4">
-              {schedule[day] && schedule[day].length > 0 ? (
-                <div className="space-y-3">
-                  {schedule[day].map((slot, index) => (
-                    <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-2 flex-1">
-                        <select
-                          className="flex-1 px-3 py-2 rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm transition-colors"
-                          value={slot.from}
-                          onChange={(e) => updateTimeSlot(day, index, 'from', e.target.value)}
-                        >
-                          <option value="">من الساعة</option>
-                          {timeOptions.map((time) => (
-                            <option key={time} value={time}>
-                              {time}
-                            </option>
-                          ))}
-                        </select>
+            {/* Start Time */}
+            <select
+              value={slot.startTime}
+              onChange={(e) => updateTimeSlot(index, 'startTime', e.target.value)}
+              className="flex-1 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">من</option>
+              {timeOptions.map(time => (
+                <option key={time} value={time}>
+                  {time}
+                </option>
+              ))}
+            </select>
 
-                        <div className="flex items-center justify-center px-2">
-                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
-                        </div>
+            {/* Separator */}
+            <span className="text-gray-400 text-sm">-</span>
 
-                        <select
-                          className="flex-1 px-3 py-2 rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm transition-colors disabled:bg-gray-100 disabled:text-gray-400"
-                          value={slot.to}
-                          onChange={(e) => updateTimeSlot(day, index, 'to', e.target.value)}
-                          disabled={!slot.from}
-                        >
-                          <option value="">إلى الساعة</option>
-                          {getFilteredToOptions(slot.from).map((time) => (
-                            <option key={time} value={time}>
-                              {time}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+            {/* End Time */}
+            <select
+              value={slot.endTime}
+              onChange={(e) => updateTimeSlot(index, 'endTime', e.target.value)}
+              disabled={!slot.startTime}
+              className="flex-1 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
+            >
+              <option value="">إلى</option>
+              {getEndTimeOptions(slot.startTime).map(time => (
+                <option key={time} value={time}>
+                  {time}
+                </option>
+              ))}
+            </select>
 
-                      <button
-                        type="button"
-                        onClick={() => removeTimeSlot(day, index)}
-                        className="flex items-center justify-center w-8 h-8 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="w-12 h-12 mx-auto rounded-full bg-gray-100 flex items-center justify-center mb-3">
-                    <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <p className="text-sm text-gray-500">لا توجد مواعيد لهذا اليوم</p>
-                  <p className="text-xs text-gray-400 mt-1">انقر على إضافة موعد لإضافة وقت جديد</p>
-                </div>
-              )}
-            </div>
+            {/* Remove Button */}
+            <button
+              type="button"
+              onClick={() => removeTimeSlot(index)}
+              className="p-1.5 text-red-500 hover:bg-red-50 rounded-md transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         ))}
+
+        {/* Empty State */}
+        {timeSlots.length === 0 && (
+          <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
+            <div className="w-12 h-12 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-3">
+              <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <p className="text-sm text-gray-500 mb-2">لم يتم تحديد أوقات معاينة</p>
+            <p className="text-xs text-gray-400">انقر على "إضافة وقت" لتحديد الأوقات المتاحة</p>
+          </div>
+        )}
       </div>
 
       {/* Preview */}
-      {value && (
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
-              <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <h4 className="font-medium text-green-900 mb-2">معاينة جدول المواعيد</h4>
-              <div className="text-sm text-green-800 leading-relaxed bg-white/60 rounded-lg p-3 border border-green-200/50">
-                {value.split('. ').map((line, index) => (
-                  line.trim() && (
-                    <div key={index} className="mb-2 last:mb-0">
-                      {line.trim()}.
-                    </div>
-                  )
-                ))}
-              </div>
-            </div>
-          </div>
+      {value && timeSlots.length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <h4 className="text-sm font-medium text-blue-900 mb-2">المعاينة:</h4>
+          <p className="text-sm text-blue-800 leading-relaxed">{value}</p>
         </div>
       )}
 
-      {/* Error Display */}
+      {/* Error */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
-              <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <h4 className="font-medium text-red-900 mb-1">خطأ في البيانات</h4>
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-sm text-red-700">{error}</p>
           </div>
         </div>
       )}

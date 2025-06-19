@@ -110,7 +110,7 @@ function RealEstatePageContent() {
         price: '',
         finalCityId: '',
         location: '',
-        viewTime: [] as any[],
+        viewTime: '',  // Changed from array to string
         paymentMethod: '',
         coverImage: null as File | null,
         files: [] as File[],
@@ -189,11 +189,11 @@ function RealEstatePageContent() {
                     basicFormData.location.trim()
                 );
             case 4:
-                return isDynamicValid && currentStep === 4;
+                return isDynamicValid || Object.keys(groupedProperties).length === 0;
             case 5:
                 return !!(
                     (basicFormData.coverImage || basicFormData.existingCoverImage || coverImagePreview) &&
-                    basicFormData.viewTime.length > 0
+                    basicFormData.viewTime && basicFormData.viewTime.trim()
                 );
             default:
                 return false;
@@ -243,7 +243,7 @@ function RealEstatePageContent() {
             } catch (error) {
                 console.error('Error loading building:', error);
                 toast.error('حدث خطأ في تحميل بيانات المبنى');
-                router.push('/dashboar')
+                router.push('/dashboard');
             } finally {
                 setIsLoadingBuilding(false);
             }
@@ -265,6 +265,25 @@ function RealEstatePageContent() {
                 const propertyData = await RealEstateApi.fetchRealEstateById(Number(propertyId));
                 setProperty(propertyData);
 
+                // Parse viewTime data properly
+                let parsedViewTime = '';
+                if (propertyData.viewTime) {
+                    try {
+                        // Try to parse as JSON first
+                        const parsed = JSON.parse(propertyData.viewTime);
+                        if (typeof parsed === 'string') {
+                            parsedViewTime = parsed;
+                        } else if (Array.isArray(parsed) && parsed.length > 0) {
+                            parsedViewTime = typeof parsed[0] === 'string' ? parsed[0] : JSON.stringify(parsed[0]);
+                        } else {
+                            parsedViewTime = JSON.stringify(parsed);
+                        }
+                    } catch {
+                        // If JSON parsing fails, use as string
+                        parsedViewTime = propertyData.viewTime;
+                    }
+                }
+
                 // Fill basic data
                 setBasicFormData({
                     title: propertyData.title || '',
@@ -272,7 +291,7 @@ function RealEstatePageContent() {
                     price: propertyData.price?.toString() || '',
                     finalCityId: propertyData.finalCityId?.toString() || '',
                     location: propertyData.location || '',
-                    viewTime: propertyData.viewTime ? JSON.parse(propertyData.viewTime) : [],
+                    viewTime: parsedViewTime,
                     paymentMethod: propertyData.paymentMethod || '',
                     coverImage: null,
                     files: [],
@@ -301,17 +320,6 @@ function RealEstatePageContent() {
                     setSelectedFinalTypeId(propertyData.finalTypeId);
                 }
 
-                // Fill dynamic properties
-                if (propertyData.properties) {
-                    const dynamicData: { [key: string]: any } = {};
-                    Object.entries(propertyData.properties).forEach(([key, propValue]) => {
-                        if (propValue && typeof propValue === 'object' && 'value' in propValue) {
-                            dynamicData[key] = propValue.value;
-                        }
-                    });
-                    setDynamicFormData(dynamicData);
-                }
-
                 // Load building data if property belongs to a building
                 if (propertyData.buildingItemId) {
                     try {
@@ -321,9 +329,6 @@ function RealEstatePageContent() {
                         console.warn('Could not load building data for property');
                     }
                 }
-
-                // Mark all steps as completed for edit mode
-                setCompletedSteps(new Set([1, 2, 3, 4, 5]));
 
             } catch (error) {
                 console.error('Error loading property:', error);
@@ -335,7 +340,36 @@ function RealEstatePageContent() {
         };
 
         loadProperty();
-    }, [isEditMode, propertyId, router, setSelectedCityId, setSelectedNeighborhoodId, setDynamicFormData]);
+    }, [isEditMode, propertyId, router, setSelectedCityId, setSelectedNeighborhoodId]);
+
+    // Fill dynamic properties after property is loaded and finalTypeId is set
+    useEffect(() => {
+        if (isEditMode && property && selectedFinalTypeId && !dynamicLoading && groupedProperties) {
+            // Fill dynamic properties
+            if (property.properties) {
+                const dynamicData: { [key: string]: any } = {};
+                Object.entries(property.properties).forEach(([key, propValue]) => {
+                    if (propValue && typeof propValue === 'object' && 'value' in propValue && 'property' in propValue) {
+                        const propertyDef = propValue.property;
+                        let value = propValue.value;
+
+                        // Handle MULTIPLE_CHOICE fields - convert comma-separated string to array
+                        if (propertyDef.dataType === 'MULTIPLE_CHOICE' && typeof value === 'string') {
+                            value = value.split(',').map((item: string) => item.trim()).filter((item: string) => item);
+                        }
+
+                        dynamicData[key] = value;
+                    }
+                });
+                setDynamicFormData(dynamicData);
+            }
+
+            // Mark all steps as completed for edit mode after data is loaded
+            setTimeout(() => {
+                setCompletedSteps(new Set([1, 2, 3, 4, 5]));
+            }, 100);
+        }
+    }, [property, selectedFinalTypeId, dynamicLoading, groupedProperties, setDynamicFormData, isEditMode]);
 
     // Handle property type selection
     const handleFinalTypeSelect = (finalTypeId: number, path: { mainType: MainType; subType: SubType; finalType: FinalType }) => {
@@ -435,7 +469,7 @@ function RealEstatePageContent() {
                 break;
 
             case 4:
-                if (!validateDynamic()) {
+                if (Object.keys(groupedProperties).length > 0 && !validateDynamic()) {
                     newErrors.push(...dynamicErrors);
                 }
                 break;
@@ -444,7 +478,7 @@ function RealEstatePageContent() {
                 if (!basicFormData.coverImage && !basicFormData.existingCoverImage && !coverImagePreview) {
                     newErrors.push('صورة الغلاف مطلوبة');
                 }
-                if (!basicFormData.viewTime || basicFormData.viewTime.length === 0) {
+                if (!basicFormData.viewTime || !basicFormData.viewTime.trim()) {
                     newErrors.push('وقت المعاينة مطلوب');
                 }
                 break;
@@ -488,6 +522,17 @@ function RealEstatePageContent() {
         setIsSubmitting(true);
 
         try {
+            // Process dynamic form data to handle MULTIPLE_CHOICE fields
+            const processedDynamicData: { [key: string]: any } = {};
+            Object.entries(dynamicFormData).forEach(([key, value]) => {
+                // Convert arrays back to comma-separated strings for MULTIPLE_CHOICE fields
+                if (Array.isArray(value)) {
+                    processedDynamicData[key] = value.join(',');
+                } else {
+                    processedDynamicData[key] = value;
+                }
+            });
+
             if (isEditMode && property) {
                 // Update existing property
                 const updateData: Partial<any> = {
@@ -496,8 +541,8 @@ function RealEstatePageContent() {
                     price: Number(basicFormData.price),
                     paymentMethod: basicFormData.paymentMethod,
                     location: basicFormData.location,
-                    viewTime: JSON.stringify(basicFormData.viewTime),
-                    dynamicProperties: dynamicFormData,
+                    viewTime: basicFormData.viewTime, // Send as string
+                    dynamicProperties: processedDynamicData,
                     cityId: selectedCityId,
                     neighborhoodId: selectedNeighborhoodId,
                     finalCityId: Number(basicFormData.finalCityId)
@@ -533,10 +578,10 @@ function RealEstatePageContent() {
                     finalTypeId: selectedTypePath.finalType.id,
                     paymentMethod: basicFormData.paymentMethod,
                     location: basicFormData.location,
-                    viewTime: JSON.stringify(basicFormData.viewTime),
+                    viewTime: basicFormData.viewTime, // Send as string
                     coverImage: basicFormData.coverImage,
                     files: basicFormData.files,
-                    dynamicProperties: dynamicFormData,
+                    dynamicProperties: processedDynamicData,
                     cityId: selectedCityId!,
                     neighborhoodId: selectedNeighborhoodId!,
                     finalCityId: Number(basicFormData.finalCityId),
@@ -550,11 +595,7 @@ function RealEstatePageContent() {
             }
 
             // Navigate back appropriately
-            if (selectedBuilding) {
-                router.push(`/dashboard`);
-            } else {
-                router.push('/dashboard');
-            }
+            router.push('/dashboard');
 
         } catch (error) {
             console.error('Error saving real estate:', error);
@@ -1036,13 +1077,11 @@ function RealEstatePageContent() {
                                 />
 
                                 <div className="mt-6">
-                                    <Label htmlFor="viewTime">أوقات المعاينة *</Label>
-                                    <div className="mt-2">
-                                        <ViewingTimeSelector
-                                            value={basicFormData.viewTime}
-                                            onChange={(viewingTimes) => updateBasicField('viewTime', viewingTimes)}
-                                        />
-                                    </div>
+                                    <ViewingTimeSelector
+                                        value={basicFormData.viewTime}
+                                        onChange={(viewingTimes) => updateBasicField('viewTime', viewingTimes)}
+                                        label="أوقات المعاينة *"
+                                    />
                                     {selectedBuilding && (
                                         <p className="text-xs text-gray-500 mt-2">
                                             تأكد من تنسيق أوقات المعاينة مع إدارة المبنى
