@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ApiDynamicProperty } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,7 +28,9 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
     onChange,
     error
 }) => {
-    const renderField = () => {
+    const [open, setOpen] = useState(false);
+
+    const RenderField = () => {
         switch (property.dataType) {
             case 'text':
                 return (
@@ -93,7 +95,6 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
 
             case 'multiple_choice':
                 const selectedValues = Array.isArray(value) ? value : [];
-                const [open, setOpen] = React.useState(false);
 
                 return (
                     <div className="space-y-2">
@@ -284,7 +285,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
 
     return (
         <div className="w-full">
-            {renderField()}
+            {RenderField()}
             {error && (
                 <p className="text-sm text-red-500 mt-1 flex items-center gap-1">
                     <X className="w-3 h-3" />
