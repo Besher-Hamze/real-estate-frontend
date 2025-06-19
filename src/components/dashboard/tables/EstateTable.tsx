@@ -238,7 +238,7 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
       accessorKey: "createdAt",
       cell: (row: RealEstateData) => (
         <div className="text-sm text-gray-500">
-          {new Date(row.createdAt).toLocaleDateString('ar-SA', {
+          {new Date(row.createdAt).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'short',
             day: 'numeric'

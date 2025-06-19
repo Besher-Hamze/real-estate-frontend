@@ -117,7 +117,13 @@ export const RealEstateApi = {
 
             // إضافة الخصائص الديناميكية
             if (data.dynamicProperties) {
-                formData.append('dynamicProperties', JSON.stringify(data.dynamicProperties));
+                // Option 1: If dynamicProperties is an object
+                Object.entries(data.dynamicProperties).forEach(([key, value]) => {
+                    formData.append(`properties[${key}]`, String(value));
+                });
+
+                // Option 2: If you also want to send as JSON (alternative approach)
+                // formData.append('dynamicProperties', JSON.stringify(data.dynamicProperties));
             }
 
             // إضافة الملفات الجديدة
