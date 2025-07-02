@@ -43,6 +43,13 @@ import {
     File,
     ChevronDown,
     ChevronUp,
+    KeyRound,
+    HandCoins,
+    DollarSign,
+    ClipboardList,
+    Handshake,
+    PiggyBank,
+    User
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { RealEstateApi } from "@/api/realEstateApi";
@@ -323,6 +330,16 @@ export default function PropertyDetails() {
     const openFeedbackModal = () => setIsFeedbackModalOpen(true);
     const closeFeedbackModal = () => setIsFeedbackModalOpen(false);
 
+    // Determine if this is a rental property
+    const isRental = property?.mainCategoryName === "إيجار";
+
+    // Note: Add these properties to RealEstateData interface if not exist:
+    // advertiserName?: string;
+    // advertiserType?: 'owner' | 'company';
+    // advertiserPhone?: string;
+    // advertiserWhatsapp?: string;
+    // reviewsCount?: number;
+
     if (isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -488,21 +505,29 @@ export default function PropertyDetails() {
                                 {property.viewTime && (
                                     <Card className="shadow-sm border-0 shadow-md">
                                         <CardHeader className="pb-4">
-                                            <CardTitle className="flex items-center gap-2 text-lg">
-                                                <Clock className="w-5 h-5 text-green-500" />
+                                            <CardTitle className="flex items-center gap-3 text-lg">
+                                                <div className="flex items-center gap-2">
+                                                    <Clock className="w-5 h-5 text-amber-500" />
+                                                    <Calendar className="w-5 h-5 text-green-500" />
+                                                    <Eye className="w-5 h-5 text-blue-500" />
+                                                </div>
                                                 مواعيد المعاينة
                                             </CardTitle>
                                         </CardHeader>
                                         <CardContent>
-                                            <p className="text-gray-700 mb-4 leading-relaxed">
-                                                {property.viewTime.replace(/"/g, '')}
-                                            </p>
+                                            <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg border border-green-200 mb-4">
+                                                {property.viewTime.replace(/"/g, '').split('.').map((time, index) => (
+                                                    <p key={index} className="text-gray-700 leading-relaxed font-medium">
+                                                        {time.trim()}
+                                                    </p>
+                                                ))}
+                                            </div>
                                             <Button
                                                 onClick={openReservationModal}
-                                                className="bg-green-500 hover:bg-green-600 text-white font-medium"
+                                                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium shadow-md"
                                             >
-                                                <Calendar className="w-4 h-4 mr-2" />
-                                                احجز معاينة الآن
+                                                <KeyRound className="w-4 h-4 mr-2" />
+                                                {isRental ? "حجز الشقة الآن" : "حجز العقار الآن"}
                                             </Button>
                                         </CardContent>
                                     </Card>
@@ -631,32 +656,87 @@ export default function PropertyDetails() {
                         transition={{ duration: 0.6, delay: 0.4 }}
                         className="space-y-6"
                     >
-                        {/* Contact Card */}
-                        <Card className="shadow-md border-0 bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                        {/* Advertiser Contact Card */}
+                        <Card className="shadow-md border-0 bg-gradient-to-br from-white to-gray-50">
                             <CardContent className="p-6">
-                                <h3 className="text-xl font-bold mb-6 text-center">تواصل معنا</h3>
+                                {/* Advertiser Info */}
+                                <div className="text-center mb-6">
+                                    {/* Logo/Avatar */}
+                                    <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-2xl shadow-lg">
+                                        {property.advertiserType === 'company' ? (
+                                            <Building2 className="w-10 h-10" />
+                                        ) : (
+                                            <User className="w-10 h-10" />
+                                        )}
+                                    </div>
+
+                                    {/* Advertiser Name */}
+                                    <h3 className="text-xl font-bold text-gray-800 mb-2">
+                                        {property.advertiserName || "المعلن"}
+                                    </h3>
+
+                                    {/* Advertiser Type */}
+                                    <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium mb-4">
+                                        {property.advertiserType === 'company' ? (
+                                            <>
+                                                <Building2 className="w-4 h-4" />
+                                                شركة
+                                            </>
+                                        ) : (
+                                            <>
+                                                <User className="w-4 h-4" />
+                                                مالك
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Contact Methods */}
                                 <div className="space-y-3">
-                                    <Button
-                                        onClick={openReservationModal}
-                                        className="w-full bg-white text-blue-600 hover:bg-gray-100 font-medium shadow-sm"
+                                    {/* Phone Call */}
+                                    <a
+                                        href={`tel:${property.advertiserPhone || '96812345678'}`}
+                                        className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-3 shadow-md hover:shadow-lg"
                                     >
-                                        <Calendar className="w-4 h-4 mr-2" />
-                                        احجز معاينة
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        className="w-full border-white text-blue-600 hover:bg-white hover:text-blue-800 font-medium"
+                                        <Phone className="w-5 h-5" />
+                                        <div className="text-center">
+                                            <div className="font-bold">اتصال مباشر</div>
+                                            <div className="text-sm opacity-90">{property.advertiserPhone || '+968 1234 5678'}</div>
+                                        </div>
+                                    </a>
+
+                                    {/* WhatsApp */}
+                                    <a
+                                        href={`https://wa.me/${(property.advertiserWhatsapp || '96812345678').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`مرحباً، أود الاستفسار عن العقار: ${property.title}\n\nرابط العقار: ${window.location.href}`)}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-3 shadow-md hover:shadow-lg"
                                     >
-                                        <Phone className="w-4 h-4 mr-2" />
-                                        اتصل بنا
-                                    </Button>
-                                    <Button
-                                        onClick={openFeedbackModal}
-                                        className="w-full bg-white text-blue-600 hover:bg-gray-100 font-medium shadow-sm"
-                                    >
-                                        <MessageCircle className="w-4 h-4 mr-2" />
-                                        أرسل استفسار
-                                    </Button>
+                                        <MessageCircle className="w-5 h-5" />
+                                        <div className="text-center">
+                                            <div className="font-bold">واتساب</div>
+                                            <div className="text-sm opacity-90">محادثة فورية</div>
+                                        </div>
+                                    </a>
+
+                                    {/* Action Buttons */}
+                                    <div className="border-t pt-4 mt-4 space-y-2">
+                                        <Button
+                                            onClick={openReservationModal}
+                                            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium shadow-md"
+                                        >
+                                            <KeyRound className="w-4 h-4 mr-2" />
+                                            {isRental ? "حجز الشقة" : "حجز العقار"}
+                                        </Button>
+                                        <Button
+                                            onClick={openFeedbackModal}
+                                            variant="outline"
+                                            className="w-full border-blue-300 text-blue-600 hover:bg-blue-50 font-medium"
+                                        >
+                                            <HandCoins className="w-4 h-4 mr-2" />
+                                            تقديم عرض
+                                        </Button>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
@@ -671,26 +751,41 @@ export default function PropertyDetails() {
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-4">
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">نوع الإعلان</span>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-gray-600 flex items-center gap-2">
+                                            <ClipboardList className="w-4 h-4" />
+                                            نوع الإعلان
+                                        </span>
                                         <Badge variant="default" className="bg-blue-500">
                                             {property.mainCategoryName}
                                         </Badge>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">الفئة</span>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-gray-600 flex items-center gap-2">
+                                            <Home className="w-4 h-4" />
+                                            الفئة
+                                        </span>
                                         <span className="font-medium">{property.subCategoryName}</span>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">النوع</span>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-gray-600 flex items-center gap-2">
+                                            <Building2 className="w-4 h-4" />
+                                            النوع
+                                        </span>
                                         <span className="font-medium">{property.finalTypeName}</span>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">طريقة الدفع</span>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-gray-600 flex items-center gap-2">
+                                            <PiggyBank className="w-4 h-4" />
+                                            طريقة الدفع
+                                        </span>
                                         <span className="font-medium">{property.paymentMethod}</span>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">تاريخ النشر</span>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-gray-600 flex items-center gap-2">
+                                            <Calendar className="w-4 h-4" />
+                                            تاريخ النشر
+                                        </span>
                                         <span className="font-medium">
                                             {new Date(property.createdAt).toLocaleDateString("ar-OM")}
                                         </span>

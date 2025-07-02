@@ -189,7 +189,7 @@ function RealEstatePageContent() {
                     basicFormData.location.trim()
                 );
             case 4:
-                return isDynamicValid || Object.keys(groupedProperties).length === 0;
+                return currentStep == 4 || currentStep > 4;
             case 5:
                 return !!(
                     (basicFormData.coverImage || basicFormData.existingCoverImage || coverImagePreview) &&
@@ -344,6 +344,7 @@ function RealEstatePageContent() {
 
     // Fill dynamic properties after property is loaded and finalTypeId is set
     useEffect(() => {
+
         if (isEditMode && property && selectedFinalTypeId && !dynamicLoading && groupedProperties) {
             // Fill dynamic properties
             if (property.properties) {
@@ -370,6 +371,8 @@ function RealEstatePageContent() {
             }, 100);
         }
     }, [property, selectedFinalTypeId, dynamicLoading, groupedProperties, setDynamicFormData, isEditMode]);
+
+
 
     // Handle property type selection
     const handleFinalTypeSelect = (finalTypeId: number, path: { mainType: MainType; subType: SubType; finalType: FinalType }) => {
@@ -462,8 +465,8 @@ function RealEstatePageContent() {
                 break;
 
             case 3:
-                if (!selectedCityId) newErrors.push('المدينة مطلوبة');
-                if (!selectedNeighborhoodId) newErrors.push('الحي مطلوب');
+                if (!selectedCityId) newErrors.push('المحافظة مطلوبة');
+                if (!selectedNeighborhoodId) newErrors.push('المدينة مطلوب');
                 if (!basicFormData.finalCityId) newErrors.push('المنطقة مطلوبة');
                 if (!basicFormData.location.trim()) newErrors.push('الموقع على الخريطة مطلوب');
                 break;
@@ -515,7 +518,7 @@ function RealEstatePageContent() {
         }
 
         if (!selectedCityId || !selectedNeighborhoodId) {
-            toast.error('يرجى اختيار المدينة والحي');
+            toast.error('يرجى اختيار المحافظة والمدينة');
             return;
         }
 
@@ -605,6 +608,32 @@ function RealEstatePageContent() {
         }
     };
 
+    useEffect(() => {
+        if (basicFormData.finalCityId && !isEditMode) {
+            const selectedFinalCity = finalCities.find(c => c.id === Number(basicFormData.finalCityId));
+            if (selectedFinalCity?.location) {
+                // Only update if current location is empty or if it's the default coordinates
+                const currentLocation = basicFormData.location;
+                const isDefaultLocation = currentLocation === '23.5880,58.3829' || !currentLocation;
+
+                if (isDefaultLocation) {
+                    updateBasicField('location', selectedFinalCity.location);
+                }
+            } else if (!basicFormData.location) {
+                // Set default Oman coordinates if no specific location for the final city
+                updateBasicField('location', '23.5880,58.3829');
+            }
+        }
+    }, [basicFormData.finalCityId, finalCities, isEditMode]);
+
+    // Also add this useEffect to set initial location when finalCities load
+    useEffect(() => {
+        if (!isEditMode && !isLoadingBuilding && !basicFormData.location && finalCities.length > 0) {
+            // Set default location when component loads if no location is set
+            updateBasicField('location', '23.5880,58.3829');
+        }
+    }, [finalCities, isEditMode, isLoadingBuilding, basicFormData.location]);
+
     // Show loading screen
     if (isLoading || isLoadingBuilding) {
         return (
@@ -619,6 +648,31 @@ function RealEstatePageContent() {
             </div>
         );
     }
+
+    const getLocationCoordinates = () => {
+        if (basicFormData.location) {
+            const coords = basicFormData.location.split(',');
+            return {
+                lat: parseFloat(coords[0]) || 23.5880,
+                lng: parseFloat(coords[1]) || 58.3829
+            };
+        }
+
+        // Try to get from selected final city
+        if (basicFormData.finalCityId) {
+            const selectedFinalCity = finalCities.find(c => c.id === Number(basicFormData.finalCityId));
+            if (selectedFinalCity?.location) {
+                const coords = selectedFinalCity.location.split(',');
+                return {
+                    lat: parseFloat(coords[0]) || 23.5880,
+                    lng: parseFloat(coords[1]) || 58.3829
+                };
+            }
+        }
+
+        // Default Oman coordinates
+        return { lat: 23.5880, lng: 58.3829 };
+    };
 
     // Render step content
     const renderStepContent = () => {
@@ -810,7 +864,7 @@ function RealEstatePageContent() {
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
-                                                <Label htmlFor="city">المدينة *</Label>
+                                                <Label htmlFor="city">المحافظة *</Label>
                                                 <select
                                                     id="city"
                                                     value={selectedCityId || ''}
@@ -818,7 +872,7 @@ function RealEstatePageContent() {
                                                     className="w-full mt-1 p-2 border rounded-md"
                                                     disabled={locationLoading}
                                                 >
-                                                    <option value="">اختر المدينة</option>
+                                                    <option value="">اختر المحافظة</option>
                                                     {cities.map(city => (
                                                         <option key={city.id} value={city.id}>
                                                             {city.name}
@@ -828,7 +882,7 @@ function RealEstatePageContent() {
                                             </div>
 
                                             <div>
-                                                <Label htmlFor="neighborhood">الحي *</Label>
+                                                <Label htmlFor="neighborhood">المدينة *</Label>
                                                 <select
                                                     id="neighborhood"
                                                     value={selectedNeighborhoodId || ''}
@@ -836,7 +890,7 @@ function RealEstatePageContent() {
                                                     className="w-full mt-1 p-2 border rounded-md"
                                                     disabled={!selectedCityId || locationLoading}
                                                 >
-                                                    <option value="">اختر الحي</option>
+                                                    <option value="">اختر المدينة</option>
                                                     {neighborhoods.map(neighborhood => (
                                                         <option key={neighborhood.id} value={neighborhood.id}>
                                                             {neighborhood.name}
@@ -869,20 +923,8 @@ function RealEstatePageContent() {
                                             <div className="mt-1">
                                                 <LocationPicker
                                                     key={`location-picker-${basicFormData.finalCityId || 'default'}`}
-                                                    initialLatitude={
-                                                        basicFormData.location
-                                                            ? parseFloat(basicFormData.location.split(',')[0])
-                                                            : finalCities.find(c => c.id === Number(basicFormData.finalCityId))?.location
-                                                                ? parseFloat(finalCities.find(c => c.id === Number(basicFormData.finalCityId))?.location?.split(',')[0] || '0')
-                                                                : 23.5880
-                                                    }
-                                                    initialLongitude={
-                                                        basicFormData.location
-                                                            ? parseFloat(basicFormData.location.split(',')[1])
-                                                            : finalCities.find(c => c.id === Number(basicFormData.finalCityId))?.location
-                                                                ? parseFloat(finalCities.find(c => c.id === Number(basicFormData.finalCityId))?.location?.split(',')[1] || '0')
-                                                                : 58.3829
-                                                    }
+                                                    initialLatitude={getLocationCoordinates().lat}
+                                                    initialLongitude={getLocationCoordinates().lng}
                                                     onLocationSelect={(latitude, longitude) => {
                                                         updateBasicField('location', `${latitude},${longitude}`);
                                                     }}
@@ -910,7 +952,7 @@ function RealEstatePageContent() {
                                     <div className="space-y-4">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
-                                                <Label htmlFor="city">المدينة *</Label>
+                                                <Label htmlFor="city">المحافظة *</Label>
                                                 <select
                                                     id="city"
                                                     value={selectedCityId || ''}
@@ -918,7 +960,7 @@ function RealEstatePageContent() {
                                                     className="w-full mt-1 p-2 border rounded-md"
                                                     disabled={locationLoading}
                                                 >
-                                                    <option value="">اختر المدينة</option>
+                                                    <option value="">اختر المحافظة</option>
                                                     {cities.map(city => (
                                                         <option key={city.id} value={city.id}>
                                                             {city.name}
@@ -928,7 +970,7 @@ function RealEstatePageContent() {
                                             </div>
 
                                             <div>
-                                                <Label htmlFor="neighborhood">الحي *</Label>
+                                                <Label htmlFor="neighborhood">المدينة *</Label>
                                                 <select
                                                     id="neighborhood"
                                                     value={selectedNeighborhoodId || ''}
@@ -936,7 +978,7 @@ function RealEstatePageContent() {
                                                     className="w-full mt-1 p-2 border rounded-md"
                                                     disabled={!selectedCityId || locationLoading}
                                                 >
-                                                    <option value="">اختر الحي</option>
+                                                    <option value="">اختر المدينة</option>
                                                     {neighborhoods.map(neighborhood => (
                                                         <option key={neighborhood.id} value={neighborhood.id}>
                                                             {neighborhood.name}
@@ -969,20 +1011,8 @@ function RealEstatePageContent() {
                                             <div className="mt-1">
                                                 <LocationPicker
                                                     key={`location-picker-${basicFormData.finalCityId || 'default'}`}
-                                                    initialLatitude={
-                                                        basicFormData.location
-                                                            ? parseFloat(basicFormData.location.split(',')[0])
-                                                            : finalCities.find(c => c.id === Number(basicFormData.finalCityId))?.location
-                                                                ? parseFloat(finalCities.find(c => c.id === Number(basicFormData.finalCityId))?.location?.split(',')[0] || '0')
-                                                                : 23.5880
-                                                    }
-                                                    initialLongitude={
-                                                        basicFormData.location
-                                                            ? parseFloat(basicFormData.location.split(',')[1])
-                                                            : finalCities.find(c => c.id === Number(basicFormData.finalCityId))?.location
-                                                                ? parseFloat(finalCities.find(c => c.id === Number(basicFormData.finalCityId))?.location?.split(',')[1] || '0')
-                                                                : 58.3829
-                                                    }
+                                                    initialLatitude={getLocationCoordinates().lat}
+                                                    initialLongitude={getLocationCoordinates().lng}
                                                     onLocationSelect={(latitude, longitude) => {
                                                         updateBasicField('location', `${latitude},${longitude}`);
                                                     }}

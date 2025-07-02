@@ -83,7 +83,7 @@ export const PropertyFeedbackModal: React.FC<PropertyFeedbackModalProps> = ({
                             <div className="p-4 bg-blue-50 rounded-xl mb-6">
                                 <p className="text-gray-700">أرسل طلب عرض لهذا العقار أو للحصول على عقار مشابه. سنتواصل معك في أقرب وقت ممكن.</p>
                             </div>
-                            
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="relative">
                                     <label htmlFor="feedback-name" className="block text-gray-700 mb-2 font-medium">الاسم كامل <span className="text-red-500">*</span></label>
@@ -102,7 +102,7 @@ export const PropertyFeedbackModal: React.FC<PropertyFeedbackModalProps> = ({
                                         />
                                     </div>
                                 </div>
-                                
+
                                 <div className="relative">
                                     <label htmlFor="feedback-phone" className="block text-gray-700 mb-2 font-medium">رقم الهاتف <span className="text-red-500">*</span></label>
                                     <div className="relative">
@@ -159,7 +159,7 @@ export const PropertyFeedbackModal: React.FC<PropertyFeedbackModalProps> = ({
                             </div>
 
                             <div className="relative">
-                                <label htmlFor="feedback-description" className="block text-gray-700 mb-2 font-medium">وصف العقار المطلوب <span className="text-red-500">*</span></label>
+                                <label htmlFor="feedback-description" className="block text-gray-700 mb-2 font-medium">وصف العرض <span className="text-red-500">*</span></label>
                                 <div className="relative">
                                     <div className="absolute top-3 right-3">
                                         <MessageSquare className="h-5 w-5 text-gray-400" />
@@ -180,9 +180,8 @@ export const PropertyFeedbackModal: React.FC<PropertyFeedbackModalProps> = ({
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className={`bg-blue-600 text-white px-8 py-3 rounded-lg font-medium transition-colors w-full md:w-auto flex items-center justify-center gap-2 ${
-                                        isSubmitting ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-700'
-                                    }`}
+                                    className={`bg-blue-600 text-white px-8 py-3 rounded-lg font-medium transition-colors w-full md:w-auto flex items-center justify-center gap-2 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-700'
+                                        }`}
                                 >
                                     <Send className="w-5 h-5" />
                                     {isSubmitting ? 'جاري الإرسال...' : 'إرسال الطلب'}

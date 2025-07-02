@@ -1,4 +1,5 @@
 import { LucideIcon } from "lucide-react";
+import { string } from "yup";
 
 export interface RealEstateFilters {
   type: string;
@@ -69,6 +70,10 @@ export interface RealEstateData {
   buildingName?: string;
   files: string[];
   createdAt: string;
+  advertiserType: "company" | "user";
+  advertiserName: string;
+  advertiserPhone: string;
+  advertiserWhatsapp: string;
   // الخصائص الديناميكية
   properties: DynamicProperties;
 
@@ -315,6 +320,11 @@ export interface CreateRealEstateData {
   mainCategoryId: number;
   subCategoryId: number;
   finalTypeId: number;
+  advertiserType: "company" | "user";
+  advertiserName: string;
+  advertiserPhone: string;
+  advertiserWhatsapp: string;
+  advertiserLogo: File;
   cityId: number;
   neighborhoodId: number;
   finalCityId: number;
