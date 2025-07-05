@@ -300,7 +300,7 @@ const ViewingTimeSelector: React.FC<ViewingTimeProps> = ({
                 </svg>
               </div>
               <p className="text-sm text-gray-500 mb-2">لم يتم تحديد أوقات معاينة</p>
-              <p className="text-xs text-gray-400">انقر على إضافة وقت لتحديد الأوقات المتاحة أو اختر "متاح على مدار الساعة"</p>
+              <p className="text-xs text-gray-400">انقر على إضافة وقت لتحديد الأوقات المتاحة أو اختر متاح على مدار الساعة</p>
             </div>
           )}
         </div>
