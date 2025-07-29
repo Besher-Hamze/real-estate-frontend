@@ -142,7 +142,7 @@ export default function BuildingsTable() {
       )
     },
     {
-      header: "عدد العقارات",
+      header: "عدد الإعلانات",
       accessorKey: "realEstateCount",
       cell: (row: Building) => (
         <div className="text-sm font-medium text-gray-700">
@@ -190,7 +190,7 @@ export default function BuildingsTable() {
     },
     {
       icon: <Home className="w-4 h-4" />,
-      label: "عرض العقارات",
+      label: "عرض الإعلانات",
       onClick: handleViewRealEstates,
       color: "text-green-600"
     },
@@ -249,7 +249,7 @@ export default function BuildingsTable() {
         <div className="bg-white rounded-lg p-4 mb-6 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <div>
-              <span className="text-gray-600">إجمالي العقارات:</span>
+              <span className="text-gray-600">إجمالي الإعلانات:</span>
               <span className="font-semibold text-lg mr-2">{buildingRealEstates.length}</span>
             </div>
             <div>
@@ -289,7 +289,7 @@ export default function BuildingsTable() {
 
         {realEstateError ? (
           <div className="bg-red-50 border border-red-200 text-red-800 rounded-lg p-4 mb-6">
-            <p className="font-semibold">حدث خطأ أثناء تحميل العقارات</p>
+            <p className="font-semibold">حدث خطأ أثناء تحميل الإعلانات</p>
             <p className="text-sm mt-2">يرجى المحاولة مرة أخرى لاحقًا.</p>
           </div>
         ) : (
@@ -320,7 +320,7 @@ export default function BuildingsTable() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">إدارة المباني</h1>
-            <p className="text-gray-600">عرض وإدارة جميع المباني والعقارات المرتبطة بها</p>
+            <p className="text-gray-600">عرض وإدارة جميع المباني والإعلانات المرتبطة بها</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-center">
@@ -331,7 +331,7 @@ export default function BuildingsTable() {
               <p className="text-2xl font-bold text-green-600">
                 {buildings?.reduce((sum, building) => sum + (building.realEstateCount || 0), 0) || 0}
               </p>
-              <p className="text-sm text-gray-600">إجمالي العقارات</p>
+              <p className="text-sm text-gray-600">إجمالي الإعلانات</p>
             </div>
           </div>
         </div>

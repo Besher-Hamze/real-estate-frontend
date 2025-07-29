@@ -35,61 +35,72 @@ const ImageUploadModal: React.FC<EnhancedImageUploadProps> = ({
 
 
   const processFileUpload = (e: React.ChangeEvent<HTMLInputElement>, clickedIndex: number) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    const MAX_FILE_SIZE = 10 * 1024 * 1024;
-    if (file.size > MAX_FILE_SIZE) {
-      toast.error('حجم الملف كبير جدًا. الحد الأقصى هو 10 ميجابايت');
-      return;
-    }
+    Array.from(files).forEach((file, fileIdx) => {
+      const MAX_FILE_SIZE = 10 * 1024 * 1024;
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error('حجم الملف كبير جدًا. الحد الأقصى هو 10 ميجابايت');
+        return;
+      }
 
-    const isImage = file.type.startsWith('image/');
-    const isVideo = file.type.startsWith('video/');
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
 
-    if (!isImage && !isVideo) {
-      toast.error('يُرجى اختيار ملف صورة أو فيديو صالح');
-      return;
-    }
+      if (!isImage && !isVideo) {
+        toast.error('يُرجى اختيار ملف صورة أو فيديو صالح');
+        return;
+      }
 
-    if (isVideo) {
-      const video = document.createElement('video');
-      video.preload = 'metadata';
+      if (isVideo) {
+        const video = document.createElement('video');
+        video.preload = 'metadata';
 
-      video.onloadedmetadata = function () {
-        window.URL.revokeObjectURL(video.src);
+        video.onloadedmetadata = function () {
+          window.URL.revokeObjectURL(video.src);
 
-        const MAX_VIDEO_DURATION = 60;
-        if (video.duration > MAX_VIDEO_DURATION) {
-          toast.error(`مدة الفيديو (${Math.round(video.duration)} ثانية) تتجاوز الحد المسموح به (${MAX_VIDEO_DURATION} ثانية)`);
-          return;
-        }
+          const MAX_VIDEO_DURATION = 60;
+          if (video.duration > MAX_VIDEO_DURATION) {
+            toast.error(`مدة الفيديو (${Math.round(video.duration)} ثانية) تتجاوز الحد المسموح به (${MAX_VIDEO_DURATION} ثانية)`);
+            return;
+          }
 
-        continueWithUpload();
-      };
+          continueWithUpload(file, fileIdx);
+        };
 
-      video.onerror = function () {
-        window.URL.revokeObjectURL(video.src);
-        toast.error('فشل في التحقق من الفيديو، يرجى التأكد من صحة الملف');
-      };
+        video.onerror = function () {
+          window.URL.revokeObjectURL(video.src);
+          toast.error('فشل في التحقق من الفيديو، يرجى التأكد من صحة الملف');
+        };
 
-      video.src = URL.createObjectURL(file);
-      return;
-    }
+        video.src = URL.createObjectURL(file);
+        return;
+      }
 
-    // بالنسبة للصور، استمر مباشرة
-    continueWithUpload();
+      // بالنسبة للصور، استمر مباشرة
+      continueWithUpload(file, fileIdx);
+    });
 
-    function continueWithUpload() {
+    function continueWithUpload(file: File, fileIdx: number) {
       let targetIndex;
-      if (additionalImagePreviews[clickedIndex]) {
-        targetIndex = clickedIndex;
+      if (additionalImagePreviews[clickedIndex + fileIdx]) {
+        targetIndex = clickedIndex + fileIdx;
       } else {
         targetIndex = additionalImagePreviews.length;
       }
 
-      // استدعاء دالة التحميل الأصلية مع الفهرس المصحح
-      handleFileUpload(e, targetIndex);
+      // أنشئ حدثًا جديدًا لكل ملف
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(file);
+      const newEvent = {
+        ...e,
+        target: {
+          ...e.target,
+          files: dataTransfer.files,
+        },
+      } as React.ChangeEvent<HTMLInputElement>;
+      handleFileUpload(newEvent, targetIndex);
     }
   };
 
@@ -219,6 +230,7 @@ const ImageUploadModal: React.FC<EnhancedImageUploadProps> = ({
             <input
               type="file"
               accept="image/*, video/*"
+              multiple
               onChange={(e) => processFileUpload(e, index)}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
               disabled={isUploading}

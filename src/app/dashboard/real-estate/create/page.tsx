@@ -410,26 +410,28 @@ function RealEstatePageContent() {
     };
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
-        const file = e.target.files?.[0];
-        if (file) {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        const newPreviews = [...additionalImagePreviews];
+        const newFileTypes = [...additionalFileTypes];
+        const fileList = Array.isArray(basicFormData.files) ? [...basicFormData.files] : [];
+
+        Array.from(files).forEach((file, i) => {
             const reader = new FileReader();
-            reader.onload = (e) => {
-                if (e.target?.result) {
-                    const newPreviews = [...additionalImagePreviews];
-                    newPreviews[index] = e.target.result as string;
-                    setAdditionalImagePreviews(newPreviews);
+            reader.onload = (ev) => {
+                if (ev.target?.result) {
+                    newPreviews[index + i] = ev.target.result as string;
                 }
             };
             reader.readAsDataURL(file);
+            fileList[index + i] = file;
+            newFileTypes[index + i] = file.type;
+        });
 
-            const files = Array.isArray(basicFormData.files) ? [...basicFormData.files] : [];
-            files[index] = file;
-            const newFileTypes = [...additionalFileTypes];
-            newFileTypes[index] = file.type;
-            setAdditionalFileTypes(newFileTypes);
-
-            updateBasicField('files', files);
-        }
+        setAdditionalImagePreviews(newPreviews);
+        setAdditionalFileTypes(newFileTypes);
+        updateBasicField('files', fileList);
     };
 
     const handleDeleteAdditionalImage = (index: number) => {
@@ -852,7 +854,7 @@ function RealEstatePageContent() {
                                                         <div className="text-sm text-green-700 space-y-1">
                                                             <p><strong>اسم المبنى:</strong> {selectedBuilding.title}</p>
                                                             <p><strong>الحالة:</strong> {selectedBuilding.status}</p>
-                                                            <p><strong>عدد العقارات الحالية:</strong> {selectedBuilding.realEstateCount || 0}</p>
+                                                            <p><strong>عدد الإعلانات الحالية:</strong> {selectedBuilding.realEstateCount || 0}</p>
                                                             {selectedBuilding.location && (
                                                                 <p><strong>الموقع الحالي:</strong> {selectedBuilding.location}</p>
                                                             )}
@@ -1053,7 +1055,7 @@ function RealEstatePageContent() {
                                                 {selectedTypePath.mainType.name} - {selectedTypePath.subType.name} - {selectedTypePath.finalType.name}
                                             </h3>
                                             <p className="text-sm text-blue-700">
-                                                املأ الخصائص المطلوبة لهذا النوع من العقارات
+                                                املأ الخصائص المطلوبة لهذا النوع من الإعلانات
                                                 {selectedBuilding && ` في مبنى ${selectedBuilding.title}`}
                                             </p>
                                         </div>

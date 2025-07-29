@@ -56,10 +56,10 @@ export default function FeaturedProperties() {
                 >
                     <span className="text-blue-600 font-semibold mb-4 block">عقارات مميزة</span>
                     <h2 className="text-4xl font-bold mb-6 bg-gradient-to-l from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                        اكتشف أفضل العقارات المتاحة
+                        اكتشف أفضل الإعلانات المتاحة
                     </h2>
                     <p className="text-gray-600 max-w-2xl mx-auto text-lg leading-relaxed">
-                        نقدم لك مجموعة منتقاة من أفضل العقارات في أرقى المناطق السكنية
+                        نقدم لك مجموعة منتقاة من أفضل الإعلانات في أرقى المناطق السكنية
                     </p>
                 </motion.div>
 
@@ -181,7 +181,7 @@ export default function FeaturedProperties() {
                             whileTap={{ scale: 0.98 }}
                             className="bg-white text-blue-600 border-2 border-blue-600 px-8 py-4 rounded-xl hover:bg-blue-50 transition-colors font-semibold"
                         >
-                            عرض جميع العقارات
+                            عرض جميع الإعلانات
                         </motion.button>
                     </Link>
 

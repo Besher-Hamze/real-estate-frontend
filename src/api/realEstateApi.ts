@@ -3,7 +3,7 @@ import apiClient from ".";
 
 export const RealEstateApi = {
     /**
-     * جلب جميع العقارات
+     * جلب جميع الإعلانات
      */
     fetchAll: async (filters?: Partial<RealEstateFilters>): Promise<RealEstateData[]> => {
         try {
@@ -163,7 +163,7 @@ export const RealEstateApi = {
     },
 
     /**
-     * البحث في العقارات
+     * البحث في الإعلانات
      */
     search: async (query: string, filters?: Partial<RealEstateFilters>): Promise<RealEstateData[]> => {
         try {
@@ -187,7 +187,7 @@ export const RealEstateApi = {
     },
 
     /**
-     * جلب العقارات المفضلة
+     * جلب الإعلانات المفضلة
      */
     fetchFavorites: async (): Promise<RealEstateData[]> => {
         try {
@@ -213,7 +213,7 @@ export const RealEstateApi = {
     },
 
     /**
-     * جلب العقارات حسب النوع النهائي
+     * جلب الإعلانات حسب النوع النهائي
      */
     fetchByFinalType: async (finalTypeId: number): Promise<RealEstateData[]> => {
         try {
@@ -226,7 +226,7 @@ export const RealEstateApi = {
     },
 
     /**
-     * جلب العقارات حسب المدينة
+     * جلب الإعلانات حسب المدينة
      */
     fetchByCity: async (cityId: number): Promise<RealEstateData[]> => {
         try {
@@ -239,7 +239,7 @@ export const RealEstateApi = {
     },
 
     /**
-     * جلب إحصائيات العقارات
+     * جلب إحصائيات الإعلانات
      */
     fetchStats: async (): Promise<{
         total: number;
@@ -327,7 +327,7 @@ export const RealEstateApi = {
     },
 
     /**
-     * جلب العقارات المشابهة
+     * جلب الإعلانات المشابهة
      */
     fetchSimilarRealEstate: async (id: number): Promise<RealEstateData[]> => {
         try {
@@ -340,7 +340,7 @@ export const RealEstateApi = {
     },
 
     /**
-     * جلب العقارات حسب عنصر المبنى
+     * جلب الإعلانات حسب عنصر المبنى
      */
     fetchRealEstateByBuildingItemId: async (buildingItemId: string): Promise<RealEstateData[]> => {
         try {
@@ -369,7 +369,7 @@ export const RealEstateApi = {
     },
 
     /**
-     * فلترة العقارات حسب النوع
+     * فلترة الإعلانات حسب النوع
      */
     fetchFilter: async (mainTypeName: string, subTypeName?: string, finalTypeName?: string) => {
         try {

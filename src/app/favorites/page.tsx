@@ -116,8 +116,8 @@ export default function FavoritesPage() {
             </Link>
           </div>
 
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">العقارات المفضلة</h1>
-          <p className="text-white/80 text-lg mb-8">العقارات التي اخترتها ضمن قائمة المفضلة</p>
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">الإعلانات المفضلة</h1>
+          <p className="text-white/80 text-lg mb-8">الإعلانات التي اخترتها ضمن قائمة المفضلة</p>
 
           {/* Search and Filter Bar */}
           <div className="bg-white rounded-xl shadow-lg p-4 flex flex-col md:flex-row items-stretch md:items-center gap-4 -mb-16 relative z-10">
@@ -218,7 +218,7 @@ export default function FavoritesPage() {
                       href="/"
                       className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
                     >
-                      تصفح العقارات
+                      تصفح الإعلانات
                     </Link>
                   )}
                 </div>

@@ -10,7 +10,7 @@ export default function HeroSection() {
         {
             image: '/images/bg-real.jpg',
             title: 'فخامة السكن في عمان',
-            subtitle: 'اكتشف أرقى العقارات في السلطنة'
+            subtitle: 'اكتشف أرقى الإعلانات في السلطنة'
         },
         {
             image: '/images/hero_bg_2.jpg',
@@ -28,7 +28,7 @@ export default function HeroSection() {
         {
             icon: Building2,
             title: 'عقارات فاخرة',
-            description: 'اختر من بين مجموعة واسعة من العقارات الراقية'
+            description: 'اختر من بين مجموعة واسعة من الإعلانات الراقية'
         },
         {
             icon: MapPin,

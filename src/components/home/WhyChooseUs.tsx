@@ -6,7 +6,7 @@ export default function WhyChooseUs() {
         {
             icon: Trophy,
             title: 'عقارات حصرية',
-            description: 'نوفر لك أفضل العقارات المميزة في جميع أنحاء السلطنة',
+            description: 'نوفر لك أفضل الإعلانات المميزة في جميع أنحاء السلطنة',
             stat: '+500',
             statLabel: 'عقار متاح'
         },
@@ -37,7 +37,7 @@ export default function WhyChooseUs() {
                 >
                     <span className="text-blue-600 font-semibold mb-4 block">لماذا تختارنا</span>
                     <h2 className="text-4xl font-bold mb-6 bg-gradient-to-l from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                        شريكك الموثوق في عالم العقارات
+                        شريكك الموثوق في عالم الإعلانات
                     </h2>
                     <p className="text-gray-600 max-w-2xl mx-auto text-lg leading-relaxed">
                         نقدم لك خدمات عقارية متكاملة مع ضمان الجودة والموثوقية لتحقيق تطلعاتك في السكن المثالي

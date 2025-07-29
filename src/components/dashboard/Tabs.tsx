@@ -136,7 +136,7 @@ export default function Tabs({ activeTab, setActiveTab }: TabsProps) {
           }}
         />
         <TabButton
-          label="العقارات"
+          label="الإعلانات"
           icon={<Home className="w-5 h-5" />}
           isActive={activeTab === "estate"}
           onClick={() => {

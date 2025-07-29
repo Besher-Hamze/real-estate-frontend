@@ -134,7 +134,7 @@ export function RealEstateListModal({
                     ) : (
                         <>
                             <div className="sticky top-0 bg-white p-4 border-b flex justify-between items-center z-10">
-                                <h2 className="text-xl font-semibold">العقارات المرتبطة</h2>
+                                <h2 className="text-xl font-semibold">الإعلانات المرتبطة</h2>
                                 <button
                                     onClick={onClose}
                                     className="text-gray-500 hover:text-gray-700"
@@ -148,7 +148,7 @@ export function RealEstateListModal({
                                         <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
                                     </div>
                                 ) : error ? (
-                                    <p className="text-center text-red-500 py-6">حدث خطأ في جلب العقارات</p>
+                                    <p className="text-center text-red-500 py-6">حدث خطأ في جلب الإعلانات</p>
                                 ) : realEstates && realEstates.length > 0 ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                         {(Array.isArray(realEstates) ? realEstates : [realEstates]).map((item: RealEstateData) => (

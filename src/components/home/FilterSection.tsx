@@ -658,7 +658,7 @@ const FilterSection = ({
           <div className="flex items-center gap-3">
             <Filter className="w-5 h-5 text-white" />
             <div>
-              <h2 className="font-bold text-white text-lg">فلترة العقارات</h2>
+              <h2 className="font-bold text-white text-lg">فلترة الإعلانات</h2>
               <p className="text-white/80 text-sm">اختر أكثر من خيار للبحث الدقيق</p>
             </div>
             {activeFilterCount > 0 && (

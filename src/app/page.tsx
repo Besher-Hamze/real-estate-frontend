@@ -160,7 +160,7 @@ export default function PremiumLanding(): JSX.Element {
               اكتشف عقارات مميزة
             </h2>
             <p className="text-gray-600 text-lg">
-              اختر من مجموعة واسعة من العقارات المميزة
+              اختر من مجموعة واسعة من الإعلانات المميزة
             </p>
           </motion.div>
 

@@ -39,10 +39,10 @@ export default function Navbar() {
             path: '/'
         },
         {
-            name: 'العقارات',
+            name: 'الإعلانات',
             path: '/properties',
             dropdownItems: [
-                { name: 'جميع العقارات', path: '/properties' },
+                { name: 'جميع الإعلانات', path: '/properties' },
                 { name: 'الفلل', path: '/properties' },
                 { name: 'الشقق', path: '/properties' },
                 { name: 'الأراضي', path: '/properties' }

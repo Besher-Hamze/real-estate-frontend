@@ -42,7 +42,7 @@ export default function PropertiesPage() {
 
     const itemsPerPage = 12;
 
-    // جلب العقارات عند التحميل
+    // جلب الإعلانات عند التحميل
     useEffect(() => {
         const fetchProperties = async () => {
             try {
@@ -129,7 +129,7 @@ export default function PropertiesPage() {
         setCurrentPage(1); // إعادة تعيين الصفحة عند تغيير الفلاتر
     }, [properties, searchQuery, activeFilters, sortOption]);
 
-    // حساب العقارات للصفحة الحالية
+    // حساب الإعلانات للصفحة الحالية
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const currentProperties = filteredProperties.slice(startIndex, endIndex);
@@ -187,7 +187,7 @@ export default function PropertiesPage() {
                         <SearchBar
                             value={searchQuery}
                             onChange={setSearchQuery}
-                            placeholder="ابحث عن العقارات..."
+                            placeholder="ابحث عن الإعلانات..."
                         />
 
                         {/* Controls */}
@@ -279,7 +279,7 @@ export default function PropertiesPage() {
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-2">
                                 <h1 className="text-2xl font-bold text-gray-900">
-                                    العقارات المتاحة
+                                    الإعلانات المتاحة
                                 </h1>
                                 <Badge variant="outline" className="text-sm">
                                     {filteredProperties.length} عقار

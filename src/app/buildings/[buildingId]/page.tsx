@@ -120,7 +120,7 @@ function BuildingContent({ buildingId }: { buildingId: string }) {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="flex flex-col items-center p-4 border-r border-gray-100">
                                 <span className="text-3xl font-bold text-blue-600">{realEstates.length}</span>
-                                <span className="text-gray-600 mt-2">إجمالي العقارات</span>
+                                <span className="text-gray-600 mt-2">إجمالي الإعلانات</span>
                             </div>
                             <div className="flex flex-col items-center p-4 border-r border-gray-100">
                                 <span className="text-3xl font-bold text-blue-600">
@@ -145,7 +145,7 @@ function BuildingContent({ buildingId }: { buildingId: string }) {
                 {/* Real Estate Properties Section */}
                 <div className="mb-12">
                     <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-2xl font-bold text-gray-800">العقارات المتاحة</h2>
+                        <h2 className="text-2xl font-bold text-gray-800">الإعلانات المتاحة</h2>
                     </div>
 
                     {realEstates.length === 0 ? (

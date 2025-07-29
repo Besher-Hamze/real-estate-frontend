@@ -135,7 +135,7 @@ export default function EstateTable({ realEstateData, isLoading, mainTypes }: Es
       selection.clearSelection();
       toast.success(`تم حذف ${selection.selectedIds.length} عقار بنجاح`);
     } catch (error) {
-      toast.error("حدث خطأ أثناء حذف العقارات المحددة");
+      toast.error("حدث خطأ أثناء حذف الإعلانات المحددة");
       console.error(error);
     } finally {
       selection.setIsBulkDeleting(false);

@@ -127,7 +127,7 @@ export default function SearchComponent() {
                                 className="bg-gradient-to-l from-blue-600 to-blue-500 text-white p-4 h-[58px] rounded-xl hover:from-blue-700 hover:to-blue-600 transition-all duration-300 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30 cursor-pointer"
                             >
                                 <Search className="w-5 h-5" />
-                                <span className="font-medium">بحث العقارات</span>
+                                <span className="font-medium">بحث الإعلانات</span>
                             </motion.a>
                         </Link>
                     </div>

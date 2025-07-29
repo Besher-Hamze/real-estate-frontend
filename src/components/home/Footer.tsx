@@ -20,7 +20,7 @@ export default function Footer() {
                                 نوفر لك أفضل الخدمات العقارية في سلطنة عمان مع ضمان الجودة والموثوقية. نحن نفخر بتقديم خدمات استثنائية لعملائنا.
                             </p>
                         </div>
-                        
+
                         {/* Contact Info */}
                         <div className="space-y-4">
                             <div className="flex items-center gap-3 text-gray-400">
@@ -42,10 +42,10 @@ export default function Footer() {
                     <div className="md:col-span-1">
                         <h4 className="text-lg font-bold text-white mb-6">روابط سريعة</h4>
                         <ul className="space-y-4">
-                            {['الرئيسية', 'العقارات', 'من نحن', 'اتصل بنا'].map((item) => (
+                            {['الرئيسية', 'الإعلانات', 'من نحن', 'اتصل بنا'].map((item) => (
                                 <li key={item}>
-                                    <a 
-                                        href="#" 
+                                    <a
+                                        href="#"
                                         className="text-gray-400 hover:text-white transition-colors duration-300 flex items-center gap-2"
                                     >
                                         <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
@@ -60,10 +60,10 @@ export default function Footer() {
                     <div className="md:col-span-1">
                         <h4 className="text-lg font-bold text-white mb-6">خدماتنا</h4>
                         <ul className="space-y-4">
-                            {['بيع العقارات', 'شراء العقارات', 'تأجير العقارات', 'تقييم العقارات'].map((item) => (
+                            {['بيع الإعلانات', 'شراء الإعلانات', 'تأجير الإعلانات', 'تقييم الإعلانات'].map((item) => (
                                 <li key={item}>
-                                    <a 
-                                        href="#" 
+                                    <a
+                                        href="#"
                                         className="text-gray-400 hover:text-white transition-colors duration-300 flex items-center gap-2"
                                     >
                                         <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />

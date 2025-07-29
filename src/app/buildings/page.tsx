@@ -100,7 +100,7 @@ const BuildingCard: React.FC<{ building: Building }> = ({ building }) => {
                     hover:bg-blue-700 transition-colors group-hover:bg-blue-700"
                 >
                     <List className="inline-block ml-2 w-5 h-5" />
-                    عرض العقارات
+                    عرض الإعلانات
                 </Link>
             </div>
         </motion.div>

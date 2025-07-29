@@ -50,10 +50,9 @@ export const BuildingItemList: React.FC<BuildingItemListProps> = ({
           {onViewRealEstate && (
             <button
               onClick={() => onViewRealEstate(item)}
-              className={`${
-                item.realestateCount ? 'text-green-600 hover:text-green-800' : 'text-gray-400 cursor-not-allowed'
-              } transition-colors p-1`}
-              title={item.realestateCount ? "عرض العقارات" : "لا توجد عقارات"}
+              className={`${item.realestateCount ? 'text-green-600 hover:text-green-800' : 'text-gray-400 cursor-not-allowed'
+                } transition-colors p-1`}
+              title={item.realestateCount ? "عرض الإعلانات" : "لا توجد عقارات"}
               disabled={!item.realestateCount}
             >
               <div className="relative">
