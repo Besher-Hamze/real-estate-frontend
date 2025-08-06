@@ -2,7 +2,7 @@
 'use client';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Clock, User, X, Check, MessageSquare } from 'lucide-react';
+import { Calendar, Clock, User, X, Check, MessageSquare, Link } from 'lucide-react';
 import { reservationsApi } from '@/api/reservationsApi';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'react-toastify';
@@ -28,7 +28,7 @@ export default function PropertyReservation({
     notes: ''
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const { user, isLoggedIn } = useAuth();
 
@@ -38,7 +38,7 @@ export default function PropertyReservation({
       ...prev,
       [name]: value
     }));
-    
+
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
@@ -49,7 +49,7 @@ export default function PropertyReservation({
   };
 
   const validateForm = () => {
-    const newErrors: {[key: string]: string} = {};
+    const newErrors: { [key: string]: string } = {};
 
     if (!formData.visitDate) {
       newErrors.visitDate = 'تاريخ الزيارة مطلوب';
@@ -57,7 +57,7 @@ export default function PropertyReservation({
       const selectedDate = new Date(formData.visitDate);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       if (selectedDate < today) {
         newErrors.visitDate = 'يجب أن يكون تاريخ الزيارة في المستقبل';
       }
@@ -73,7 +73,7 @@ export default function PropertyReservation({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!isLoggedIn) {
       toast.error('يجب تسجيل الدخول أولاً لحجز موعد');
       return;
@@ -95,7 +95,7 @@ export default function PropertyReservation({
 
       toast.success('تم إرسال طلب الحجز بنجاح! سيتم التواصل معك قريباً');
       onClose();
-      
+
       // Reset form
       setFormData({
         visitDate: '',
@@ -184,9 +184,8 @@ export default function PropertyReservation({
                     value={formData.visitDate}
                     onChange={handleInputChange}
                     min={getMinDate()}
-                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                      errors.visitDate ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${errors.visitDate ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     disabled={isLoading}
                   />
                   {errors.visitDate && (
@@ -205,9 +204,8 @@ export default function PropertyReservation({
                     name="visitTime"
                     value={formData.visitTime}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                      errors.visitTime ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${errors.visitTime ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     disabled={isLoading}
                   >
                     <option value="">اختر الوقت المناسب</option>
@@ -270,7 +268,7 @@ export default function PropertyReservation({
                       </>
                     )}
                   </motion.button>
-                  
+
                   <button
                     type="button"
                     onClick={onClose}
@@ -286,19 +284,19 @@ export default function PropertyReservation({
             {/* Login Buttons for non-logged users */}
             {!isLoggedIn && (
               <div className="space-y-3">
-                <a
+                <Link
                   href="/auth/login"
                   className="w-full bg-blue-600 text-white py-3 px-4 rounded-xl hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2"
                 >
                   <User className="w-5 h-5" />
                   تسجيل الدخول
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/auth/register"
                   className="w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-xl hover:bg-gray-50 transition-colors font-medium flex items-center justify-center gap-2"
                 >
                   إنشاء حساب جديد
-                </a>
+                </Link>
               </div>
             )}
 
@@ -306,7 +304,7 @@ export default function PropertyReservation({
             <div className="mt-6 p-4 bg-gray-50 rounded-lg">
               <p className="text-sm text-gray-600">
                 <strong>ملاحظة:</strong> سيتم التواصل معك خلال 24 ساعة لتأكيد موعد الزيارة.
-                يمكنك تتبع حالة طلبك في صفحة "حجوزاتي".
+                يمكنك تتبع حالة طلبك في صفحة حجوزاتي.
               </p>
             </div>
           </motion.div>
