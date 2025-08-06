@@ -15,7 +15,7 @@ export interface Reservation {
   companyName?: string;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
   visitDate: string;
-  visitTime: string;
+  // visitTime: string;
   notes?: string;
   createdAt: string;
   updatedAt: string;
@@ -44,10 +44,12 @@ export interface ReservationStats {
 }
 
 export interface ReservationsResponse {
-  reservations: Reservation[];
-  total: number;
-  page: number;
-  totalPages: number;
+  success: boolean;
+  data: {
+    stats: ReservationStats;
+    reservations: Reservation[];
+  }
+  message: string;
 }
 
 export interface ErrorResponse {
@@ -104,7 +106,7 @@ export const reservationsApi = {
     try {
       const response = await apiClient.get<ReservationsResponse>('/api/reservations/user');
       // Return the reservations array from the response
-      return response.data.reservations || [];
+      return response.data.data.reservations || [];
     } catch (error: any) {
       if (error.response?.data) {
         throw new Error(error.response.data.error?.message || 'حدث خطأ في جلب الحجوزات');
@@ -126,7 +128,7 @@ export const reservationsApi = {
       });
 
       // Return the reservations array from the response
-      return response.data.reservations || [];
+      return response.data.data.reservations || [];
     } catch (error: any) {
       if (error.response?.data) {
         throw new Error(error.response.data.error?.message || 'حدث خطأ في جلب حجوزات الشركة');

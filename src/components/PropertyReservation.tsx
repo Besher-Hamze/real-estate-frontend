@@ -1,6 +1,6 @@
 // src/components/PropertyReservation.tsx - مكون حجز العقار
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Clock, User, X, Check, MessageSquare, Link } from 'lucide-react';
 import { reservationsApi } from '@/api/reservationsApi';
@@ -11,6 +11,7 @@ interface PropertyReservationProps {
   propertyId: number;
   propertyTitle: string;
   propertyPrice: number;
+  viewTime?: string; // Add viewTime prop
   isOpen: boolean;
   onClose: () => void;
 }
@@ -19,6 +20,7 @@ export default function PropertyReservation({
   propertyId,
   propertyTitle,
   propertyPrice,
+  viewTime,
   isOpen,
   onClose
 }: PropertyReservationProps) {
@@ -31,6 +33,16 @@ export default function PropertyReservation({
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const { user, isLoggedIn } = useAuth();
+
+  // Reset time selection when date changes
+  useEffect(() => {
+    if (formData.visitDate) {
+      setFormData(prev => ({
+        ...prev,
+        visitTime: '' // Reset time when date changes
+      }));
+    }
+  }, [formData.visitDate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -63,9 +75,9 @@ export default function PropertyReservation({
       }
     }
 
-    if (!formData.visitTime) {
-      newErrors.visitTime = 'وقت الزيارة مطلوب';
-    }
+    // if (!formData.visitTime) {
+    //   newErrors.visitTime = 'وقت الزيارة مطلوب';
+    // }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -89,7 +101,7 @@ export default function PropertyReservation({
       await reservationsApi.createReservation({
         propertyId,
         visitDate: formData.visitDate,
-        visitTime: formData.visitTime,
+        visitTime: "12:00",
         notes: formData.notes
       });
 
@@ -109,12 +121,93 @@ export default function PropertyReservation({
     }
   };
 
-  // Generate time slots
-  const timeSlots = [
-    '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-    '12:00', '12:30', '14:00', '14:30', '15:00', '15:30',
-    '16:00', '16:30', '17:00', '17:30', '18:00'
-  ];
+  // Parse viewTime and generate time slots based on selected date
+  const parseViewTimeForDate = (viewTime?: string, selectedDate?: string) => {
+    if (!viewTime || !selectedDate) {
+      // Default time slots if no viewTime provided
+      return [
+        '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+        '12:00', '12:30', '14:00', '14:30', '15:00', '15:30',
+        '16:00', '16:30', '17:00', '17:30', '18:00'
+      ];
+    }
+
+    const timeSlots: string[] = [];
+    const selectedDay = new Date(selectedDate).getDay();
+
+    // Map day numbers to Arabic day names
+    const dayNames = {
+      0: 'الأحد',
+      1: 'الاثنين',
+      2: 'الثلاثاء',
+      3: 'الأربعاء',
+      4: 'الخميس',
+      5: 'الجمعة',
+      6: 'السبت'
+    };
+
+    const selectedDayName = dayNames[selectedDay as keyof typeof dayNames];
+
+    // Parse the viewTime string to extract time ranges for the selected day
+    const lines = viewTime.split('\n').filter(line => line.trim());
+
+    lines.forEach(line => {
+      // Check if this line contains the selected day
+      if (line.includes(selectedDayName)) {
+        // Extract time range for this day
+        const timeMatch = line.match(/من الساعة (\d{1,2}):(\d{2}) (صباحًا|مساءً|AM|PM) إلى (\d{1,2}):(\d{2}) (صباحًا|مساءً|PM)/);
+        if (timeMatch) {
+          let startHour = parseInt(timeMatch[1]);
+          const startMinute = parseInt(timeMatch[2]);
+          let endHour = parseInt(timeMatch[4]);
+          const endMinute = parseInt(timeMatch[5]);
+
+          // Convert to 24-hour format
+          if (timeMatch[3] === 'مساءً' || timeMatch[3] === 'PM') {
+            if (startHour !== 12) startHour += 12;
+          }
+          if (timeMatch[6] === 'مساءً' || timeMatch[6] === 'PM') {
+            if (endHour !== 12) endHour += 12;
+          }
+          if (timeMatch[3] === 'صباحًا' || timeMatch[3] === 'AM') {
+            if (startHour === 12) startHour = 0;
+          }
+          if (timeMatch[6] === 'صباحًا' || timeMatch[6] === 'AM') {
+            if (endHour === 12) endHour = 0;
+          }
+
+          // Generate 30-minute intervals for this time period
+          let currentHour = startHour;
+          let currentMinute = startMinute;
+
+          while (currentHour < endHour || (currentHour === endHour && currentMinute < endMinute)) {
+            const timeSlot = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
+            timeSlots.push(timeSlot);
+
+            currentMinute += 30;
+            if (currentMinute >= 60) {
+              currentMinute = 0;
+              currentHour++;
+            }
+          }
+        }
+      }
+    });
+
+    // If no specific times found for this day, return default times
+    if (timeSlots.length === 0) {
+      return [
+        '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+        '12:00', '12:30', '14:00', '14:30', '15:00', '15:30',
+        '16:00', '16:30', '17:00', '17:30', '18:00'
+      ];
+    }
+
+    // Remove duplicates and sort
+    return [...new Set(timeSlots)].sort();
+  };
+
+  const timeSlots = parseViewTimeForDate(viewTime, formData.visitDate);
 
   // Get minimum date (tomorrow)
   const getMinDate = () => {
@@ -194,11 +287,29 @@ export default function PropertyReservation({
                 </div>
 
                 {/* Visit Time */}
-                <div>
+                {/* <div>
                   <label htmlFor="visitTime" className="block text-sm font-medium text-gray-700 mb-2">
                     <Clock className="w-4 h-4 inline mr-2" />
                     وقت الزيارة
                   </label>
+                  {formData.visitDate && viewTime && (
+                    <div className="mb-2 p-2 bg-blue-50 rounded-lg text-sm text-blue-700">
+                      <strong>مواعيد المعاينة المتاحة:</strong>
+                      <div className="mt-1 text-xs">
+                        {(() => {
+                          const selectedDay = new Date(formData.visitDate).getDay();
+                          const dayNames = {
+                            0: 'الأحد', 1: 'الاثنين', 2: 'الثلاثاء', 3: 'الأربعاء',
+                            4: 'الخميس', 5: 'الجمعة', 6: 'السبت'
+                          };
+                          const dayName = dayNames[selectedDay as keyof typeof dayNames];
+                          const lines = viewTime.split('\n').filter(line => line.trim());
+                          const daySchedule = lines.find(line => line.includes(dayName));
+                          return daySchedule ? daySchedule : 'جميع الأوقات متاحة';
+                        })()}
+                      </div>
+                    </div>
+                  )}
                   <select
                     id="visitTime"
                     name="visitTime"
@@ -216,7 +327,7 @@ export default function PropertyReservation({
                   {errors.visitTime && (
                     <p className="mt-1 text-sm text-red-600">{errors.visitTime}</p>
                   )}
-                </div>
+                </div> */}
 
                 {/* Notes */}
                 <div>

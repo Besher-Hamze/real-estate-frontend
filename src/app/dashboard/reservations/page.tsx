@@ -80,9 +80,9 @@ export default function ReservationsPage() {
 
   const updateReservationStatus = async (reservationId: number, status: 'confirmed' | 'cancelled' | 'completed') => {
     try {
-      const updatedReservation = await reservationsApi.updateReservation(reservationId, { status });
-      setReservations(prev => prev.map(r => r.id === reservationId ? updatedReservation : r));
-      setSelectedReservation(updatedReservation);
+      await reservationsApi.updateReservation(reservationId, { status });
+      await loadReservations()
+      // setSelectedReservation(updatedReservation);
       loadStats(); // Refresh stats
       toast.success(`تم ${status === 'confirmed' ? 'تأكيد' : status === 'cancelled' ? 'إلغاء' : 'إكمال'} الحجز بنجاح`);
     } catch (error: any) {
@@ -280,10 +280,6 @@ export default function ReservationsPage() {
                         <Calendar className="w-4 h-4" />
                         <span>{formatDate(reservation.visitDate)}</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4" />
-                        <span>{reservation.visitTime}</span>
-                      </div>
                     </div>
                   </div>
 
@@ -391,10 +387,7 @@ export default function ReservationsPage() {
                       <Calendar className="w-5 h-5 text-gray-400" />
                       <span className="text-gray-900">{formatDate(selectedReservation.visitDate)}</span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Clock className="w-5 h-5 text-gray-400" />
-                      <span className="text-gray-900">{selectedReservation.visitTime}</span>
-                    </div>
+
                     <div className="flex items-center gap-3">
                       <span className="w-5 h-5 flex items-center justify-center">📝</span>
                       <div className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedReservation.status)}`}>

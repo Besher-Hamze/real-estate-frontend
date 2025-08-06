@@ -671,36 +671,23 @@ export default function PropertyDetails() {
 
                                     {/* Advertiser Name */}
                                     <h3 className="text-xl font-bold text-gray-800 mb-2">
-                                        {property.advertiserName || "المعلن"}
+                                        {property.companyFullName || "المعلن"}
                                     </h3>
 
-                                    {/* Advertiser Type */}
-                                    <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium mb-4">
-                                        {property.advertiserType === 'company' ? (
-                                            <>
-                                                <Building2 className="w-4 h-4" />
-                                                شركة
-                                            </>
-                                        ) : (
-                                            <>
-                                                <User className="w-4 h-4" />
-                                                مالك
-                                            </>
-                                        )}
-                                    </div>
+
                                 </div>
 
                                 {/* Contact Methods */}
                                 <div className="space-y-3">
                                     {/* Phone Call */}
                                     <a
-                                        href={`tel:${property.advertiserPhone || '96812345678'}`}
+                                        href={`tel:${property.companyPhone || '96812345678'}`}
                                         className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-3 shadow-md hover:shadow-lg"
                                     >
                                         <Phone className="w-5 h-5" />
                                         <div className="text-center">
                                             <div className="font-bold">اتصال مباشر</div>
-                                            <div className="text-sm opacity-90">{property.advertiserPhone || '+968 1234 5678'}</div>
+                                            <div className="text-sm opacity-90">{property.companyPhone || '+968 1234 5678'}</div>
                                         </div>
                                     </a>
 
@@ -805,6 +792,7 @@ export default function PropertyDetails() {
                             propertyId={property.id}
                             propertyTitle={property.title}
                             propertyPrice={property.price}
+                            viewTime={property.viewTime}
                             isOpen={isReservationModalOpen}
                             onClose={closeReservationModal}
                         />

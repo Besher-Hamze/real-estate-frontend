@@ -90,6 +90,8 @@ export interface RealEstateData {
   subCategoryName?: string;
   buildingItemId?: string;
   viewTime?: string;
+  companyFullName?: string;
+  companyPhone?: string;
 }
 
 export interface CityType {

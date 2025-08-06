@@ -208,10 +208,7 @@ export default function MyReservationsPage() {
                             <Calendar className="w-4 h-4" />
                             <span>{formatDate(reservation.visitDate)}</span>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4" />
-                            <span>{reservation.visitTime}</span>
-                          </div>
+
                           {reservation.companyName && (
                             <div className="flex items-center gap-2">
                               <MapPin className="w-4 h-4" />
@@ -291,10 +288,10 @@ export default function MyReservationsPage() {
                     <Calendar className="w-5 h-5 text-gray-400" />
                     <span className="text-gray-900">{formatDate(selectedReservation.visitDate)}</span>
                   </div>
-                  <div className="flex items-center gap-3">
+                  {/* <div className="flex items-center gap-3">
                     <Clock className="w-5 h-5 text-gray-400" />
                     <span className="text-gray-900">{selectedReservation.visitTime}</span>
-                  </div>
+                  </div> */}
                   <div className="flex items-center gap-3">
                     <span className="w-5 h-5 flex items-center justify-center">📝</span>
                     <div className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedReservation.status)}`}>
