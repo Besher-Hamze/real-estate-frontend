@@ -298,8 +298,8 @@ export default function PropertiesPage() {
                                 {currentProperties.map((property) => (
                                     <PropertyCard
                                         key={property.id}
-                                        property={property}
-                                        viewMode={viewMode}
+                                        item={property}
+                                        mainType={undefined}
                                     />
                                 ))}
                             </div>

@@ -67,7 +67,7 @@ export default function MyReservationsPage() {
   const cancelReservation = async (reservationId: number) => {
     try {
       await reservationsApi.updateReservation(reservationId, { status: 'cancelled' });
-      setReservations(prev => prev.map(r => 
+      setReservations(prev => prev.map(r =>
         r.id === reservationId ? { ...r, status: 'cancelled' } : r
       ));
       toast.success('تم إلغاء الحجز بنجاح');
@@ -115,7 +115,7 @@ export default function MyReservationsPage() {
   return (
     <div className="min-h-screen bg-gray-50" dir="rtl">
       <Navbar />
-      
+
       <div className="pt-24 pb-16">
         <div className="max-w-6xl mx-auto px-4">
           {/* Page Header */}
@@ -125,7 +125,7 @@ export default function MyReservationsPage() {
               <ArrowRight className="w-4 h-4" />
               <span>حجوزاتي</span>
             </div>
-            
+
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
                 <Calendar className="w-6 h-6 text-blue-600" />
@@ -177,12 +177,6 @@ export default function MyReservationsPage() {
                 <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">لا توجد حجوزات</h3>
                 <p className="text-gray-600 mb-6">لم تقم بحجز أي مواعيد معاينة بعد</p>
-                <Link
-                  href="/properties"
-                  className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors font-medium"
-                >
-                  تصفح العقارات
-                </Link>
               </div>
             ) : (
               <div className="divide-y divide-gray-200">
@@ -208,7 +202,7 @@ export default function MyReservationsPage() {
                             {getStatusText(reservation.status)}
                           </div>
                         </div>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
                           <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4" />
@@ -239,7 +233,7 @@ export default function MyReservationsPage() {
                           <Eye className="w-4 h-4" />
                           التفاصيل
                         </button>
-                        
+
                         {reservation.status === 'pending' && (
                           <button
                             onClick={() => cancelReservation(reservation.id)}
