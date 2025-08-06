@@ -25,6 +25,19 @@ export const RealEstateApi = {
     },
 
     /**
+     * جلب عقاراتي
+     */
+    fetchMyRealEstate: async (): Promise<RealEstateData[]> => {
+        try {
+            const response = await apiClient.get<RealEstateData[]>('/api/realestate/my-properties');
+            return response.data;
+        } catch (error) {
+            console.error("Failed to fetch my real estate:", error);
+            throw error;
+        }
+    },
+
+    /**
      * جلب عقار واحد بالتفصيل
      */
     fetchById: async (id: number): Promise<RealEstateData> => {
@@ -262,9 +275,12 @@ export const RealEstateApi = {
     /**
      * @deprecated استخدم fetchAll بدلاً من ذلك
      */
-    fetchRealEstate: async (): Promise<RealEstateData[]> => {
+    fetchRealEstate: async (forMe: boolean = false): Promise<RealEstateData[]> => {
         try {
-            const response = await apiClient.get<RealEstateData[]>('api/realestate');
+
+            const response = await apiClient.get<RealEstateData[]>(
+                forMe ? "/api/realestate/my-properties" : "/api/realestate"
+            );
             return response.data;
         } catch (error) {
             console.error("Failed to fetch real estate:", error);

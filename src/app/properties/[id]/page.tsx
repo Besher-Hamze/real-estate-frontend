@@ -59,8 +59,7 @@ import PropertyGallery from "@/components/properties/PropertyGallery";
 import RealEstateCard from "@/components/widgets/PropertyGrid/PropertyCard";
 import MapboxViewer from "@/components/map/MapboxViewer";
 import PropertyActionButtons from "@/components/properties/PropertyActionButtons";
-import { PropertyReservationModal } from "@/components/properties/PropertyReservation";
-import { PropertyFeedbackModal } from "@/components/properties/PropertyFeedbackForm";
+import PropertyReservation from "@/components/PropertyReservation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -728,14 +727,14 @@ export default function PropertyDetails() {
                                             <KeyRound className="w-4 h-4 mr-2" />
                                             {isRental ? "حجز الشقة" : "حجز العقار"}
                                         </Button>
-                                        <Button
+                                        {/* <Button
                                             onClick={openFeedbackModal}
                                             variant="outline"
                                             className="w-full border-blue-300 text-blue-600 hover:bg-blue-50 font-medium"
                                         >
                                             <HandCoins className="w-4 h-4 mr-2" />
                                             تقديم عرض
-                                        </Button>
+                                        </Button> */}
                                     </div>
                                 </div>
                             </CardContent>
@@ -802,15 +801,12 @@ export default function PropertyDetails() {
             <AnimatePresence>
                 {property && (
                     <>
-                        <PropertyReservationModal
+                        <PropertyReservation
                             propertyId={property.id}
+                            propertyTitle={property.title}
+                            propertyPrice={property.price}
                             isOpen={isReservationModalOpen}
                             onClose={closeReservationModal}
-                        />
-                        <PropertyFeedbackModal
-                            propertyId={property.id}
-                            isOpen={isFeedbackModalOpen}
-                            onClose={closeFeedbackModal}
                         />
                     </>
                 )}

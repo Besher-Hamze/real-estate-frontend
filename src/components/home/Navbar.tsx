@@ -1,13 +1,18 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ChevronDown, MapPin, Heart } from 'lucide-react';
+import { Menu, X, ChevronDown, MapPin, Heart, User, Settings, LogOut, LogIn, Calendar } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function Navbar() {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState<any>(null);
     const [favoriteCount, setFavoriteCount] = useState(0);
+    const [showUserMenu, setShowUserMenu] = useState(false);
+
+    const { user, isLoggedIn, logout, canAccessDashboard } = useAuth();
+
     useEffect(() => {
         const handleScroll = () => {
             setIsScrolled(window.scrollY > 20);
@@ -57,6 +62,11 @@ export default function Navbar() {
             path: '/'
         }
     ];
+
+    const handleLogout = () => {
+        logout();
+        setShowUserMenu(false);
+    };
 
     return (
         <>
@@ -178,13 +188,120 @@ export default function Navbar() {
                                 </Link>
                             </motion.div>
 
-                            <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="hidden md:block bg-blue-600 text-white px-6 py-2 rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20 font-medium"
-                            >
-                                ابدأ الآن
-                            </motion.button>
+                            {/* User Menu or Auth Buttons */}
+                            {isLoggedIn ? (
+                                <div className="relative">
+                                    {/* User Menu Trigger */}
+                                    <motion.button
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => setShowUserMenu(!showUserMenu)}
+                                        className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${isScrolled
+                                            ? 'text-gray-800 hover:bg-gray-100'
+                                            : 'text-white hover:bg-white/10'}`}
+                                    >
+                                        <User className="w-5 h-5" />
+                                        <span className="hidden md:block font-medium">{user?.fullName}</span>
+                                        <ChevronDown className={`w-4 h-4 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
+                                    </motion.button>
+
+                                    {/* User Dropdown Menu */}
+                                    <AnimatePresence>
+                                        {showUserMenu && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: 10 }}
+                                                className="absolute left-0 mt-2 w-64 bg-white rounded-xl shadow-lg py-2 border border-gray-100"
+                                            >
+                                                {/* User Info */}
+                                                <div className="px-4 py-3 border-b border-gray-100">
+                                                    <p className="font-medium text-gray-900">{user?.fullName}</p>
+                                                    <p className="text-sm text-gray-500">{user?.email}</p>
+                                                    <div className="mt-1">
+                                                        <span className={`inline-flex px-2 py-1 text-xs rounded-full ${user?.role === 'admin' ? 'bg-purple-100 text-purple-800' :
+                                                                user?.role === 'company' ? 'bg-blue-100 text-blue-800' :
+                                                                    user?.role === 'user_vip' ? 'bg-yellow-100 text-yellow-800' :
+                                                                        'bg-gray-100 text-gray-800'
+                                                            }`}>
+                                                            {user?.role === 'admin' ? 'مدير' :
+                                                                user?.role === 'company' ? 'شركة' :
+                                                                    user?.role === 'user_vip' ? 'مستخدم VIP' : 'مستخدم'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Menu Items */}
+                                                <div className="py-1">
+                                                    {canAccessDashboard() && (
+                                                        <Link
+                                                            href="/dashboard"
+                                                            className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                                            onClick={() => setShowUserMenu(false)}
+                                                        >
+                                                            <Settings className="w-4 h-4" />
+                                                            لوحة التحكم
+                                                        </Link>
+                                                    )}
+
+                                                    <Link
+                                                        href="/my-reservations"
+                                                        className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                                        onClick={() => setShowUserMenu(false)}
+                                                    >
+                                                        <Calendar className="w-4 h-4" />
+                                                        حجوزاتي
+                                                    </Link>
+
+                                                    <Link
+                                                        href="/profile"
+                                                        className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                                        onClick={() => setShowUserMenu(false)}
+                                                    >
+                                                        <User className="w-4 h-4" />
+                                                        الملف الشخصي
+                                                    </Link>
+
+                                                    <button
+                                                        onClick={handleLogout}
+                                                        className="flex items-center gap-3 w-full px-4 py-2 text-red-600 hover:bg-red-50 transition-colors"
+                                                    >
+                                                        <LogOut className="w-4 h-4" />
+                                                        تسجيل الخروج
+                                                    </button>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2">
+                                    {/* Login Button */}
+                                    <Link href="/auth/login">
+                                        <motion.button
+                                            whileHover={{ scale: 1.05 }}
+                                            whileTap={{ scale: 0.95 }}
+                                            className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors font-medium ${isScrolled
+                                                ? 'text-gray-800 hover:bg-gray-100'
+                                                : 'text-white hover:bg-white/10'}`}
+                                        >
+                                            <LogIn className="w-4 h-4" />
+                                            <span className="hidden sm:block">تسجيل الدخول</span>
+                                        </motion.button>
+                                    </Link>
+
+                                    {/* Start Now Button */}
+                                    <Link href="/auth/register">
+                                        <motion.button
+                                            whileHover={{ scale: 1.05 }}
+                                            whileTap={{ scale: 0.95 }}
+                                            className="bg-blue-600 text-white px-6 py-2 rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20 font-medium"
+                                        >
+                                            ابدأ الآن
+                                        </motion.button>
+                                    </Link>
+                                </div>
+                            )}
 
                             {/* Mobile Menu Button */}
                             <motion.button
@@ -213,6 +330,51 @@ export default function Navbar() {
                             className="md:hidden bg-white border-t border-gray-100 mt-4"
                         >
                             <div className="max-w-7xl mx-auto px-4 py-4">
+                                {/* User Info - Mobile */}
+                                {isLoggedIn && (
+                                    <div className="py-3 border-b border-gray-100 mb-4">
+                                        <p className="font-medium text-gray-900">{user?.fullName}</p>
+                                        <p className="text-sm text-gray-500">{user?.email}</p>
+                                        <div className="mt-2 flex gap-2">
+                                            <span className={`inline-flex px-2 py-1 text-xs rounded-full ${user?.role === 'admin' ? 'bg-purple-100 text-purple-800' :
+                                                    user?.role === 'company' ? 'bg-blue-100 text-blue-800' :
+                                                        user?.role === 'user_vip' ? 'bg-yellow-100 text-yellow-800' :
+                                                            'bg-gray-100 text-gray-800'
+                                                }`}>
+                                                {user?.role === 'admin' ? 'مدير' :
+                                                    user?.role === 'company' ? 'شركة' :
+                                                        user?.role === 'user_vip' ? 'مستخدم VIP' : 'مستخدم'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Dashboard Link - Mobile */}
+                                {isLoggedIn && canAccessDashboard() && (
+                                    <div className="py-2">
+                                        <Link
+                                            href="/dashboard"
+                                            className="flex items-center gap-3 text-blue-600 hover:text-blue-700 transition-colors font-medium"
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                        >
+                                            <Settings className="w-5 h-5" />
+                                            لوحة التحكم
+                                        </Link>
+                                    </div>
+                                )}
+
+                                {/* My Reservations Mobile Link */}
+                                <div className="py-2">
+                                    <Link
+                                        href="/my-reservations"
+                                        className="flex items-center gap-3 text-blue-600 hover:text-blue-700 transition-colors font-medium"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                    >
+                                        <Calendar className="w-5 h-5" />
+                                        حجوزاتي
+                                    </Link>
+                                </div>
+
                                 {/* Favorites Mobile Link */}
                                 <div className="py-2">
                                     <Link
@@ -258,13 +420,51 @@ export default function Navbar() {
                                         )}
                                     </div>
                                 ))}
-                                <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    className="w-full mt-4 bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20 font-medium"
-                                >
-                                    ابدأ الآن
-                                </motion.button>
+
+                                {/* Auth Buttons - Mobile */}
+                                {!isLoggedIn && (
+                                    <div className="mt-4 space-y-2">
+                                        <Link href="/auth/login">
+                                            <motion.button
+                                                whileHover={{ scale: 1.02 }}
+                                                whileTap={{ scale: 0.98 }}
+                                                className="w-full flex items-center justify-center gap-2 border border-gray-300 text-gray-700 px-6 py-3 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+                                                onClick={() => setIsMobileMenuOpen(false)}
+                                            >
+                                                <LogIn className="w-4 h-4" />
+                                                تسجيل الدخول
+                                            </motion.button>
+                                        </Link>
+                                        <Link href="/auth/register">
+                                            <motion.button
+                                                whileHover={{ scale: 1.02 }}
+                                                whileTap={{ scale: 0.98 }}
+                                                className="w-full bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20 font-medium"
+                                                onClick={() => setIsMobileMenuOpen(false)}
+                                            >
+                                                ابدأ الآن
+                                            </motion.button>
+                                        </Link>
+                                    </div>
+                                )}
+
+                                {/* Logout Button - Mobile */}
+                                {isLoggedIn && (
+                                    <div className="mt-4 pt-4 border-t border-gray-100">
+                                        <motion.button
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            onClick={() => {
+                                                handleLogout();
+                                                setIsMobileMenuOpen(false);
+                                            }}
+                                            className="w-full flex items-center justify-center gap-2 text-red-600 hover:bg-red-50 px-6 py-3 rounded-xl transition-colors font-medium"
+                                        >
+                                            <LogOut className="w-4 h-4" />
+                                            تسجيل الخروج
+                                        </motion.button>
+                                    </div>
+                                )}
                             </div>
                         </motion.div>
                     )}

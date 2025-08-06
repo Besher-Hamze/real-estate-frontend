@@ -4,16 +4,18 @@ import apiClient from ".";
 export const buildingApi = {
     fetchBuildings: async (): Promise<Building[]> => {
         try {
-            const response = await apiClient.get<any[]>('api/buildings');     
+            const response = await apiClient.get<any[]>(
+                "api/buildings/my-buildings"
+            );
             console.log(response.data);
-                   
+
             return response.data;
         } catch (error) {
             console.error("Failed to fetch buildings:", error);
             throw error;
         }
     },
-    
+
     fetchBuildingById: async (id: string): Promise<Building> => {
         try {
             const response = await apiClient.get<Building>(`api/buildings/${id}`);

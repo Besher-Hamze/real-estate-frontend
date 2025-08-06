@@ -1,137 +1,248 @@
-import { RealEstateData } from "@/lib/types";
-import axios from "axios";
+// src/api/reservationsApi.ts - نظام إدارة الحجوزات
 import apiClient from ".";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+export interface Reservation {
+  id: number;
+  propertyId: number;
+  propertyTitle: string;
+  propertyPrice: number;
+  propertyImage?: string;
+  userId: number;
+  userName: string;
+  userPhone: string;
+  userEmail: string;
+  companyId?: number;
+  companyName?: string;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  visitDate: string;
+  visitTime: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
-export const RealEstateApi = {
-  fetchRealEstate: async (): Promise<RealEstateData[]> => {
+export interface CreateReservationRequest {
+  propertyId: number;
+  visitDate: string;
+  visitTime: string;
+  notes?: string;
+}
+
+export interface UpdateReservationRequest {
+  status?: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  visitDate?: string;
+  visitTime?: string;
+  notes?: string;
+}
+
+export interface ReservationStats {
+  total: number;
+  pending: number;
+  confirmed: number;
+  cancelled: number;
+  completed: number;
+}
+
+export interface ReservationsResponse {
+  reservations: Reservation[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export interface ErrorResponse {
+  success: false;
+  error: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+}
+
+export const reservationsApi = {
+  // إنشاء حجز جديد
+  createReservation: async (reservationData: CreateReservationRequest): Promise<Reservation> => {
     try {
-      const response = await apiClient.get<RealEstateData[]>('api/realestate');
+      const response = await apiClient.post<Reservation>('/api/reservations', reservationData);
       return response.data;
-    } catch (error) {
-      console.error("Failed to fetch real estate:", error);
-      throw error;
-    }
-  },
-
-  addRealEstate: async (estate: FormData) => {
-    try {
-      const response = await axios.post(`${API_BASE_URL}/api/realestate`, estate, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      return response.data;
-    } catch (error) {
-      console.error("Failed to add real estate:", error);
-      throw error;
-    }
-  },
-  updateRealEstate: async (id: number, estate: any) => {
-    try {
-
-      const {
-        cityName,
-        neighborhoodName,
-        mainCategoryName,
-        subCategoryName,
-        finalTypeName,
-        finalCityName,
-        ...cleanedEstate
-      } = estate;
-
-      const filteredEstate = { ...cleanedEstate };
-
-
-
-
-      const response = await apiClient.put(`${API_BASE_URL}/api/realestate/${id}`, filteredEstate);
-
-      return response.data;
-    } catch (error) {
-      console.error("Failed to update real estate:", error);
-      throw error;
-    }
-  },
-
-  fetchRealEstateById: async (id: number): Promise<RealEstateData> => {
-    try {
-      const response = await apiClient.get<RealEstateData>(`api/realestate/${id}`);
-
-      return response.data;
-    } catch (error) {
-      console.error("Failed to fetch real estate by ID:", error);
-      throw error;
-    }
-  },
-
-
-  fetchSimilarRealEstate: async (id: number): Promise<RealEstateData[]> => {
-    try {
-      const response = await apiClient.get<RealEstateData[]>(`/api/realestate/similar/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error("Failed to fetch similar real estate:", error);
-      return [];
-    }
-  },
-
-
-  fetchRealEstateByBuildingItemId: async (buildingItemId: string): Promise<RealEstateData[]> => {
-    try {
-
-      const response = await apiClient.get<RealEstateData[]>(`api/realestate/items/${buildingItemId}`);
-      if ((response.data as any).message) {
-        return [];
+    } catch (error: any) {
+      if (error.response?.data) {
+        throw new Error(error.response.data.error?.message || 'حدث خطأ في إنشاء الحجز');
       }
-
-      return response.data;
-    } catch (error) {
-      console.error("Failed to fetch real estate by ID:", error);
-      throw error;
+      throw new Error('حدث خطأ في الاتصال بالخادم');
     }
   },
 
-  fetchRealEstateByBuildingId: async (buildingItemId: string): Promise<RealEstateData[]> => {
+  // الحصول على جميع الحجوزات (للأدمن والشركات)
+  getAllReservations: async (params?: {
+    status?: string;
+    propertyId?: number;
+    userId?: number;
+    page?: number;
+    limit?: number;
+  }): Promise<ReservationsResponse> => {
     try {
+      const queryParams = new URLSearchParams();
+      if (params?.status) queryParams.append('status', params.status);
+      if (params?.propertyId) queryParams.append('propertyId', params.propertyId.toString());
+      if (params?.userId) queryParams.append('userId', params.userId.toString());
+      if (params?.page) queryParams.append('page', params.page.toString());
+      if (params?.limit) queryParams.append('limit', params.limit.toString());
 
-      const response = await apiClient.get<RealEstateData[]>(`api/realestate/items/${buildingItemId}`);
-      if ((response.data as any).message) {
-        return [];
+      const response = await apiClient.get<ReservationsResponse>(`/api/reservations?${queryParams.toString()}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        throw new Error(error.response.data.error?.message || 'غير مصرح لك بالوصول لهذه البيانات');
       }
-
-      return response.data;
-    } catch (error) {
-      console.error("Failed to fetch real estate by ID:", error);
-      throw error;
+      throw new Error('حدث خطأ في الاتصال بالخادم');
     }
   },
 
-
-  deleteRealEstate: async (id: number) => {
+  // الحصول على حجوزات المستخدم الحالي
+  getUserReservations: async (): Promise<Reservation[]> => {
     try {
-      const response = await apiClient.delete(`api/realestate/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error("Failed to delete real estate:", error);
-      throw error;
+      const response = await apiClient.get<ReservationsResponse>('/api/reservations/user');
+      // Return the reservations array from the response
+      return response.data.reservations || [];
+    } catch (error: any) {
+      if (error.response?.data) {
+        throw new Error(error.response.data.error?.message || 'حدث خطأ في جلب الحجوزات');
+      }
+      throw new Error('حدث خطأ في الاتصال بالخادم');
     }
   },
 
-  fetchFilter: async (mainTypName: string, subTypeName?: string, finalTypeName?: string) => {
+  // الحصول على حجوزات الشركة (للشركات والأدمن)
+  getCompanyReservations: async (): Promise<Reservation[]> => {
     try {
-      const response = await apiClient.post(`api/realestate/filter`, {
-        main: mainTypName,
-        sub: subTypeName,
-        finall: finalTypeName,
+      // For companies, we'll use the same endpoint but filter by company
+      // The backend should handle the filtering based on the user's role
+      const response = await apiClient.get<ReservationsResponse>('/api/reservations', {
+        params: {
+          // Add company filter if needed
+          companyOnly: true
+        }
       });
-      return response.data;
-    } catch (error) {
-      console.error("Failed to fetch filter ");
-      console.log(error);
 
-      throw error;
+      // Return the reservations array from the response
+      return response.data.reservations || [];
+    } catch (error: any) {
+      if (error.response?.data) {
+        throw new Error(error.response.data.error?.message || 'حدث خطأ في جلب حجوزات الشركة');
+      }
+      throw new Error('حدث خطأ في الاتصال بالخادم');
     }
   },
+
+  // تحديث حالة الحجز
+  updateReservation: async (reservationId: number, updateData: UpdateReservationRequest): Promise<Reservation> => {
+    try {
+      const response = await apiClient.put<Reservation>(`/api/reservations/${reservationId}`, updateData);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        throw new Error(error.response.data.error?.message || 'حدث خطأ في تحديث الحجز');
+      }
+      throw new Error('حدث خطأ في الاتصال بالخادم');
+    }
+  },
+
+  // حذف حجز
+  deleteReservation: async (reservationId: number): Promise<{ success: boolean; message: string }> => {
+    try {
+      const response = await apiClient.delete<{ success: boolean; message: string }>(`/api/reservations/${reservationId}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        throw new Error(error.response.data.error?.message || 'حدث خطأ في حذف الحجز');
+      }
+      throw new Error('حدث خطأ في الاتصال بالخادم');
+    }
+  },
+
+  // الحصول على إحصائيات الحجوزات
+  getReservationStats: async (): Promise<ReservationStats> => {
+    try {
+      const response = await apiClient.get<ReservationStats>('/api/reservations/stats');
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        throw new Error(error.response.data.error?.message || 'حدث خطأ في جلب الإحصائيات');
+      }
+      throw new Error('حدث خطأ في الاتصال بالخادم');
+    }
+  },
+
+  // الحصول على حجز واحد بالمعرف
+  getReservationById: async (reservationId: number): Promise<Reservation> => {
+    try {
+      const response = await apiClient.get<Reservation>(`/api/reservations/${reservationId}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        throw new Error(error.response.data.error?.message || 'الحجز غير موجود');
+      }
+      throw new Error('حدث خطأ في الاتصال بالخادم');
+    }
+  },
+
+  // التحقق من صلاحيات المستخدم للحجز
+  canManageReservation: (reservation: Reservation, userRole: string, userId: number): boolean => {
+    // الأدمن يمكنه إدارة جميع الحجوزات
+    if (userRole === 'admin') return true;
+
+    // الشركة يمكنها إدارة حجوزات عقاراتها
+    if (userRole === 'company' && reservation.companyId === userId) return true;
+
+    // المستخدم يمكنه إدارة حجوزاته الخاصة
+    if (reservation.userId === userId) return true;
+
+    return false;
+  },
+
+  // التحقق من صحة تاريخ الزيارة
+  validateVisitDate: (visitDate: string): boolean => {
+    const selectedDate = new Date(visitDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return selectedDate >= today;
+  },
+
+  // تنسيق تاريخ الزيارة للعرض
+  formatVisitDate: (date: string): string => {
+    return new Date(date).toLocaleDateString('ar-OM', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  },
+
+  // تنسيق وقت الزيارة للعرض
+  formatVisitTime: (time: string): string => {
+    return time;
+  },
+
+  // الحصول على حالة الحجز باللغة العربية
+  getStatusText: (status: string): string => {
+    const statusMap: { [key: string]: string } = {
+      'pending': 'في الانتظار',
+      'confirmed': 'مؤكد',
+      'cancelled': 'ملغي',
+      'completed': 'مكتمل'
+    };
+    return statusMap[status] || status;
+  },
+
+  // الحصول على لون الحالة
+  getStatusColor: (status: string): string => {
+    const colorMap: { [key: string]: string } = {
+      'pending': 'text-yellow-600 bg-yellow-100',
+      'confirmed': 'text-green-600 bg-green-100',
+      'cancelled': 'text-red-600 bg-red-100',
+      'completed': 'text-blue-600 bg-blue-100'
+    };
+    return colorMap[status] || 'text-gray-600 bg-gray-100';
+  }
 };

@@ -50,7 +50,7 @@ function BuildingContent({ buildingId }: { buildingId: string }) {
 
     const { data: realEstates = [], isLoading: isRealEstateLoading } = useQuery<RealEstateData[]>({
         queryKey: ['realEstate', 'building', buildingId],
-        queryFn: () => RealEstateApi.fetchRealEstateByBuildingId(buildingId),
+        queryFn: () => RealEstateApi.fetchRealEstateByBuildingItemId(buildingId),
         enabled: !!buildingId
     });
 

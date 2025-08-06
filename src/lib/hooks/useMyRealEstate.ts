@@ -1,8 +1,8 @@
 import { RealEstateApi } from "@/api/realEstateApi";
 import { useQuery } from "@tanstack/react-query";
-import { estateQuery } from "../constants/queryNames";
+import { myEstateQuery } from "../constants/queryNames";
 
-export const useRealEstate = () => {
+export const useMyRealEstate = () => {
     const {
         data: realEstateData,
         isLoading,
@@ -10,8 +10,8 @@ export const useRealEstate = () => {
         error,
         refetch,
     } = useQuery({
-        queryKey: [estateQuery],
-        queryFn: () => RealEstateApi.fetchAll(),
+        queryKey: [myEstateQuery],
+        queryFn: () => RealEstateApi.fetchMyRealEstate(),
         staleTime: 60000,
         refetchInterval: 60000,
         retry: 3,
