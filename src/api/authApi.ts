@@ -152,8 +152,10 @@ export const authApi = {
   // الحصول على جميع المستخدمين (للأدمن فقط)
   getAllUsers: async (): Promise<User[]> => {
     try {
-      const response = await apiClient.get<User[]>('/api/auth/users');
-      return response.data;
+      const response = await apiClient.get<{ users: User[] }>(
+        "/api/auth/users"
+      );
+      return response.data.users;
     } catch (error: any) {
       if (error.response?.data) {
         throw new Error(error.response.data.error?.message || 'غير مصرح لك بالوصول لهذه البيانات');

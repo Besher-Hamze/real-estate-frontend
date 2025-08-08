@@ -32,6 +32,7 @@ export const RealEstateApi = {
             const response = await apiClient.get<RealEstateData[]>('/api/realestate/my-properties');
             return response.data;
         } catch (error) {
+            return [] as RealEstateData[]; // رجوع فارغ إذا حدث خطأ
             console.error("Failed to fetch my real estate:", error);
             throw error;
         }

@@ -22,11 +22,11 @@ import UsersManagementPage from "@/app/dashboard/users/page";
 import { useMyRealEstate } from "@/lib/hooks/useMyRealEstate";
 
 export default function DashboardComponent() {
+  const { user, hasRole } = useAuth();
   const [activeTab, setActiveTab] = useState<
     "mainType" | "subType" | "finalType" | "city" | "neighborhood" | "estate" | "map" | "finalCity" | "reservations" | "users" | "analytics"
-  >("estate");
+  >(user?.role == "admin" ? "users" : "estate");
 
-  const { user, hasRole } = useAuth();
   const router = useRouter();
   const { mainTypes, isLoading: isLoadingMainTypes, refetch: refetchMain } = useMainType();
   const { realEstateData, isLoading: isLoadingEstate } = useMyRealEstate();
