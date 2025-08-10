@@ -348,8 +348,8 @@ export const RealEstateApi = {
      */
     fetchSimilarRealEstate: async (id: number): Promise<RealEstateData[]> => {
         try {
-            const response = await apiClient.get<RealEstateData[]>(`/api/realestate/similar/${id}`);
-            return response.data;
+            const response = await apiClient.get<{ similarProperties: RealEstateData[] }>(`/api/realestate/similar/${id}`);
+            return response.data.similarProperties;
         } catch (error) {
             console.error("Failed to fetch similar real estate:", error);
             return [];

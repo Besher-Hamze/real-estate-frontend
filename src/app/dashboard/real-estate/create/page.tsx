@@ -1,5 +1,5 @@
 'use client';
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,35 +14,17 @@ import { CreateRealEstateData, MainType, SubType, FinalType, RealEstateData, Bui
 import { RealEstateApi } from '@/api/realEstateApi';
 import { buildingApi } from '@/api/buidlingApi';
 import {
-    Save,
-    ArrowLeft,
-    ArrowRight,
-    CheckCircle,
-    MapPin,
-    Camera,
-    FileText,
-    Home,
-    DollarSign,
-    Loader2,
-    Edit,
-    Plus,
-    Building2,
-    AlertCircle,
-    CheckSquare
+    Save, ArrowLeft, ArrowRight, CheckCircle, MapPin, Camera, FileText, Home, DollarSign,
+    Loader2, Edit, Plus, Building2, AlertCircle, CheckSquare
 } from 'lucide-react';
 import { toast } from 'sonner';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PAYMENT_OPTIONS } from '@/components/ui/constants/formOptions';
 import LocationPicker from '@/components/map/LocationPicker';
 import ViewingTimeSelector from '@/components/forms/ViewingTimeSelector';
 import ImageUploadModal from '@/components/dashboard/forms/EnhancedImageUpload';
 
+// Types and Interfaces
 interface FormStep {
     id: number;
     title: string;
@@ -50,7 +32,32 @@ interface FormStep {
     icon: React.ReactNode;
 }
 
-// Main component content
+interface BasicFormData {
+    title: string;
+    description: string;
+    price: string;
+    finalCityId: string;
+    location: string;
+    viewTime: string;
+    paymentMethod: string;
+    coverImage: File | null;
+    files: File[];
+    existingCoverImage: string;
+    existingFiles: string[];
+}
+
+interface ImageUploadState {
+    coverImagePreview: string | null;
+    additionalImagePreviews: string[];
+    additionalFileTypes: string[];
+    isUploading: boolean;
+    isCoverImageUploading: boolean;
+    uploadingImageIndexes: number[];
+    coverImageProgress: number;
+    additionalImageProgress: Record<number, number>;
+}
+
+// Main Component
 function RealEstatePageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -59,27 +66,50 @@ function RealEstatePageContent() {
     const isEditMode = !!propertyId;
     const isBuildingMode = !!buildingId;
 
-    // Step management
+    // State Management
     const [currentStep, setCurrentStep] = useState(1);
     const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
-
-    // Property type selection
     const [selectedFinalTypeId, setSelectedFinalTypeId] = useState<number | null>(null);
     const [selectedTypePath, setSelectedTypePath] = useState<{
         mainType: MainType;
         subType: SubType;
         finalType: FinalType;
     } | null>(null);
-
-    // Building data
     const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
     const [isLoadingBuilding, setIsLoadingBuilding] = useState(isBuildingMode);
-
-    // Property data for edit mode
     const [isLoading, setIsLoading] = useState(isEditMode);
     const [property, setProperty] = useState<RealEstateData | null>(null);
+    const [errors, setErrors] = useState<string[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Dynamic properties
+    // Form Data
+    const [basicFormData, setBasicFormData] = useState<BasicFormData>({
+        title: '',
+        description: '',
+        price: '',
+        finalCityId: '',
+        location: '',
+        viewTime: '',
+        paymentMethod: '',
+        coverImage: null,
+        files: [],
+        existingCoverImage: '',
+        existingFiles: []
+    });
+
+    // Image Upload State
+    const [imageUploadState, setImageUploadState] = useState<ImageUploadState>({
+        coverImagePreview: null,
+        additionalImagePreviews: [],
+        additionalFileTypes: [],
+        isUploading: false,
+        isCoverImageUploading: false,
+        uploadingImageIndexes: [],
+        coverImageProgress: 0,
+        additionalImageProgress: {}
+    });
+
+    // Hooks
     const {
         formData: dynamicFormData,
         groupedProperties,
@@ -87,11 +117,9 @@ function RealEstatePageContent() {
         loading: dynamicLoading,
         updateField: updateDynamicField,
         validate: validateDynamic,
-        isValid: isDynamicValid,
         setFormData: setDynamicFormData
     } = useDynamicForm(selectedFinalTypeId);
 
-    // Location data
     const {
         cities,
         neighborhoods,
@@ -103,37 +131,8 @@ function RealEstatePageContent() {
         loading: locationLoading
     } = useLocationData();
 
-    // Basic form data
-    const [basicFormData, setBasicFormData] = useState({
-        title: '',
-        description: '',
-        price: '',
-        finalCityId: '',
-        location: '',
-        viewTime: '',  // Changed from array to string
-        paymentMethod: '',
-        coverImage: null as File | null,
-        files: [] as File[],
-        existingCoverImage: '',
-        existingFiles: [] as string[]
-    });
-
-    // Image upload states
-    const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
-    const [additionalImagePreviews, setAdditionalImagePreviews] = useState<string[]>([]);
-    const [additionalFileTypes, setAdditionalFileTypes] = useState<string[]>([]);
-    const [isUploading, setIsUploading] = useState(false);
-    const [isCoverImageUploading, setIsCoverImageUploading] = useState(false);
-    const [uploadingImageIndexes, setUploadingImageIndexes] = useState<number[]>([]);
-    const [coverImageProgress, setCoverImageProgress] = useState<number>(0);
-    const [additionalImageProgress, setAdditionalImageProgress] = useState<Record<number, number>>({});
-
-    // Form validation
-    const [errors, setErrors] = useState<string[]>([]);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    // Define form steps
-    const steps: FormStep[] = [
+    // Constants
+    const steps: FormStep[] = useMemo(() => [
         {
             id: 1,
             title: 'نوع العقار',
@@ -164,10 +163,19 @@ function RealEstatePageContent() {
             description: 'صور العقار والمستندات',
             icon: <Camera className="w-5 h-5" />
         }
-    ];
+    ], [isEditMode]);
 
-    // Check if step is completed
-    const isStepCompleted = (stepId: number): boolean => {
+    // Utility Functions
+    const updateBasicField = useCallback((field: keyof BasicFormData, value: any) => {
+        setBasicFormData(prev => ({ ...prev, [field]: value }));
+        setErrors([]);
+    }, []);
+
+    const updateImageUploadState = useCallback((updates: Partial<ImageUploadState>) => {
+        setImageUploadState(prev => ({ ...prev, ...updates }));
+    }, []);
+
+    const isStepCompleted = useCallback((stepId: number): boolean => {
         if (completedSteps.has(stepId)) return true;
 
         switch (stepId) {
@@ -189,267 +197,185 @@ function RealEstatePageContent() {
                     basicFormData.location.trim()
                 );
             case 4:
-                return currentStep == 4 || currentStep > 4;
+                return currentStep >= 4;
             case 5:
                 return !!(
-                    (basicFormData.coverImage || basicFormData.existingCoverImage || coverImagePreview) &&
+                    (basicFormData.coverImage || basicFormData.existingCoverImage || imageUploadState.coverImagePreview) &&
                     basicFormData.viewTime && basicFormData.viewTime.trim()
                 );
             default:
                 return false;
         }
-    };
+    }, [basicFormData, selectedFinalTypeId, selectedCityId, selectedNeighborhoodId, imageUploadState.coverImagePreview, currentStep, completedSteps]);
 
-    // Mark step as completed
-    const markStepCompleted = (stepId: number) => {
+    const markStepCompleted = useCallback((stepId: number) => {
         if (isStepCompleted(stepId)) {
             setCompletedSteps(prev => new Set([...prev, stepId]));
         }
-    };
+    }, [isStepCompleted]);
 
-    // Load building data if buildingId is provided
-    useEffect(() => {
-        const loadBuilding = async () => {
-            if (!buildingId) {
-                setIsLoadingBuilding(false);
-                return;
-            }
-
-            try {
-                setIsLoadingBuilding(true);
-                const buildingData = await buildingApi.fetchBuildingById(buildingId);
-                setSelectedBuilding(buildingData);
-
-                // Auto-fill location data from building
-                if (buildingData.location) {
-                    updateBasicField('location', buildingData.location);
-                }
-
-                if (buildingData.cityId) {
-                    setSelectedCityId(buildingData.cityId);
-                }
-                if (buildingData.neighborhoodId) {
-                    setSelectedNeighborhoodId(buildingData.neighborhoodId);
-                }
-                if (buildingData.finalCityId) {
-                    updateBasicField('finalCityId', buildingData.finalCityId.toString());
-                }
-
-                // Pre-fill title with building context
-                if (!basicFormData.title) {
-                    updateBasicField('title', `عقار في ${buildingData.title}`);
-                }
-
-            } catch (error) {
-                console.error('Error loading building:', error);
-                toast.error('حدث خطأ في تحميل بيانات المبنى');
-                router.push('/dashboard');
-            } finally {
-                setIsLoadingBuilding(false);
-            }
-        };
-
-        loadBuilding();
-    }, [buildingId, router, setSelectedCityId, setSelectedNeighborhoodId]);
-
-    // Load existing property data for edit mode
-    useEffect(() => {
-        const loadProperty = async () => {
-            if (!isEditMode || !propertyId) {
-                setIsLoading(false);
-                return;
-            }
-
-            try {
-                setIsLoading(true);
-                const propertyData = await RealEstateApi.fetchRealEstateById(Number(propertyId));
-                setProperty(propertyData);
-
-                // Parse viewTime data properly
-                let parsedViewTime = '';
-                if (propertyData.viewTime) {
-                    try {
-                        // Try to parse as JSON first
-                        const parsed = JSON.parse(propertyData.viewTime);
-                        if (typeof parsed === 'string') {
-                            parsedViewTime = parsed;
-                        } else if (Array.isArray(parsed) && parsed.length > 0) {
-                            parsedViewTime = typeof parsed[0] === 'string' ? parsed[0] : JSON.stringify(parsed[0]);
-                        } else {
-                            parsedViewTime = JSON.stringify(parsed);
-                        }
-                    } catch {
-                        // If JSON parsing fails, use as string
-                        parsedViewTime = propertyData.viewTime;
-                    }
-                }
-
-                // Fill basic data
-                setBasicFormData({
-                    title: propertyData.title || '',
-                    description: propertyData.description || '',
-                    price: propertyData.price?.toString() || '',
-                    finalCityId: propertyData.finalCityId?.toString() || '',
-                    location: propertyData.location || '',
-                    viewTime: parsedViewTime,
-                    paymentMethod: propertyData.paymentMethod || '',
-                    coverImage: null,
-                    files: [],
-                    existingCoverImage: propertyData.coverImage || '',
-                    existingFiles: propertyData.files || []
-                });
-
-                // Set image previews
-                if (propertyData.coverImage) {
-                    setCoverImagePreview(`${propertyData.coverImage}`);
-                }
-
-                if (propertyData.files && propertyData.files.length > 0) {
-                    const imagePreviews = propertyData.files.map((file: string) => `${file}`);
-                    setAdditionalImagePreviews(imagePreviews);
-                    const fileTypes = propertyData.files.map(() => 'image/jpeg');
-                    setAdditionalFileTypes(fileTypes);
-                }
-
-                // Set location data
-                if (propertyData.cityId) setSelectedCityId(propertyData.cityId);
-                if (propertyData.neighborhoodId) setSelectedNeighborhoodId(propertyData.neighborhoodId);
-
-                // Set property type
-                if (propertyData.finalTypeId) {
-                    setSelectedFinalTypeId(propertyData.finalTypeId);
-                }
-
-                // Load building data if property belongs to a building
-                if (propertyData.buildingItemId) {
-                    try {
-                        const buildingData = await buildingApi.fetchBuildingById(propertyData.buildingItemId);
-                        setSelectedBuilding(buildingData);
-                    } catch (error) {
-                        console.warn('Could not load building data for property');
-                    }
-                }
-
-            } catch (error) {
-                console.error('Error loading property:', error);
-                toast.error('حدث خطأ في تحميل بيانات العقار');
-                router.push('/dashboard');
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        loadProperty();
-    }, [isEditMode, propertyId, router, setSelectedCityId, setSelectedNeighborhoodId]);
-
-    // Fill dynamic properties after property is loaded and finalTypeId is set
-    useEffect(() => {
-
-        if (isEditMode && property && selectedFinalTypeId && !dynamicLoading && groupedProperties) {
-            // Fill dynamic properties
-            if (property.properties) {
-                const dynamicData: { [key: string]: any } = {};
-                Object.entries(property.properties).forEach(([key, propValue]) => {
-                    if (propValue && typeof propValue === 'object' && 'value' in propValue && 'property' in propValue) {
-                        const propertyDef = propValue.property;
-                        let value = propValue.value;
-
-                        // Handle MULTIPLE_CHOICE fields - convert comma-separated string to array
-                        if (propertyDef.dataType === 'MULTIPLE_CHOICE' && typeof value === 'string') {
-                            value = value.split(',').map((item: string) => item.trim()).filter((item: string) => item);
-                        }
-
-                        dynamicData[key] = value;
-                    }
-                });
-                setDynamicFormData(dynamicData);
-            }
-
-            // Mark all steps as completed for edit mode after data is loaded
-            setTimeout(() => {
-                setCompletedSteps(new Set([1, 2, 3, 4, 5]));
-            }, 100);
+    const getLocationCoordinates = useCallback(() => {
+        if (basicFormData.location) {
+            const coords = basicFormData.location.split(',');
+            return {
+                lat: parseFloat(coords[0]) || 23.5880,
+                lng: parseFloat(coords[1]) || 58.3829
+            };
         }
-    }, [property, selectedFinalTypeId, dynamicLoading, groupedProperties, setDynamicFormData, isEditMode]);
 
+        if (basicFormData.finalCityId) {
+            const selectedFinalCity = finalCities.find(c => c.id === Number(basicFormData.finalCityId));
+            if (selectedFinalCity?.location) {
+                const coords = selectedFinalCity.location.split(',');
+                return {
+                    lat: parseFloat(coords[0]) || 23.5880,
+                    lng: parseFloat(coords[1]) || 58.3829
+                };
+            }
+        }
 
+        return { lat: 23.5880, lng: 58.3829 };
+    }, [basicFormData.location, basicFormData.finalCityId, finalCities]);
 
-    // Handle property type selection
-    const handleFinalTypeSelect = (finalTypeId: number, path: { mainType: MainType; subType: SubType; finalType: FinalType }) => {
+    // Event Handlers
+    const handleFinalTypeSelect = useCallback((finalTypeId: number, path: { mainType: MainType; subType: SubType; finalType: FinalType }) => {
         setSelectedFinalTypeId(finalTypeId);
         setSelectedTypePath(path);
         markStepCompleted(1);
-
         if (!isEditMode) {
             setCurrentStep(2);
         }
-    };
+    }, [isEditMode, markStepCompleted]);
 
-    // Update basic form field
-    const updateBasicField = (field: keyof typeof basicFormData, value: any) => {
-        setBasicFormData(prev => ({
-            ...prev,
-            [field]: value
-        }));
-        setErrors([]);
-    };
-
-    // Image upload handlers
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Single image upload handler
+    const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = (e) => {
-                if (e.target?.result) {
-                    setCoverImagePreview(e.target.result as string);
+            reader.onload = (event) => {
+                if (event.target?.result) {
+                    updateImageUploadState({ coverImagePreview: event.target.result as string });
                 }
             };
             reader.readAsDataURL(file);
             updateBasicField('coverImage', file);
         }
-    };
+    }, [updateBasicField, updateImageUploadState]);
 
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
-        const files = e.target.files;
-        if (!files || files.length === 0) return;
+    // Single additional file upload handler
+    const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
 
-        const newPreviews = [...additionalImagePreviews];
-        const newFileTypes = [...additionalFileTypes];
-        const fileList = Array.isArray(basicFormData.files) ? [...basicFormData.files] : [];
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            if (event.target?.result) {
+                const newPreviews = [...imageUploadState.additionalImagePreviews];
+                const newFileTypes = [...imageUploadState.additionalFileTypes];
+                const newFiles = [...basicFormData.files];
 
-        Array.from(files).forEach((file, i) => {
+                newPreviews[index] = event.target.result as string;
+                newFileTypes[index] = file.type;
+                newFiles[index] = file;
+
+                updateImageUploadState({
+                    additionalImagePreviews: newPreviews,
+                    additionalFileTypes: newFileTypes
+                });
+                updateBasicField('files', newFiles);
+            }
+        };
+        reader.readAsDataURL(file);
+    }, [imageUploadState, basicFormData.files, updateBasicField, updateImageUploadState]);
+
+    // Multiple files upload handler - NEW
+    const handleMultipleFileUpload = useCallback((files: FileList) => {
+        const filesArray = Array.from(files);
+        let currentCoverImage = imageUploadState.coverImagePreview;
+        let currentCoverFile = basicFormData.coverImage;
+
+        const newPreviews = [...imageUploadState.additionalImagePreviews];
+        const newFileTypes = [...imageUploadState.additionalFileTypes];
+        const newFiles = [...basicFormData.files];
+
+        let fileIndex = 0;
+
+        filesArray.forEach((file, index) => {
             const reader = new FileReader();
-            reader.onload = (ev) => {
-                if (ev.target?.result) {
-                    newPreviews[index + i] = ev.target.result as string;
+            reader.onload = (event) => {
+                if (event.target?.result) {
+                    const previewUrl = event.target.result as string;
+
+                    if (!currentCoverImage && index === 0) {
+                        // First file becomes cover image if no cover exists
+                        updateImageUploadState({ coverImagePreview: previewUrl });
+                        updateBasicField('coverImage', file);
+                        currentCoverImage = previewUrl;
+                        currentCoverFile = file;
+                    } else {
+                        // Find next available slot for additional images
+                        let targetIndex = fileIndex;
+                        while (newPreviews[targetIndex] && targetIndex < 30) {
+                            targetIndex++;
+                        }
+
+                        if (targetIndex < 30) {
+                            newPreviews[targetIndex] = previewUrl;
+                            newFileTypes[targetIndex] = file.type;
+                            newFiles[targetIndex] = file;
+                            fileIndex = targetIndex + 1;
+                        }
+                    }
+
+                    // Update state after processing all files
+                    if (index === filesArray.length - 1) {
+                        updateImageUploadState({
+                            additionalImagePreviews: newPreviews,
+                            additionalFileTypes: newFileTypes
+                        });
+                        updateBasicField('files', newFiles);
+                    }
                 }
             };
             reader.readAsDataURL(file);
-            fileList[index + i] = file;
-            newFileTypes[index + i] = file.type;
         });
+    }, [imageUploadState, basicFormData, updateBasicField, updateImageUploadState]);
 
-        setAdditionalImagePreviews(newPreviews);
-        setAdditionalFileTypes(newFileTypes);
-        updateBasicField('files', fileList);
-    };
+    const handleDeleteAdditionalImage = useCallback((index: number) => {
+        const newPreviews = [...imageUploadState.additionalImagePreviews];
+        const newFiles = [...basicFormData.files];
+        const newTypes = [...imageUploadState.additionalFileTypes];
 
-    const handleDeleteAdditionalImage = (index: number) => {
-        const newPreviews = [...additionalImagePreviews];
-        const newUrls = [...basicFormData.files];
-        const newTypes = [...additionalFileTypes];
+        // Remove the item at the specific index
+        newPreviews[index] = '';
+        newFiles[index] = undefined as any;
+        newTypes[index] = '';
 
-        newPreviews.splice(index, 1);
-        newUrls.splice(index, 1);
-        newTypes.splice(index, 1);
+        // Clean up the arrays by filtering out empty/undefined values
+        const cleanPreviews = newPreviews.filter(preview => preview);
+        const cleanFiles = newFiles.filter(file => file);
+        const cleanTypes = newTypes.filter(type => type);
 
-        setAdditionalImagePreviews(newPreviews);
-        setAdditionalFileTypes(newTypes);
-        updateBasicField('files', newUrls);
-    };
+        // Resize arrays to maintain 30 slots
+        while (cleanPreviews.length < 30) cleanPreviews.push('');
+        while (cleanFiles.length < 30) cleanFiles.push(undefined as any);
+        while (cleanTypes.length < 30) cleanTypes.push('');
 
-    // Validate current step
-    const validateCurrentStep = (): boolean => {
+        updateImageUploadState({
+            additionalImagePreviews: cleanPreviews,
+            additionalFileTypes: cleanTypes
+        });
+        updateBasicField('files', cleanFiles.filter(file => file));
+    }, [imageUploadState, basicFormData.files, updateBasicField, updateImageUploadState]);
+
+    const handleDeleteCoverImage = useCallback(() => {
+        updateImageUploadState({ coverImagePreview: null });
+        updateBasicField('coverImage', null);
+        updateBasicField('existingCoverImage', '');
+    }, [updateBasicField, updateImageUploadState]);
+
+    // Validation
+    const validateCurrentStep = useCallback((): { isValid: boolean; errors: string[] } => {
         const newErrors: string[] = [];
 
         switch (currentStep) {
@@ -480,7 +406,7 @@ function RealEstatePageContent() {
                 break;
 
             case 5:
-                if (!basicFormData.coverImage && !basicFormData.existingCoverImage && !coverImagePreview) {
+                if (!basicFormData.coverImage && !basicFormData.existingCoverImage && !imageUploadState.coverImagePreview) {
                     newErrors.push('صورة الغلاف مطلوبة');
                 }
                 if (!basicFormData.viewTime || !basicFormData.viewTime.trim()) {
@@ -489,33 +415,40 @@ function RealEstatePageContent() {
                 break;
         }
 
-        setErrors(newErrors);
-        return newErrors.length === 0;
-    };
+        return { isValid: newErrors.length === 0, errors: newErrors };
+    }, [
+        currentStep, basicFormData, selectedFinalTypeId, selectedCityId, selectedNeighborhoodId,
+        imageUploadState.coverImagePreview, groupedProperties, validateDynamic, dynamicErrors
+    ]);
 
-    // Navigation functions
-    const nextStep = () => {
-        if (validateCurrentStep() && currentStep < steps.length) {
+    // Navigation Functions
+    const nextStep = useCallback(() => {
+        const validation = validateCurrentStep();
+        if (validation.isValid && currentStep < steps.length) {
             markStepCompleted(currentStep);
             setCurrentStep(currentStep + 1);
+        } else {
+            setErrors(validation.errors);
         }
-    };
+    }, [validateCurrentStep, currentStep, steps.length, markStepCompleted]);
 
-    const prevStep = () => {
+    const prevStep = useCallback(() => {
         if (currentStep > 1) {
             setCurrentStep(currentStep - 1);
         }
-    };
+    }, [currentStep]);
 
-    const navigateToStep = (stepId: number) => {
+    const navigateToStep = useCallback((stepId: number) => {
         if (completedSteps.has(stepId) || stepId <= currentStep || stepId === currentStep + 1) {
             setCurrentStep(stepId);
         }
-    };
+    }, [completedSteps, currentStep]);
 
-    // Submit form
-    const handleSubmit = async () => {
-        if (!validateCurrentStep() || !selectedTypePath) {
+    // Submit Handler
+    const handleSubmit = useCallback(async () => {
+        const validation = validateCurrentStep();
+        if (!validation.isValid || !selectedTypePath) {
+            setErrors(validation.errors);
             return;
         }
 
@@ -527,10 +460,8 @@ function RealEstatePageContent() {
         setIsSubmitting(true);
 
         try {
-            // Process dynamic form data to handle MULTIPLE_CHOICE fields
             const processedDynamicData: { [key: string]: any } = {};
             Object.entries(dynamicFormData).forEach(([key, value]) => {
-                // Convert arrays back to comma-separated strings for MULTIPLE_CHOICE fields
                 if (Array.isArray(value)) {
                     processedDynamicData[key] = value.join(',');
                 } else {
@@ -538,15 +469,17 @@ function RealEstatePageContent() {
                 }
             });
 
+            // Filter out undefined files
+            const validFiles = basicFormData.files.filter(file => file instanceof File);
+
             if (isEditMode && property) {
-                // Update existing property
                 const updateData: Partial<any> = {
                     title: basicFormData.title,
                     description: basicFormData.description,
                     price: Number(basicFormData.price),
                     paymentMethod: basicFormData.paymentMethod,
                     location: basicFormData.location,
-                    viewTime: basicFormData.viewTime, // Send as string
+                    viewTime: basicFormData.viewTime,
                     dynamicProperties: processedDynamicData,
                     cityId: selectedCityId,
                     neighborhoodId: selectedNeighborhoodId,
@@ -560,8 +493,8 @@ function RealEstatePageContent() {
                 if (basicFormData.coverImage) {
                     updateData.coverImage = basicFormData.coverImage;
                 }
-                if (basicFormData.files.length > 0) {
-                    updateData.files = basicFormData.files;
+                if (validFiles.length > 0) {
+                    updateData.files = validFiles;
                 }
 
                 if (selectedTypePath) {
@@ -573,7 +506,6 @@ function RealEstatePageContent() {
                 await RealEstateApi.update(property.id, updateData);
                 toast.success('تم تحديث العقار بنجاح!');
             } else {
-                // Create new property
                 const createData: CreateRealEstateData = {
                     title: basicFormData.title,
                     description: basicFormData.description,
@@ -583,9 +515,9 @@ function RealEstatePageContent() {
                     finalTypeId: selectedTypePath.finalType.id,
                     paymentMethod: basicFormData.paymentMethod,
                     location: basicFormData.location,
-                    viewTime: basicFormData.viewTime, // Send as string
+                    viewTime: basicFormData.viewTime,
                     coverImage: basicFormData.coverImage,
-                    files: basicFormData.files,
+                    files: validFiles,
                     dynamicProperties: processedDynamicData,
                     cityId: selectedCityId!,
                     neighborhoodId: selectedNeighborhoodId!,
@@ -599,22 +531,174 @@ function RealEstatePageContent() {
                 toast.success('تم إنشاء العقار بنجاح!');
             }
 
-            // Navigate back appropriately
             router.push('/dashboard');
-
         } catch (error) {
             console.error('Error saving real estate:', error);
             toast.error(isEditMode ? 'حدث خطأ في تحديث العقار' : 'حدث خطأ في إنشاء العقار');
         } finally {
             setIsSubmitting(false);
         }
-    };
+    }, [
+        validateCurrentStep, selectedTypePath, selectedCityId, selectedNeighborhoodId,
+        basicFormData, dynamicFormData, isEditMode, property, selectedBuilding, router
+    ]);
+
+    // Effects
+    useEffect(() => {
+        const loadBuilding = async () => {
+            if (!buildingId) {
+                setIsLoadingBuilding(false);
+                return;
+            }
+
+            try {
+                setIsLoadingBuilding(true);
+                const buildingData = await buildingApi.fetchBuildingById(buildingId);
+                setSelectedBuilding(buildingData);
+
+                if (buildingData.location) {
+                    updateBasicField('location', buildingData.location);
+                }
+                if (buildingData.cityId) {
+                    setSelectedCityId(buildingData.cityId);
+                }
+                if (buildingData.neighborhoodId) {
+                    setSelectedNeighborhoodId(buildingData.neighborhoodId);
+                }
+                if (buildingData.finalCityId) {
+                    updateBasicField('finalCityId', buildingData.finalCityId.toString());
+                }
+                if (!basicFormData.title) {
+                    updateBasicField('title', `عقار في ${buildingData.title}`);
+                }
+            } catch (error) {
+                console.error('Error loading building:', error);
+                toast.error('حدث خطأ في تحميل بيانات المبنى');
+                router.push('/dashboard');
+            } finally {
+                setIsLoadingBuilding(false);
+            }
+        };
+
+        loadBuilding();
+    }, [buildingId, router, setSelectedCityId, setSelectedNeighborhoodId, updateBasicField, basicFormData.title]);
+
+    useEffect(() => {
+        const loadProperty = async () => {
+            if (!isEditMode || !propertyId) {
+                setIsLoading(false);
+                return;
+            }
+
+            try {
+                setIsLoading(true);
+                const propertyData = await RealEstateApi.fetchRealEstateById(Number(propertyId));
+                setProperty(propertyData);
+
+                let parsedViewTime = '';
+                if (propertyData.viewTime) {
+                    try {
+                        const parsed = JSON.parse(propertyData.viewTime);
+                        if (typeof parsed === 'string') {
+                            parsedViewTime = parsed;
+                        } else if (Array.isArray(parsed) && parsed.length > 0) {
+                            parsedViewTime = typeof parsed[0] === 'string' ? parsed[0] : JSON.stringify(parsed[0]);
+                        } else {
+                            parsedViewTime = JSON.stringify(parsed);
+                        }
+                    } catch {
+                        parsedViewTime = propertyData.viewTime;
+                    }
+                }
+
+                setBasicFormData({
+                    title: propertyData.title || '',
+                    description: propertyData.description || '',
+                    price: propertyData.price?.toString() || '',
+                    finalCityId: propertyData.finalCityId?.toString() || '',
+                    location: propertyData.location || '',
+                    viewTime: parsedViewTime,
+                    paymentMethod: propertyData.paymentMethod || '',
+                    coverImage: null,
+                    files: [],
+                    existingCoverImage: propertyData.coverImage || '',
+                    existingFiles: propertyData.files || []
+                });
+
+                if (propertyData.coverImage) {
+                    updateImageUploadState({ coverImagePreview: `${propertyData.coverImage}` });
+                }
+
+                if (propertyData.files && propertyData.files.length > 0) {
+                    const imagePreviews = new Array(30).fill('');
+                    const fileTypes = new Array(30).fill('');
+
+                    propertyData.files.forEach((file: string, index: number) => {
+                        if (index < 30) {
+                            imagePreviews[index] = `${file}`;
+                            fileTypes[index] = 'image/jpeg';
+                        }
+                    });
+
+                    updateImageUploadState({
+                        additionalImagePreviews: imagePreviews,
+                        additionalFileTypes: fileTypes
+                    });
+                }
+
+                if (propertyData.cityId) setSelectedCityId(propertyData.cityId);
+                if (propertyData.neighborhoodId) setSelectedNeighborhoodId(propertyData.neighborhoodId);
+                if (propertyData.finalTypeId) setSelectedFinalTypeId(propertyData.finalTypeId);
+
+                if (propertyData.buildingItemId) {
+                    try {
+                        const buildingData = await buildingApi.fetchBuildingById(propertyData.buildingItemId);
+                        setSelectedBuilding(buildingData);
+                    } catch (error) {
+                        console.warn('Could not load building data for property');
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading property:', error);
+                toast.error('حدث خطأ في تحميل بيانات العقار');
+                router.push('/dashboard');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadProperty();
+    }, [isEditMode, propertyId, router, setSelectedCityId, setSelectedNeighborhoodId, updateImageUploadState]);
+
+    useEffect(() => {
+        if (isEditMode && property && selectedFinalTypeId && !dynamicLoading && groupedProperties) {
+            if (property.properties) {
+                const dynamicData: { [key: string]: any } = {};
+                Object.entries(property.properties).forEach(([key, propValue]) => {
+                    if (propValue && typeof propValue === 'object' && 'value' in propValue && 'property' in propValue) {
+                        const propertyDef = propValue.property;
+                        let value = propValue.value;
+
+                        if (propertyDef.dataType === 'MULTIPLE_CHOICE' && typeof value === 'string') {
+                            value = value.split(',').map((item: string) => item.trim()).filter((item: string) => item);
+                        }
+
+                        dynamicData[key] = value;
+                    }
+                });
+                setDynamicFormData(dynamicData);
+            }
+
+            setTimeout(() => {
+                setCompletedSteps(new Set([1, 2, 3, 4, 5]));
+            }, 100);
+        }
+    }, [property, selectedFinalTypeId, dynamicLoading, groupedProperties, setDynamicFormData, isEditMode]);
 
     useEffect(() => {
         if (basicFormData.finalCityId && !isEditMode) {
             const selectedFinalCity = finalCities.find(c => c.id === Number(basicFormData.finalCityId));
             if (selectedFinalCity?.location) {
-                // Only update if current location is empty or if it's the default coordinates
                 const currentLocation = basicFormData.location;
                 const isDefaultLocation = currentLocation === '23.5880,58.3829' || !currentLocation;
 
@@ -622,21 +706,18 @@ function RealEstatePageContent() {
                     updateBasicField('location', selectedFinalCity.location);
                 }
             } else if (!basicFormData.location) {
-                // Set default Oman coordinates if no specific location for the final city
                 updateBasicField('location', '23.5880,58.3829');
             }
         }
-    }, [basicFormData.finalCityId, finalCities, isEditMode]);
+    }, [basicFormData.finalCityId, finalCities, isEditMode, basicFormData.location, updateBasicField]);
 
-    // Also add this useEffect to set initial location when finalCities load
     useEffect(() => {
         if (!isEditMode && !isLoadingBuilding && !basicFormData.location && finalCities.length > 0) {
-            // Set default location when component loads if no location is set
             updateBasicField('location', '23.5880,58.3829');
         }
-    }, [finalCities, isEditMode, isLoadingBuilding, basicFormData.location]);
+    }, [finalCities, isEditMode, isLoadingBuilding, basicFormData.location, updateBasicField]);
 
-    // Show loading screen
+    // Loading State
     if (isLoading || isLoadingBuilding) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -651,32 +732,7 @@ function RealEstatePageContent() {
         );
     }
 
-    const getLocationCoordinates = () => {
-        if (basicFormData.location) {
-            const coords = basicFormData.location.split(',');
-            return {
-                lat: parseFloat(coords[0]) || 23.5880,
-                lng: parseFloat(coords[1]) || 58.3829
-            };
-        }
-
-        // Try to get from selected final city
-        if (basicFormData.finalCityId) {
-            const selectedFinalCity = finalCities.find(c => c.id === Number(basicFormData.finalCityId));
-            if (selectedFinalCity?.location) {
-                const coords = selectedFinalCity.location.split(',');
-                return {
-                    lat: parseFloat(coords[0]) || 23.5880,
-                    lng: parseFloat(coords[1]) || 58.3829
-                };
-            }
-        }
-
-        // Default Oman coordinates
-        return { lat: 23.5880, lng: 58.3829 };
-    };
-
-    // Render step content
+    // Step Content Renderer
     const renderStepContent = () => {
         switch (currentStep) {
             case 1:
@@ -839,193 +895,78 @@ function RealEstatePageContent() {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                {selectedBuilding ? (
-                                    <div className="space-y-4">
-                                        <Card className="bg-green-50 border-green-200">
-                                            <CardContent className="pt-4">
-                                                <div className="flex items-start gap-3">
-                                                    <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
-                                                        <CheckSquare className="w-4 h-4 text-green-600" />
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <h4 className="font-medium text-green-900 mb-1">
-                                                            معلومات المبنى
-                                                        </h4>
-                                                        <div className="text-sm text-green-700 space-y-1">
-                                                            <p><strong>اسم المبنى:</strong> {selectedBuilding.title}</p>
-                                                            <p><strong>الحالة:</strong> {selectedBuilding.status}</p>
-                                                            <p><strong>عدد الإعلانات الحالية:</strong> {selectedBuilding.realEstateCount || 0}</p>
-                                                            {selectedBuilding.location && (
-                                                                <p><strong>الموقع الحالي:</strong> {selectedBuilding.location}</p>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div>
-                                                <Label htmlFor="city">المحافظة *</Label>
-                                                <select
-                                                    id="city"
-                                                    value={selectedCityId || ''}
-                                                    onChange={(e) => setSelectedCityId(Number(e.target.value) || null)}
-                                                    className="w-full mt-1 p-2 border rounded-md"
-                                                    disabled={locationLoading}
-                                                >
-                                                    <option value="">اختر المحافظة</option>
-                                                    {cities.map(city => (
-                                                        <option key={city.id} value={city.id}>
-                                                            {city.name}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </div>
-
-                                            <div>
-                                                <Label htmlFor="neighborhood">المدينة *</Label>
-                                                <select
-                                                    id="neighborhood"
-                                                    value={selectedNeighborhoodId || ''}
-                                                    onChange={(e) => setSelectedNeighborhoodId(Number(e.target.value) || null)}
-                                                    className="w-full mt-1 p-2 border rounded-md"
-                                                    disabled={!selectedCityId || locationLoading}
-                                                >
-                                                    <option value="">اختر المدينة</option>
-                                                    {neighborhoods.map(neighborhood => (
-                                                        <option key={neighborhood.id} value={neighborhood.id}>
-                                                            {neighborhood.name}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <Label htmlFor="finalCity">المنطقة *</Label>
-                                            <select
-                                                id="finalCity"
-                                                value={basicFormData.finalCityId}
-                                                onChange={(e) => updateBasicField('finalCityId', e.target.value)}
-                                                className="w-full mt-1 p-2 border rounded-md"
-                                                disabled={!selectedNeighborhoodId || locationLoading}
-                                            >
-                                                <option value="">اختر المنطقة</option>
-                                                {finalCities.map(finalCity => (
-                                                    <option key={finalCity.id} value={finalCity.id}>
-                                                        {finalCity.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        <div>
-                                            <Label htmlFor="location">تحديد الموقع على الخريطة *</Label>
-                                            <div className="mt-1">
-                                                <LocationPicker
-                                                    key={`location-picker-${basicFormData.finalCityId || 'default'}`}
-                                                    initialLatitude={getLocationCoordinates().lat}
-                                                    initialLongitude={getLocationCoordinates().lng}
-                                                    onLocationSelect={(latitude, longitude) => {
-                                                        updateBasicField('location', `${latitude},${longitude}`);
-                                                    }}
-                                                />
-                                            </div>
-                                            <p className="text-xs text-gray-500 mt-2">
-                                                انقر على الخريطة لتحديد الموقع أو اسحب العلامة لتغيير الموقع
-                                            </p>
-                                        </div>
-
-                                        <div>
-                                            <Label htmlFor="buildingFloor">الطابق (اختياري)</Label>
-                                            <Input
-                                                id="buildingFloor"
-                                                type="number"
-                                                placeholder="رقم الطابق"
-                                                className="mt-1"
-                                                onChange={(e) => {
-                                                    updateDynamicField('building_floor', e.target.value);
-                                                }}
-                                            />
-                                        </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <Label htmlFor="city">المحافظة *</Label>
+                                        <select
+                                            id="city"
+                                            value={selectedCityId || ''}
+                                            onChange={(e) => setSelectedCityId(Number(e.target.value) || null)}
+                                            className="w-full mt-1 p-2 border rounded-md"
+                                            disabled={locationLoading}
+                                        >
+                                            <option value="">اختر المحافظة</option>
+                                            {cities.map(city => (
+                                                <option key={city.id} value={city.id}>
+                                                    {city.name}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </div>
-                                ) : (
-                                    <div className="space-y-4">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div>
-                                                <Label htmlFor="city">المحافظة *</Label>
-                                                <select
-                                                    id="city"
-                                                    value={selectedCityId || ''}
-                                                    onChange={(e) => setSelectedCityId(Number(e.target.value) || null)}
-                                                    className="w-full mt-1 p-2 border rounded-md"
-                                                    disabled={locationLoading}
-                                                >
-                                                    <option value="">اختر المحافظة</option>
-                                                    {cities.map(city => (
-                                                        <option key={city.id} value={city.id}>
-                                                            {city.name}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </div>
 
-                                            <div>
-                                                <Label htmlFor="neighborhood">المدينة *</Label>
-                                                <select
-                                                    id="neighborhood"
-                                                    value={selectedNeighborhoodId || ''}
-                                                    onChange={(e) => setSelectedNeighborhoodId(Number(e.target.value) || null)}
-                                                    className="w-full mt-1 p-2 border rounded-md"
-                                                    disabled={!selectedCityId || locationLoading}
-                                                >
-                                                    <option value="">اختر المدينة</option>
-                                                    {neighborhoods.map(neighborhood => (
-                                                        <option key={neighborhood.id} value={neighborhood.id}>
-                                                            {neighborhood.name}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <Label htmlFor="finalCity">المنطقة *</Label>
-                                            <select
-                                                id="finalCity"
-                                                value={basicFormData.finalCityId}
-                                                onChange={(e) => updateBasicField('finalCityId', e.target.value)}
-                                                className="w-full mt-1 p-2 border rounded-md"
-                                                disabled={!selectedNeighborhoodId || locationLoading}
-                                            >
-                                                <option value="">اختر المنطقة</option>
-                                                {finalCities.map(finalCity => (
-                                                    <option key={finalCity.id} value={finalCity.id}>
-                                                        {finalCity.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        <div>
-                                            <Label htmlFor="location">تحديد الموقع على الخريطة *</Label>
-                                            <div className="mt-1">
-                                                <LocationPicker
-                                                    key={`location-picker-${basicFormData.finalCityId || 'default'}`}
-                                                    initialLatitude={getLocationCoordinates().lat}
-                                                    initialLongitude={getLocationCoordinates().lng}
-                                                    onLocationSelect={(latitude, longitude) => {
-                                                        updateBasicField('location', `${latitude},${longitude}`);
-                                                    }}
-                                                />
-                                            </div>
-                                            <p className="text-xs text-gray-500 mt-2">
-                                                انقر على الخريطة لتحديد الموقع أو اسحب العلامة لتغيير الموقع
-                                            </p>
-                                        </div>
+                                    <div>
+                                        <Label htmlFor="neighborhood">المدينة *</Label>
+                                        <select
+                                            id="neighborhood"
+                                            value={selectedNeighborhoodId || ''}
+                                            onChange={(e) => setSelectedNeighborhoodId(Number(e.target.value) || null)}
+                                            className="w-full mt-1 p-2 border rounded-md"
+                                            disabled={!selectedCityId || locationLoading}
+                                        >
+                                            <option value="">اختر المدينة</option>
+                                            {neighborhoods.map(neighborhood => (
+                                                <option key={neighborhood.id} value={neighborhood.id}>
+                                                    {neighborhood.name}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </div>
-                                )}
+                                </div>
+
+                                <div>
+                                    <Label htmlFor="finalCity">المنطقة *</Label>
+                                    <select
+                                        id="finalCity"
+                                        value={basicFormData.finalCityId}
+                                        onChange={(e) => updateBasicField('finalCityId', e.target.value)}
+                                        className="w-full mt-1 p-2 border rounded-md"
+                                        disabled={!selectedNeighborhoodId || locationLoading}
+                                    >
+                                        <option value="">اختر المنطقة</option>
+                                        {finalCities.map(finalCity => (
+                                            <option key={finalCity.id} value={finalCity.id}>
+                                                {finalCity.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <Label htmlFor="location">تحديد الموقع على الخريطة *</Label>
+                                    <div className="mt-1">
+                                        <LocationPicker
+                                            key={`location-picker-${basicFormData.finalCityId || 'default'}`}
+                                            initialLatitude={getLocationCoordinates().lat}
+                                            initialLongitude={getLocationCoordinates().lng}
+                                            onLocationSelect={(latitude, longitude) => {
+                                                updateBasicField('location', `${latitude},${longitude}`);
+                                            }}
+                                        />
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-2">
+                                        انقر على الخريطة لتحديد الموقع أو اسحب العلامة لتغيير الموقع
+                                    </p>
+                                </div>
                             </CardContent>
                         </Card>
                     </div>
@@ -1095,17 +1036,19 @@ function RealEstatePageContent() {
                             </CardHeader>
                             <CardContent className="space-y-6">
                                 <ImageUploadModal
-                                    additionalImagePreviews={additionalImagePreviews}
-                                    additionalFileTypes={additionalFileTypes}
+                                    additionalImagePreviews={imageUploadState.additionalImagePreviews}
+                                    additionalFileTypes={imageUploadState.additionalFileTypes}
                                     handleFileUpload={handleFileUpload}
-                                    coverImagePreview={coverImagePreview}
+                                    coverImagePreview={imageUploadState.coverImagePreview}
                                     handleImageUpload={handleImageUpload}
-                                    isUploading={isUploading}
+                                    handleMultipleFileUpload={handleMultipleFileUpload}
+                                    isUploading={imageUploadState.isUploading}
                                     handleDeleteImage={handleDeleteAdditionalImage}
-                                    isCoverImageUploading={isCoverImageUploading}
-                                    isAdditionalImageUploading={uploadingImageIndexes}
-                                    coverImageProgress={coverImageProgress}
-                                    additionalImageProgress={additionalImageProgress}
+                                    handleDeleteCoverImage={handleDeleteCoverImage}
+                                    isCoverImageUploading={imageUploadState.isCoverImageUploading}
+                                    isAdditionalImageUploading={imageUploadState.uploadingImageIndexes}
+                                    coverImageProgress={imageUploadState.coverImageProgress}
+                                    additionalImageProgress={imageUploadState.additionalImageProgress}
                                 />
 
                                 <div className="mt-6">
@@ -1130,6 +1073,7 @@ function RealEstatePageContent() {
         }
     };
 
+    // Main Render
     return (
         <div className="min-h-screen bg-gray-50 py-8">
             <div className="max-w-4xl mx-auto px-4">

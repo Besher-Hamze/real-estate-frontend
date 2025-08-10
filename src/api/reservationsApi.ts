@@ -214,7 +214,7 @@ export const reservationsApi = {
 
   // تنسيق تاريخ الزيارة للعرض
   formatVisitDate: (date: string): string => {
-    return new Date(date).toLocaleDateString('ar-OM', {
+    return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'

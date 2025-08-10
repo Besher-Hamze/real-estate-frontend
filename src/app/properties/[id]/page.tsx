@@ -235,7 +235,7 @@ export default function PropertyDetails() {
                 try {
                     const date = new Date(value);
                     if (isNaN(date.getTime())) return value;
-                    return date.toLocaleDateString("ar-OM");
+                    return date.toLocaleDateString("en-US");
                 } catch {
                     return value;
                 }
@@ -680,7 +680,7 @@ export default function PropertyDetails() {
                                 {/* Contact Methods */}
                                 <div className="space-y-3">
                                     {/* Phone Call */}
-                                    <a
+                                    {/* <a
                                         href={`tel:${property.companyPhone || '96812345678'}`}
                                         className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-3 shadow-md hover:shadow-lg"
                                     >
@@ -689,10 +689,10 @@ export default function PropertyDetails() {
                                             <div className="font-bold">اتصال مباشر</div>
                                             <div className="text-sm opacity-90">{property.companyPhone || '+968 1234 5678'}</div>
                                         </div>
-                                    </a>
+                                    </a> */}
 
                                     {/* WhatsApp */}
-                                    <a
+                                    {/* <a
                                         href={`https://wa.me/${(property.advertiserWhatsapp || '96812345678').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`مرحباً، أود الاستفسار عن العقار: ${property.title}\n\nرابط العقار: ${window.location.href}`)}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
@@ -703,7 +703,7 @@ export default function PropertyDetails() {
                                             <div className="font-bold">واتساب</div>
                                             <div className="text-sm opacity-90">محادثة فورية</div>
                                         </div>
-                                    </a>
+                                    </a> */}
 
                                     {/* Action Buttons */}
                                     <div className="border-t pt-4 mt-4 space-y-2">
@@ -773,7 +773,7 @@ export default function PropertyDetails() {
                                             تاريخ النشر
                                         </span>
                                         <span className="font-medium">
-                                            {new Date(property.createdAt).toLocaleDateString("ar-OM")}
+                                            {new Date(property.createdAt).toLocaleDateString("en-US")}
                                         </span>
                                     </div>
                                 </div>

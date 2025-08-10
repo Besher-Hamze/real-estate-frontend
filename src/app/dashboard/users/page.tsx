@@ -291,7 +291,7 @@ export default function UsersManagementPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(user.createdAt).toLocaleDateString('ar-SA')}
+                      {new Date(user.createdAt).toLocaleDateString('en-US')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center gap-2">
@@ -328,7 +328,7 @@ export default function UsersManagementPage() {
             className="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto"
           >
             <h3 className="text-lg font-bold text-gray-900 mb-4">تعديل بيانات المستخدم</h3>
-            
+
             <div className="space-y-4">
               {/* Full Name */}
               <div>
@@ -336,7 +336,7 @@ export default function UsersManagementPage() {
                 <input
                   type="text"
                   value={editingUser.fullName}
-                  onChange={(e) => setEditingUser({...editingUser, fullName: e.target.value})}
+                  onChange={(e) => setEditingUser({ ...editingUser, fullName: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -347,7 +347,7 @@ export default function UsersManagementPage() {
                 <input
                   type="email"
                   value={editingUser.email}
-                  onChange={(e) => setEditingUser({...editingUser, email: e.target.value})}
+                  onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -358,7 +358,7 @@ export default function UsersManagementPage() {
                 <input
                   type="tel"
                   value={editingUser.phone || ''}
-                  onChange={(e) => setEditingUser({...editingUser, phone: e.target.value})}
+                  onChange={(e) => setEditingUser({ ...editingUser, phone: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -368,7 +368,7 @@ export default function UsersManagementPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">الدور</label>
                 <select
                   value={editingUser.role}
-                  onChange={(e) => setEditingUser({...editingUser, role: e.target.value as UserRole})}
+                  onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value as UserRole })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="user">مستخدم عادي</option>
@@ -385,7 +385,7 @@ export default function UsersManagementPage() {
                   <input
                     type="text"
                     value={editingUser.companyName || ''}
-                    onChange={(e) => setEditingUser({...editingUser, companyName: e.target.value})}
+                    onChange={(e) => setEditingUser({ ...editingUser, companyName: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
@@ -397,7 +397,7 @@ export default function UsersManagementPage() {
                   type="checkbox"
                   id="isActive"
                   checked={editingUser.isActive}
-                  onChange={(e) => setEditingUser({...editingUser, isActive: e.target.checked})}
+                  onChange={(e) => setEditingUser({ ...editingUser, isActive: e.target.checked })}
                   className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <label htmlFor="isActive" className="text-sm font-medium text-gray-700">

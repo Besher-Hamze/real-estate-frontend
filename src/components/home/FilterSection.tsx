@@ -31,15 +31,11 @@ import {
   FilterSectionProps,
   FinalCityType,
   ApiDynamicProperty,
-  RealEstateData,
-  PropertyValue
+
 } from '@/lib/types';
 import { cityApi } from '@/api/cityApi';
 import { neighborhoodApi } from '@/api/NeighborhoodApi';
-import { getPropertySizeLabel } from '@/utils/filterUtils';
 import SortComponent from './SortComponent';
-import { FilterChip } from './home';
-import { SelectField } from './SelectField';
 import { finalCityApi } from '@/api/finalCityApi';
 
 // Extended filters to support multiple selections
@@ -257,7 +253,7 @@ const PriceRangeSection = ({
   isRental?: boolean;
 }) => {
   const currency = 'ر.ع';
-  const maxPrice = isRental ? 10000 : 1000000;
+  const maxPrice = 9999999;
 
   const formatNumber = (num: number) => {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -268,7 +264,7 @@ const PriceRangeSection = ({
     { label: '500 - 1000', min: 500, max: 1000 },
     { label: '1000 - 2000', min: 1000, max: 2000 },
     { label: '2000 - 5000', min: 2000, max: 5000 },
-    { label: '5000+', min: 5000, max: maxPrice }
+    { label: '9999999+', min: 5000, max: maxPrice }
   ] : [
     { label: 'أقل من 50 ألف', min: 0, max: 50000 },
     { label: '50 - 100 ألف', min: 50000, max: 100000 },

@@ -323,7 +323,16 @@ const ViewingTimeSelector: React.FC<ViewingTimeProps> = ({
       {value && (
         <div className={`border rounded-lg p-3 ${isAlwaysAvailable ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'}`}>
           <h4 className={`text-sm font-medium mb-2 ${isAlwaysAvailable ? 'text-green-900' : 'text-blue-900'}`}>المعاينة:</h4>
-          <p className={`text-sm leading-relaxed ${isAlwaysAvailable ? 'text-green-800' : 'text-blue-800'}`}>{value}</p>
+          <p className={`text-sm leading-relaxed ${isAlwaysAvailable ? 'text-green-800' : 'text-blue-800'}`}>
+            {typeof value === 'string'
+              ? value.split('.').map((part, idx, arr) => (
+                <React.Fragment key={idx}>
+                  {part.trim()}
+                  {idx < arr.length - 1 && <br />}
+                </React.Fragment>
+              ))
+              : value}
+          </p>
         </div>
       )}
 

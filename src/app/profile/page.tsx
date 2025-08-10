@@ -411,7 +411,7 @@ export default function ProfilePage() {
                                 </div>
                             ) : (
                                 <p className="text-gray-600">
-                                    آخر تغيير: {new Date(user.updatedAt || user.createdAt).toLocaleDateString('ar-OM')}
+                                    آخر تغيير: {new Date(user.updatedAt || user.createdAt).toLocaleDateString('en-US')}
                                 </p>
                             )}
                         </CardContent>
