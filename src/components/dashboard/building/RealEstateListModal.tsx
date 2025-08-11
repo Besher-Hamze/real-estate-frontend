@@ -9,10 +9,10 @@ import { finalTypeTypeApi } from '@/api/finalTypeApi';
 import { RealEstateData } from '@/lib/types';
 import RealEstateCard from '@/components/widgets/PropertyGrid/PropertyCard';
 import { mainTypeApi } from '@/api/mainTypeApi';
-import EditEstateForm from '../estate-components/Edit-Estate';
 import { toast } from 'react-toastify';
 import { finalCityQuery } from '@/lib/constants/queryNames';
 import { finalCityApi } from '@/api/finalCityApi';
+import { EditEstateForm } from '../estate-components/Edit-Estate';
 
 interface RealEstateListModalProps {
     isOpen: boolean;

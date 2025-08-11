@@ -361,11 +361,8 @@ export const RealEstateApi = {
      */
     fetchRealEstateByBuildingItemId: async (buildingItemId: string): Promise<RealEstateData[]> => {
         try {
-            const response = await apiClient.get<RealEstateData[]>(`api/realestate/items/${buildingItemId}`);
-            if ((response.data as any).message) {
-                return [];
-            }
-            return response.data;
+            const response = await apiClient.get<{ realEstates: RealEstateData[] }>(`api/buildings/${buildingItemId}`);
+            return response.data.realEstates;
         } catch (error) {
             console.error("Failed to fetch real estate by building item ID:", error);
             throw error;
