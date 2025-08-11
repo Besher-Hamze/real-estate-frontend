@@ -456,7 +456,7 @@ export default function BuildingsTable() {
                   </button>
                   <button
                     onClick={() => {
-                      const url = `${process.env.NEXT_PUBLIC_FRONTEND}/buildings/${selectedBuilding.id}`;
+                      const url = `http://62.171.153.198:4001/buildings/${selectedBuilding.id}`;
                       window.open(url, '_blank');
                     }}
                     className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
