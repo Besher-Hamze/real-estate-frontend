@@ -146,7 +146,7 @@ export default function BuildingsTable() {
       accessorKey: "realEstateCount",
       cell: (row: Building) => (
         <div className="text-sm font-medium text-gray-700">
-          {row.realEstateCount || 0}
+          {row.realEstatesCount || 0}
         </div>
       )
     },
@@ -329,7 +329,7 @@ export default function BuildingsTable() {
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-green-600">
-                {buildings?.reduce((sum, building) => sum + (building.realEstateCount || 0), 0) || 0}
+                {buildings?.reduce((sum, building) => sum + (building.realEstatesCount || 0), 0) || 0}
               </p>
               <p className="text-sm text-gray-600">إجمالي الإعلانات</p>
             </div>
