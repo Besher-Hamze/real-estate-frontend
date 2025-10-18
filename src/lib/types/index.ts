@@ -119,7 +119,11 @@ export interface Building {
   location: string;
   buildingAge: string;
   realEstatesCount: number;
-  items?: BuildingItem[]
+  items?: BuildingItem[];
+  // Location properties
+  cityId?: number;
+  neighborhoodId?: number;
+  finalCityId?: number;
 }
 
 export interface CreateBuilding {
@@ -322,11 +326,6 @@ export interface CreateRealEstateData {
   mainCategoryId: number;
   subCategoryId: number;
   finalTypeId: number;
-  advertiserType: "company" | "user";
-  advertiserName: string;
-  advertiserPhone: string;
-  advertiserWhatsapp: string;
-  advertiserLogo: File;
   cityId: number;
   neighborhoodId: number;
   finalCityId: number;
@@ -338,4 +337,10 @@ export interface CreateRealEstateData {
   paymentMethod: string;
   // الخصائص الديناميكية
   dynamicProperties: DynamicFormData;
+  // Advertiser fields (optional for backward compatibility)
+  advertiserType?: "company" | "user";
+  advertiserName?: string;
+  advertiserPhone?: string;
+  advertiserWhatsapp?: string;
+  advertiserLogo?: File;
 }

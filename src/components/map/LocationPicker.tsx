@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import Map, { Marker, NavigationControl } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { MapPin, Target } from 'lucide-react';
@@ -27,6 +27,32 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
     latitude: initialLatitude || 23.5880,
     longitude: initialLongitude || 58.3829
   });
+
+  // Update viewport and marker when props change
+  useEffect(() => {
+    if (initialLatitude !== undefined && initialLongitude !== undefined) {
+      const newViewport = {
+        latitude: initialLatitude,
+        longitude: initialLongitude,
+        zoom: 14
+      };
+
+      setViewport(newViewport);
+      setMarkerPosition({
+        latitude: initialLatitude,
+        longitude: initialLongitude
+      });
+
+      // Update map center if map is available
+      if (mapRef.current) {
+        mapRef.current.flyTo({
+          center: [initialLongitude, initialLatitude],
+          zoom: 14,
+          duration: 1000
+        });
+      }
+    }
+  }, [initialLatitude, initialLongitude]);
 
   const handleMapClick = useCallback((event: any) => {
     const { lat, lng } = event.lngLat;

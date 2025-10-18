@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { TypeSelector, DynamicForm } from '@/components/dynamic-form';
 import { useDynamicForm } from '@/hooks/useDynamicProperties';
 import { useLocationData } from '@/hooks/useLocationData';
-import { CreateRealEstateData, MainType, SubType, FinalType, RealEstateData, Building } from '@/lib/types';
+import { CreateRealEstateData, MainType, SubType, FinalType, RealEstateData, Building, FinalCityType } from '@/lib/types';
 import { RealEstateApi } from '@/api/realEstateApi';
 import { buildingApi } from '@/api/buidlingApi';
 import {
@@ -225,7 +225,7 @@ function RealEstatePageContent() {
 
         if (basicFormData.finalCityId) {
             const selectedFinalCity = finalCities.find(c => c.id === Number(basicFormData.finalCityId));
-            if (selectedFinalCity?.location) {
+            if (selectedFinalCity && 'location' in selectedFinalCity && selectedFinalCity.location && typeof selectedFinalCity.location === 'string') {
                 const coords = selectedFinalCity.location.split(',');
                 return {
                     lat: parseFloat(coords[0]) || 23.5880,
@@ -522,6 +522,11 @@ function RealEstatePageContent() {
                     cityId: selectedCityId!,
                     neighborhoodId: selectedNeighborhoodId!,
                     finalCityId: Number(basicFormData.finalCityId),
+                    // Default advertiser values (can be overridden by backend)
+                    advertiserType: "user",
+                    advertiserName: "مستخدم",
+                    advertiserPhone: "",
+                    advertiserWhatsapp: "",
                     ...(selectedBuilding && {
                         buildingItemId: selectedBuilding.id,
                     })
@@ -559,14 +564,14 @@ function RealEstatePageContent() {
                 if (buildingData.location) {
                     updateBasicField('location', buildingData.location);
                 }
-                if (buildingData.cityId) {
-                    setSelectedCityId(buildingData.cityId);
+                if ((buildingData as any).cityId) {
+                    setSelectedCityId((buildingData as any).cityId);
                 }
-                if (buildingData.neighborhoodId) {
-                    setSelectedNeighborhoodId(buildingData.neighborhoodId);
+                if ((buildingData as any).neighborhoodId) {
+                    setSelectedNeighborhoodId((buildingData as any).neighborhoodId);
                 }
-                if (buildingData.finalCityId) {
-                    updateBasicField('finalCityId', buildingData.finalCityId.toString());
+                if ((buildingData as any).finalCityId) {
+                    updateBasicField('finalCityId', (buildingData as any).finalCityId.toString());
                 }
                 if (!basicFormData.title) {
                     updateBasicField('title', `عقار في ${buildingData.title}`);
@@ -680,10 +685,11 @@ function RealEstatePageContent() {
                         let value = propValue.value;
 
                         if (propertyDef.dataType === 'MULTIPLE_CHOICE' && typeof value === 'string') {
-                            value = value.split(',').map((item: string) => item.trim()).filter((item: string) => item);
+                            const arrayValue = value.split(',').map((item: string) => item.trim()).filter((item: string) => item);
+                            dynamicData[key] = arrayValue;
+                        } else {
+                            dynamicData[key] = value;
                         }
-
-                        dynamicData[key] = value;
                     }
                 });
                 setDynamicFormData(dynamicData);
@@ -696,20 +702,16 @@ function RealEstatePageContent() {
     }, [property, selectedFinalTypeId, dynamicLoading, groupedProperties, setDynamicFormData, isEditMode]);
 
     useEffect(() => {
-        if (basicFormData.finalCityId && !isEditMode) {
+        if (basicFormData.finalCityId) {
             const selectedFinalCity = finalCities.find(c => c.id === Number(basicFormData.finalCityId));
-            if (selectedFinalCity?.location) {
-                const currentLocation = basicFormData.location;
-                const isDefaultLocation = currentLocation === '23.5880,58.3829' || !currentLocation;
-
-                if (isDefaultLocation) {
-                    updateBasicField('location', selectedFinalCity.location);
-                }
+            if (selectedFinalCity && 'location' in selectedFinalCity && selectedFinalCity.location && typeof selectedFinalCity.location === 'string') {
+                // Always update location when finalCity changes
+                updateBasicField('location', selectedFinalCity.location);
             } else if (!basicFormData.location) {
                 updateBasicField('location', '23.5880,58.3829');
             }
         }
-    }, [basicFormData.finalCityId, finalCities, isEditMode, basicFormData.location, updateBasicField]);
+    }, [basicFormData.finalCityId, finalCities, updateBasicField]);
 
     useEffect(() => {
         if (!isEditMode && !isLoadingBuilding && !basicFormData.location && finalCities.length > 0) {
@@ -955,7 +957,7 @@ function RealEstatePageContent() {
                                     <Label htmlFor="location">تحديد الموقع على الخريطة *</Label>
                                     <div className="mt-1">
                                         <LocationPicker
-                                            key={`location-picker-${basicFormData.finalCityId || 'default'}`}
+                                            key={`location-picker-${basicFormData.finalCityId}-${basicFormData.location}`}
                                             initialLatitude={getLocationCoordinates().lat}
                                             initialLongitude={getLocationCoordinates().lng}
                                             onLocationSelect={(latitude, longitude) => {
